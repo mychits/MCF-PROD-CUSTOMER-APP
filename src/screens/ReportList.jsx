@@ -21,8 +21,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import NoGroupImage from "../../assets/Nogroup.png";
 import { ContextProvider } from "../context/UserProvider";
-
-// Helper function to format numbers with commas in Indian style (e.g., 2,51,500)
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) {
     return "0";
@@ -30,8 +28,6 @@ const formatNumberIndianStyle = (num) => {
   const parts = num.toString().split('.');
   let integerPart = parts[0];
   let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
-
-  // Handle negative numbers
   let isNegative = false;
   if (integerPart.startsWith('-')) {
     isNegative = true;
@@ -51,19 +47,17 @@ const formatNumberIndianStyle = (num) => {
 };
 
 const Colors = {
-  primaryBlue: "#053B90", // Dark blue, main app color
-  lightBackground: "#F0F5F9", // Very light grey-blue for screen background
-  cardBackground: "#FFFFFF", // Pure white for card base
-  darkText: "#2C3E50", // Dark grey for primary text
-  mediumText: "#7F8C8D", // Medium grey for secondary text
-  lightText: "#BDC3C7", // Light grey for subtle labels
-  accentGreen: "#2ECC71", // Bright green for profit/positive
-  accentBlue: "#3499DB", // Vibrant blue for investment/neutral
-  buttonPrimary: "#00BCD4", // Teal/Cyan for main action button
-  buttonText: "#FFFFFF", // White for button text
-  shadowColor: "rgba(0,0,0,0.1)", // Light shadow for depth
-
-  // Updated Gradient Colors for more attractive cards
+  primaryBlue: "#053B90",
+  lightBackground: "#F0F5F9", 
+  cardBackground: "#FFFFFF",
+  darkText: "#2C3E50", 
+  mediumText: "#7F8C8D", 
+  lightText: "#BDC3C7", 
+  accentGreen: "#2ECC71",
+  accentBlue: "#3499DB", 
+  buttonPrimary: "#00BCD4", 
+  buttonText: "#FFFFFF",
+  shadowColor: "rgba(0,0,0,0.1)", 
   gradientStartLight: '#E3F2FD', // Very light blue
   gradientEndLight: '#FFFFFF', // White
 

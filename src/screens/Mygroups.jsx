@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext, useRef } from "react"; // Import useRef
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,6 @@ import {
   StatusBar,
   Image,
   Platform,
-  Vibration,
-  Animated,
 } from "react-native";
 import url from "../data/url";
 import axios from "axios";
@@ -58,8 +56,6 @@ const Colors = {
   cardShadowLight: 'rgba(0,0,0,0.08)', // Lighter, more diffused shadow
   goldColor: '#FFD700', // Gold color for currency icon
 };
-
-// Helper function to format numbers with commas in Indian style (e.g., 2,51,500)
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) {
     return "0";
@@ -67,8 +63,6 @@ const formatNumberIndianStyle = (num) => {
   const parts = num.toString().split(".");
   let integerPart = parts[0];
   let decimalPart = parts.length > 1 ? "." + parts[1] : "";
-
-  // Handle negative numbers
   let isNegative = false;
   if (integerPart.startsWith("-")) {
     isNegative = true;
@@ -84,8 +78,6 @@ const formatNumberIndianStyle = (num) => {
     return (isNegative ? "-" : "") + lastThree + decimalPart;
   }
 };
-
-// Helper function to format date
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
   const options = { year: "numeric", month: "short", day: "numeric" };
@@ -105,10 +97,6 @@ const Mygroups = ({ navigation, route }) => {
   const [Totalprofit, setTotalProfit] = useState(0);
   const [individualGroupReports, setIndividualGroupReports] = useState({});
 
-  // Use useRef to store Animated.Value instances
-  // This ensures Hooks are called consistently, and the ref.current can be updated.
-  const animatedCardValues = useRef({});
-
   const fetchTickets = useCallback(async () => {
     if (!userId) {
       setLoading(false);
@@ -120,30 +108,13 @@ const Mygroups = ({ navigation, route }) => {
       );
 
       setCardsData(response.data || []);
-
-      // Initialize or reset animated values when new data arrives
-      animatedCardValues.current = {}; // Clear previous values
-      response.data.forEach((_, index) => {
-        animatedCardValues.current[index] = {
-          fadeAnim: new Animated.Value(0),
-          scaleAnim: new Animated.Value(1),
-        };
-        // Start fade-in animations after data is set
-        Animated.timing(animatedCardValues.current[index].fadeAnim, {
-          toValue: 1,
-          duration: 500,
-          delay: index * 100, // Staggered animation
-          useNativeDriver: true,
-        }).start();
-      });
-
     } catch (error) {
       console.error("Error fetching tickets:", error);
       setCardsData([]);
     } finally {
       setLoading(false);
     }
-  }, [userId]); // Removed cardsData.length from dependency array
+  }, [userId]);
 
   const fetchAllOverview = useCallback(async () => {
     if (!userId) {
@@ -175,8 +146,6 @@ const Mygroups = ({ navigation, route }) => {
         0
       );
       setTotalProfit(totalProfitAmount);
-
-      // Create a map for individual group reports for quick lookup
       const reportsMap = {};
       data.forEach((groupReport) => {
         if (
@@ -215,36 +184,19 @@ const Mygroups = ({ navigation, route }) => {
 
   const filteredCards = cardsData.filter((card) => card.group_id !== null);
 
-  const handlePressIn = (index) => {
-    Vibration.vibrate(20); // Shorter vibration for press-in
-    Animated.spring(animatedCardValues.current[index].scaleAnim, { // Access from ref
-      toValue: 0.96, // Slightly shrink on press
-      useNativeDriver: true,
-      bounciness: 12,
-    }).start();
-  };
-
-  const handlePressOut = (index, groupId, ticket) => {
-    Animated.spring(animatedCardValues.current[index].scaleAnim, { // Access from ref
-      toValue: 1, // Return to original size
-      useNativeDriver: true,
-      bounciness: 12,
-    }).start(() => {
-      navigation.navigate("BottomTab", {
-        screen: "EnrollTab",
+  const handleCardPress = (groupId, ticket) => {
+    navigation.navigate("BottomTab", {
+      screen: "EnrollTab",
+      params: {
+        screen: "EnrollGroup",
         params: {
-          screen: "EnrollGroup",
-          params: {
-            userId: userId,
-            groupId: groupId,
-            ticket: ticket,
-          },
+          userId: userId,
+          groupId: groupId,
+          ticket: ticket,
         },
-      });
+      },
     });
   };
-
-  // Determine the display value for Total Profit based on Total Investment
   const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit;
 
   return (
@@ -261,7 +213,6 @@ const Mygroups = ({ navigation, route }) => {
           <Text style={styles.sectionTitle}>My Groups</Text>
 
           <View style={styles.summaryCardsRow}>
-            {/* Investment Card */}
             <View style={[styles.summaryCard, styles.investmentCardBackground]}>
               <FontAwesome5
                 name="wallet"
@@ -274,7 +225,6 @@ const Mygroups = ({ navigation, route }) => {
               </Text>
               <Text style={styles.summaryLabel}>Total Investment</Text>
             </View>
-            {/* Profit Card */}
             <View style={[styles.summaryCard, styles.profitCardBackground]}>
               <FontAwesome5
                 name="chart-line"
@@ -306,98 +256,77 @@ const Mygroups = ({ navigation, route }) => {
                 const individualPaidAmount =
                   individualGroupReports[groupReportKey]?.totalPaid || 0;
 
-                // Safely access animated values from useRef
-                const fadeAnim = animatedCardValues.current[index]?.fadeAnim || new Animated.Value(1);
-                const scaleAnim = animatedCardValues.current[index]?.scaleAnim || new Animated.Value(1);
-
                 return (
-                  <Animated.View
+                  <TouchableOpacity
                     key={card._id || index}
-                    style={[
-                      styles.groupCardAnimated,
-                      { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
-                    ]}
+                    style={styles.groupCardTouchable}
+                    onPress={() =>
+                      handleCardPress(card.group_id._id, card.tickets)
+                    }
+                    activeOpacity={0.8}
                   >
-                    <TouchableOpacity
-                      style={styles.groupCardTouchable}
-                      onPressIn={() => handlePressIn(index)}
-                      onPressOut={() =>
-                        handlePressOut(index, card.group_id._id, card.tickets)
-                      }
-                      activeOpacity={1}
+                    <LinearGradient
+                      colors={[Colors.cardGradientStart, Colors.cardGradientEnd]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.infoGradientBox}
                     >
-                      <LinearGradient
-                        colors={[Colors.cardGradientStart, Colors.cardGradientEnd]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.infoGradientBox}
-                      >
-                        <View style={styles.iconContainer}>
-                          <MaterialCommunityIcons
-                            name="currency-inr"
-                            size={30}
-                            color={Colors.goldColor}
-                          />
+                      <View style={styles.iconContainer}>
+                        <MaterialCommunityIcons
+                          name="currency-inr"
+                          size={30}
+                          color={Colors.goldColor}
+                        />
+                      </View>
+                      <View style={styles.textDetailsContainer}>
+                        <Text style={styles.groupValue}>
+                          ₹ {formatNumberIndianStyle(card.group_id.group_value)}
+                        </Text>
+                        <Text style={styles.groupCardNameEnhanced}>
+                          {card.group_id.group_name}
+                        </Text>
+                        <Text style={styles.groupCardTicketEnhanced}>
+                          Ticket: <Text style={{ fontWeight: 'bold', color: Colors.ticketColor }}>{card.tickets}</Text>
+                        </Text>
+                        <View style={styles.amountRow}>
+                          <Text style={styles.amountLabel}>Paid:</Text>
+                          <Text style={styles.highlightedAmountEnhanced}>
+                            ₹ {formatNumberIndianStyle(individualPaidAmount)}
+                          </Text>
                         </View>
-                        <View style={styles.textDetailsContainer}>
-                          {/* Group Value */}
-                          <Text style={styles.groupValue}>
-                            ₹ {formatNumberIndianStyle(card.group_id.group_value)}
-                          </Text>
-
-                          {/* Group Name */}
-                          <Text style={styles.groupCardNameEnhanced}>
-                            {card.group_id.group_name}
-                          </Text>
-
-                          {/* Display Ticket */}
-                          <Text style={styles.groupCardTicketEnhanced}>
-                            Ticket: <Text style={{ fontWeight: 'bold', color: Colors.ticketColor }}>{card.tickets}</Text>
-                          </Text>
-
-                          {/* Display Individual Paid Amount */}
-                          <View style={styles.amountRow}>
-                            <Text style={styles.amountLabel}>Paid:</Text>
-                            <Text style={styles.highlightedAmountEnhanced}>
-                              ₹ {formatNumberIndianStyle(individualPaidAmount)}
-                            </Text>
+                        {(card.group_id?.start_date || card.group_id?.end_date) && (
+                          <View style={styles.dateContainer}>
+                            {card.group_id?.start_date && (
+                              <View style={styles.dateItem}>
+                                <MaterialIcons
+                                  name="event-available"
+                                  size={16}
+                                  color={Colors.dateLabel}
+                                />
+                                <Text style={styles.dateLabelText}>Start:</Text>
+                                <Text style={styles.dateTextHighlight}>
+                                  {formatDate(card.group_id.start_date)}
+                                </Text>
+                              </View>
+                            )}
+                            {card.group_id?.end_date && (
+                              <View style={styles.dateItem}>
+                                <MaterialIcons
+                                  name="event-busy"
+                                  size={16}
+                                  color={Colors.dateLabel}
+                                />
+                                <Text style={styles.dateLabelText}>End:</Text>
+                                <Text style={styles.dateTextHighlight}>
+                                  {formatDate(card.group_id.end_date)}
+                                </Text>
+                              </View>
+                            )}
                           </View>
-
-                          {/* Start and End Dates */}
-                          {(card.group_id?.start_date || card.group_id?.end_date) && (
-                            <View style={styles.dateContainer}>
-                              {card.group_id?.start_date && (
-                                <View style={styles.dateItem}>
-                                  <MaterialIcons
-                                    name="event-available"
-                                    size={16}
-                                    color={Colors.dateLabel}
-                                  />
-                                  <Text style={styles.dateLabelText}>Start:</Text>
-                                  <Text style={styles.dateTextHighlight}>
-                                    {formatDate(card.group_id.start_date)}
-                                  </Text>
-                                </View>
-                              )}
-                              {card.group_id?.end_date && (
-                                <View style={styles.dateItem}>
-                                  <MaterialIcons
-                                    name="event-busy"
-                                    size={16}
-                                    color={Colors.dateLabel}
-                                  />
-                                  <Text style={styles.dateLabelText}>End:</Text>
-                                  <Text style={styles.dateTextHighlight}>
-                                    {formatDate(card.group_id.end_date)}
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                          )}
-                        </View>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </Animated.View>
+                        )}
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
                 );
               })}
             </ScrollView>
@@ -511,7 +440,7 @@ const styles = StyleSheet.create({
   groupListContentContainer: {
     paddingBottom: 20,
   },
-  groupCardAnimated: {
+  groupCardTouchable: {
     marginVertical: 10,
     borderRadius: 20,
     overflow: "hidden",
@@ -529,10 +458,6 @@ const styles = StyleSheet.create({
         elevation: 8,
       },
     }),
-  },
-  groupCardTouchable: {
-    borderRadius: 20,
-    overflow: 'hidden',
   },
   infoGradientBox: {
     flexDirection: "row",

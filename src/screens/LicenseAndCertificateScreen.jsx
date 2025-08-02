@@ -90,8 +90,6 @@ const LicenseAndCertificateScreen = ({ navigation }) => {
           />
         ))}
       </ScrollView>
-
-      {/* Full-Screen Image Modal with Zoom */}
       <Modal
         visible={!!selectedImage}
         transparent={true}

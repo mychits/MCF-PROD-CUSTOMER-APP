@@ -13,16 +13,16 @@ import {
   SafeAreaView,
   Keyboard,
   ActivityIndicator,
-  Dimensions, // Import Dimensions to get screen height
-  StatusBar, // Import StatusBar for consistency
+  Dimensions,
+  StatusBar,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient"; // Keep if used elsewhere, not in selected code
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import url from "../data/url";
 import { ContextProvider } from "../context/UserProvider";
 
 const { height: screenHeight } = Dimensions.get("window");
+
 const Toast = React.forwardRef(({ duration = 2000 }, ref) => {
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState("");
@@ -77,10 +77,12 @@ export default function Register() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [otp, setOtp] = useState(""); // New state for OTP
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [loading, setLoading] = useState(false); // For loading state
+  const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false); // New state to track if OTP has been sent
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -108,7 +110,7 @@ export default function Register() {
     }
   };
 
-  const handleRegister = async () => {
+  const validateInputs = () => {
     const trimmedFullName = fullName.trim();
     const trimmedPhoneNumber = phoneNumber.replace(/\s/g, "");
     const trimmedPassword = password.trim();
@@ -121,29 +123,90 @@ export default function Register() {
       !trimmedConfirmPassword
     ) {
       showAppToast("Please fill all fields.");
-      return;
+      return false;
     }
 
     if (trimmedPassword !== trimmedConfirmPassword) {
       showAppToast("Passwords do not match.");
-      return;
+      return false;
     }
 
     if (trimmedPhoneNumber.length !== 10 || isNaN(trimmedPhoneNumber)) {
       showAppToast("Phone number must be 10 digits.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSendOtp = async () => {
+    if (!validateInputs()) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(`${url}/user/send-otp`, { // You need to create this endpoint
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone_number: phoneNumber.replace(/\s/g, "") }),
+      });
+
+      if (response.ok) {
+        showAppToast("OTP sent successfully!");
+        setOtpSent(true);
+      } else {
+        const errorData = await response.json();
+        showAppToast(errorData.message || "Failed to send OTP. Please try again.");
+      }
+    } catch (error) {
+      showAppToast("An error occurred while sending OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!validateInputs()) {
       return;
     }
 
-    setLoading(true); // Start loading
+    if (!otpSent) {
+      showAppToast("Please send and verify OTP first.");
+      return;
+    }
+
+    if (!otp.trim()) {
+      showAppToast("Please enter the OTP.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
+      // Step 1: Verify OTP
+      const otpVerificationResponse = await fetch(`${url}/user/verify-otp`, { // You need to create this endpoint
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone_number: phoneNumber.replace(/\s/g, ""),
+          otp: otp.trim(),
+        }),
+      });
+
+      if (!otpVerificationResponse.ok) {
+        const errorData = await otpVerificationResponse.json();
+        showAppToast(errorData.message || "OTP verification failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Register User (only if OTP verification is successful)
       const response = await fetch(`${url}/user/signup-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          full_name: trimmedFullName,
-          phone_number: trimmedPhoneNumber,
-          password: trimmedPassword,
+          full_name: fullName.trim(),
+          phone_number: phoneNumber.replace(/\s/g, ""),
+          password: password.trim(),
           track_source: "mobile",
         }),
       });
@@ -151,7 +214,6 @@ export default function Register() {
       if (response.ok) {
         const data = await response.json();
         showAppToast("Registration Successful!");
-
         setTimeout(() => {
           setAppUser((prev) => ({ ...prev, userId: data.user?._id }));
           navigation.navigate("BottomTab", { userId: data.user?._id });
@@ -173,7 +235,7 @@ export default function Register() {
     } catch (error) {
       showAppToast("An error occurred during registration. Please try again.");
     } finally {
-      setLoading(false); // End loading
+      setLoading(false);
     }
   };
 
@@ -209,7 +271,7 @@ export default function Register() {
             {/* Full Name Input */}
             <TextInput
               style={styles.input}
-              placeholder="Full Name" // Label now as placeholder
+              placeholder="Full Name"
               placeholderTextColor="#78909C"
               value={fullName}
               onChangeText={setFullName}
@@ -222,7 +284,7 @@ export default function Register() {
             {/* Phone Number Input */}
             <TextInput
               style={styles.input}
-              placeholder="Phone Number" // Label now as placeholder
+              placeholder="Phone Number"
               placeholderTextColor="#78909C"
               keyboardType="phone-pad"
               value={phoneNumber}
@@ -240,7 +302,7 @@ export default function Register() {
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Create Password" // Label already as placeholder
+                placeholder="Create Password"
                 placeholderTextColor="#78909C"
                 secureTextEntry={!showPassword}
                 value={password}
@@ -268,7 +330,7 @@ export default function Register() {
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Confirm Password" // Label already as placeholder
+                placeholder="Confirm Password"
                 placeholderTextColor="#78909C"
                 secureTextEntry={!showConfirmPassword}
                 value={confirmPassword}
@@ -292,14 +354,46 @@ export default function Register() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={styles.registerButton}
-              onPress={handleRegister}
-              accessible
-              accessibilityLabel="Register"
-            >
-              <Text style={styles.registerButtonText}>Register</Text>
-            </TouchableOpacity>
+            {/* Send OTP Button */}
+            {!otpSent && (
+              <TouchableOpacity
+                style={styles.registerButton}
+                onPress={handleSendOtp}
+                accessible
+                accessibilityLabel="Send OTP"
+              >
+                <Text style={styles.registerButtonText}>Send OTP</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* OTP Input Field (conditionally rendered) */}
+            {otpSent && (
+              <TextInput
+                style={styles.input}
+                placeholder="Enter OTP"
+                placeholderTextColor="#78909C"
+                keyboardType="numeric"
+                value={otp}
+                onChangeText={setOtp}
+                maxLength={6} // Assuming 6-digit OTP
+                accessible
+                accessibilityLabel="OTP input"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            )}
+
+            {/* Register Button (conditionally enabled/visible) */}
+            {otpSent && (
+              <TouchableOpacity
+                style={styles.registerButton}
+                onPress={handleRegister}
+                accessible
+                accessibilityLabel="Register"
+              >
+                <Text style={styles.registerButtonText}>Register</Text>
+              </TouchableOpacity>
+            )}
 
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Already have an account? </Text>
@@ -317,7 +411,9 @@ export default function Register() {
           {loading && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color="#053B90" />
-              <Text style={styles.loadingText}>Registering...</Text>
+              <Text style={styles.loadingText}>
+                {otpSent ? "Registering..." : "Sending OTP..."}
+              </Text>
             </View>
           )}
         </ScrollView>
@@ -335,7 +431,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#053B90",
   },
   keyboardAvoidingView: {
-    // Added style for KeyboardAvoidingView
     flex: 1,
   },
   scrollViewContent: {
@@ -454,7 +549,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000, // Ensure it's on top of other content
+    zIndex: 1000,
   },
   loadingText: {
     marginTop: 10,
@@ -463,7 +558,7 @@ const styles = StyleSheet.create({
   },
   toastContainer: {
     position: "absolute",
-    top: 40, // Position at the top
+    top: 40,
     left: "5%",
     right: "5%",
     backgroundColor: "rgba(238, 243, 247, 0.9)",

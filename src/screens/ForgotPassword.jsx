@@ -124,13 +124,13 @@ const ForgotPassword = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false} // Prevents scroll indicator from appearing if not needed
+        showsVerticalScrollIndicator={false} 
       >
         <LinearGradient
           colors={["#053B90", "#053B90"]}
           style={styles.container}
         >
-          {!keyboardVisible && ( // Hide header when keyboard is visible for more space
+          {!keyboardVisible && ( 
             <View style={styles.header}>
               <Image
                 source={require("../../assets/Group400.png")}
@@ -140,8 +140,6 @@ const ForgotPassword = ({ navigation }) => {
               <Text style={styles.title}>MyChits</Text>
             </View>
           )}
-
-          {/* Corrected syntax here */}
           <Animated.View style={[styles.content, { paddingTop: 50 }]}>
             <Text style={styles.titleText}>Reset Password?</Text>
             <Text style={styles.subtitle}>Don’t worry about your account</Text>
@@ -170,8 +168,6 @@ const ForgotPassword = ({ navigation }) => {
                 <Text style={styles.buttonText}>Continue</Text>
               )}
             </TouchableOpacity>
-
-            {/* Consider removing one of the 'Sign Up' buttons/links if they lead to the same place */}
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={() => navigation.navigate("Register")}
@@ -192,8 +188,6 @@ const ForgotPassword = ({ navigation }) => {
           </Animated.View>
         </LinearGradient>
       </ScrollView>
-
-      {/* Global Loading Overlay */}
       {globalLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#053B90" />

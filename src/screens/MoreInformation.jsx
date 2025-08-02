@@ -84,7 +84,6 @@ const MoreInformation = ({ navigation }) => {
         userId={userId}
         title="More Information"
       />{" "}
-      {/* Added title prop */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentCard}>
           <Text style={styles.mainTitle}>About MyChits</Text>
@@ -100,8 +99,6 @@ const MoreInformation = ({ navigation }) => {
             participants. We continuously strive to improve our services and add
             new features based on your valuable feedback.
           </Text>
-
-          {/* Enhanced Contact/Support Section */}
           <View style={styles.contactSection}>
             <Text style={styles.contactTitle}>Need Support?</Text>
             <TouchableOpacity
@@ -127,8 +124,6 @@ const MoreInformation = ({ navigation }) => {
               <Text style={styles.contactButtonText}>Email Support</Text>
             </TouchableOpacity>
           </View>
-
-          {/* New White Container for Website Link */}
           <View style={styles.websiteContainer}>
             <TouchableOpacity
               onPress={handleWebsiteLink}
@@ -138,15 +133,13 @@ const MoreInformation = ({ navigation }) => {
               <MaterialIcons
                 name="language"
                 size={20}
-                color={Colors.primaryBlue} // Changed color for contrast on white background
+                color={Colors.primaryBlue} 
               />
               <Text style={styles.websiteLinkTextInWhiteContainer}>Visit Our Website</Text>
             </TouchableOpacity>
           </View>
 
         </View>
-
-        {/* The LinearGradient footer - correctly outside the contentCard and websiteContainer */}
         <LinearGradient
           colors={[Colors.gradientStart, Colors.gradientEnd]} // Using defined gradient colors
           start={{ x: 0, y: 0 }}

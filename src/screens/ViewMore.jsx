@@ -52,7 +52,6 @@ const ViewMore = ({ route, navigation }) => {
   const handleToDateChange = (event, selectedDate) => {
     setToDatePickerVisible(false);
     if (selectedDate) {
-      // Set the "To Date" to the end of the selected day for inclusive filtering
       const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59, 999);
       setToDate(endOfDay);
     }
@@ -69,19 +68,13 @@ const ViewMore = ({ route, navigation }) => {
         return itemDate >= fromTime && itemDate <= toTime;
       });
     }
-
-    // Applying status filter
     if (statusFilter !== "all") {
       tempFilteredData = tempFilteredData.filter((item) => {
-        // IMPORTANT: Adjust these conditions based on your actual data structure
-        // and how "paid" and "pending" are truly determined in your backend.
-        // For example, if there's a 'status' field like item.status === 'completed'
         if (statusFilter === "paid") {
           return item.amount > 0; // Assuming any payment with amount > 0 is "paid"
         }
         if (statusFilter === "pending") {
-          return item.amount === 0; // Assuming payment with amount === 0 is "pending"
-          // Or if you have a 'pending' status from the backend: item.status === 'pending'
+          return item.amount === 0; 
         }
         return true;
       });
@@ -126,11 +119,8 @@ const ViewMore = ({ route, navigation }) => {
         } else {
           const data = await paymentResponse.json();
           if (data.success) {
-            // Sort data by pay_date descending immediately after fetching
             const sortedData = data.data.sort((a, b) => new Date(b.pay_date) - new Date(a.pay_date));
             setAllPaymentData(sortedData);
-
-            // Apply initial filters
             const currentFilteredData = applyFilters(
               sortedData,
               selectedStatus,
@@ -157,7 +147,6 @@ const ViewMore = ({ route, navigation }) => {
   }, [groupId, userId, ticket]); // Only re-fetch when these params change
 
   useEffect(() => {
-    // Re-apply filters whenever selectedStatus, fromDate, toDate, or allPaymentData changes
     const currentFilteredData = applyFilters(
       allPaymentData,
       selectedStatus,
@@ -165,9 +154,7 @@ const ViewMore = ({ route, navigation }) => {
       toDate
     );
     setFilteredPaymentData(currentFilteredData);
-  }, [selectedStatus, fromDate, toDate, allPaymentData]); // Re-run when filters or raw data changes
-
-  // Helper function to format numbers with commas in Indian style (e.g., 2,51,500)
+  }, [selectedStatus, fromDate, toDate, allPaymentData]); 
   const formatNumberIndianStyle = (num) => {
     if (num === null || num === undefined) {
       return "0";
@@ -212,10 +199,6 @@ const ViewMore = ({ route, navigation }) => {
         <View style={styles.contentCard}>
           <View style={styles.dropdownContainer}>
             <Text style={styles.headerText}>Transactions</Text>
-
-            
-
-            {/* Date Filters */}
             <View style={styles.dateContainer}>
               <View style={styles.dateInputWrapper}>
                 <Text style={styles.dateLabel}>From Date</Text>
@@ -225,7 +208,6 @@ const ViewMore = ({ route, navigation }) => {
                 >
                   <TextInput
                     placeholder="From Date"
-                    // Format date for display as YYYY-MM-DD
                     value={fromDate.toISOString().split("T")[0]}
                     editable={false}
                     style={styles.dateTextInput}
@@ -240,7 +222,6 @@ const ViewMore = ({ route, navigation }) => {
                 >
                   <TextInput
                     placeholder="To Date"
-                    // Format date for display as YYYY-MM-DD
                     value={toDate.toISOString().split("T")[0]}
                     editable={false}
                     style={styles.dateTextInput}
@@ -249,8 +230,6 @@ const ViewMore = ({ route, navigation }) => {
               </View>
             </View>
           </View>
-
-          {/* Transaction List ScrollView */}
           <ScrollView
             contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={true} // Ensure scroll indicator is visible
@@ -261,8 +240,6 @@ const ViewMore = ({ route, navigation }) => {
                   key={card._id}
                   style={[
                     styles.cards,
-                    // If you want to highlight a selected card, you can use this:
-                    // selectedCardIndex === index && styles.selectedCard,
                   ]}
                 >
                   <View style={styles.leftSide}>
@@ -304,8 +281,6 @@ const ViewMore = ({ route, navigation }) => {
               </View>
             )}
           </ScrollView>
-
-          {/* From Date Picker */}
           {isFromDatePickerVisible && (
             <DateTimePicker
               value={fromDate}
@@ -314,8 +289,6 @@ const ViewMore = ({ route, navigation }) => {
               onChange={handleFromDateChange}
             />
           )}
-
-          {/* To Date Picker */}
           {isToDatePickerVisible && (
             <DateTimePicker
               value={toDate}

@@ -52,7 +52,7 @@ const EnrollConfirm = ({ navigation, route }) => {
         position: "bottom",
         visibilityTime: 3000,
       });
-      return; // Prevent navigation if userId is missing
+      return; 
     }
 
     navigation.navigate("BottomTab", {
@@ -92,10 +92,7 @@ const EnrollConfirm = ({ navigation, route }) => {
               You are currently offline.
             </Text>
           )}
-
-          {/* Button to go to My Groups */}
           <TouchableOpacity style={styles.button} onPress={handleGoToMyGroups}>
-            {/* Removed conditional rendering for ActivityIndicator */}
             <Text style={styles.buttonText}>Go to My Groups</Text>
           </TouchableOpacity>
         </View>

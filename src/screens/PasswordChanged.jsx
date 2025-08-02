@@ -22,15 +22,14 @@ const PasswordChanged = () => {
         );
         navigation.replace("Login", { mobileNumber: mobileNumber });
       }
-    }, 4000); // Wait for 3 seconds before navigating
-
-    return () => clearTimeout(timer); // Clean up the timer
-  }, [userId, mobileNumber, navigation]); // Re-run effect if these change
+    }, 4000); 
+    return () => clearTimeout(timer); 
+  }, [userId, mobileNumber, navigation]); 
 
   return (
     <View style={styles.container}>
       <Image
-        source={require("../../assets/MarkR.png")} // Replace with your success image
+        source={require("../../assets/MarkR.png")} 
         style={styles.successImage}
       />
       <Text style={styles.message}>Password Changed Successfully!</Text>
@@ -38,8 +37,6 @@ const PasswordChanged = () => {
         Password Has Been Changed Successfully.You can now log in with your new
         password.
       </Text>
-      {/* You might also have a button to manually navigate immediately */}
-      {/* <Button title="Go to Login" onPress={() => navigation.replace('Login', { mobileNumber: mobileNumber })} /> */}
     </View>
   );
 };

@@ -272,8 +272,6 @@ const IntroduceNewCustomers = () => {
       ]}
     >
       <StatusBar barStyle="light-content" backgroundColor="#053B90" />
-
-      {/* Header component - no longer wrapped in its own SafeAreaView */}
       <Header userId={userId} navigation={navigation} />
 
       <KeyboardAvoidingView
@@ -309,9 +307,6 @@ const IntroduceNewCustomers = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
-
-              {/* Removed Password FloatingLabelInput */}
-              {/* Removed Address FloatingLabelInput */}
               <FloatingLabelInput
                 label="Zip code"
                 value={Zipcode}

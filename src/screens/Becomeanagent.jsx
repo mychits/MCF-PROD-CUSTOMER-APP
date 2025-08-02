@@ -20,8 +20,6 @@ import Header from "../components/layouts/Header";
 import { LinearGradient } from "expo-linear-gradient";
 import { ContextProvider } from "../context/UserProvider";
 import axios from 'axios';
-
-// Assuming your backend URL is defined in this file
 import url from "../data/url"; // Make sure this path is correct to your backend URL
 
 const Colors = {
@@ -149,8 +147,6 @@ const Becomeanagent = ({ navigation, route }) => {
           position: "bottom",
           visibilityTime: 4000,
         });
-
-        // Clear form fields on successful submission
         setFullName("");
         setEmail("");
         setPhoneNumber("");

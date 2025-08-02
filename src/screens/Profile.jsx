@@ -17,17 +17,13 @@ import Header from "../components/layouts/Header"; // Assuming this path is corr
 import { ContextProvider } from "../context/UserProvider"; // Assuming this path is correct for your project
 
 const Profile = ({ navigation, route }) => {
-  // Using useContext to get and set appUser from ContextProvider
   const [appUser, setAppUser] = useContext(ContextProvider);
-  // Extract userId, providing a default empty object to prevent errors if appUser.userId is undefined
   const userId = appUser.userId || {};
   const [userData, setUserData] = useState({
     full_name: "",
     phone_number: "",
     address: "",
   });
-
-  // Define menu items for the profile screen
   const menuItems = [
     { title: "Basic Details", icon: "person", link: "MyAccount" },
     { title: "About Us", icon: "info", link: "About" },
@@ -36,84 +32,60 @@ const Profile = ({ navigation, route }) => {
     { title: "F&Q", icon: "question-answer", link: "Fq" },
     { title: "Reset Password", icon: "lock-reset", link: "ConformNewPassword" },
   ];
-
-  // useEffect hook to fetch user data when the component mounts or userId changes
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Make an API call to fetch user data using axios
         const response = await axios.get(
           `${url}/user/get-user-by-id/${userId}`
         );
-        setUserData(response.data); // Update the userData state with fetched data
+        setUserData(response.data); 
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
     };
 
-    fetchUserData(); // Call the fetch function
-  }, [userId]); // Dependency array: re-run effect if userId changes
+    fetchUserData(); 
+  }, [userId]); 
 
   return (
-    // SafeAreaView ensures content is not obscured by notches or status bars
     <SafeAreaView style={styles.fullScreenContainer}>
-      {/* Wrapper for the Header component */}
       <View style={styles.headerWrapper}>
-        {/* Header component with userId and navigation props */}
         <Header userId={userId} navigation={navigation} />
       </View>
-
-      {/* Main content wrapper, taking up the remaining vertical space */}
       <View style={styles.mainContentWrapper}>
-        {/* Card-like container for profile content */}
         <View style={styles.contentCard}>
-          {/* Container for the "My Profile" title */}
           <View style={styles.dropdownContainer}>
             <Text style={styles.titleText}>My Profile</Text>
           </View>
-
-          {/* Container for profile image and user details */}
           <View style={styles.profileImageContainer}>
             <View style={styles.profileContainer}>
-              {/* Profile image */}
               <Image
-                source={require("../../assets/profile (2).png")} // Ensure this path is correct
+                source={require("../../assets/profile (2).png")}
                 style={styles.profileImage}
               />
-              {/* User's full name */}
               <Text style={styles.userName}>{userData.full_name}</Text>
-              {/* User's phone number */}
               <Text style={styles.phoneNumber}>{userData.phone_number}</Text>
             </View>
           </View>
-
-          {/* ScrollView for the menu items and logout button */}
-          {/* showsVerticalScrollIndicator={false} hides the scrollbar */}
           <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
-            {/* Map through menuItems to render each menu item */}
             {menuItems.map((item, index) => (
               <TouchableOpacity
                 key={index}
                 style={styles.menuItem}
                 onPress={() =>
-                  // Navigate to the linked screen, passing userId as a parameter
                   navigation.navigate(item.link, { userId: userId })
                 }
               >
                 <View style={styles.menuItemLeft}>
-                  {/* MaterialIcons icon */}
                   <MaterialIcons name={item.icon} size={24} color="#585858" />
-                  {/* Menu item title */}
                   <Text style={styles.menuText}>{item.title}</Text>
                 </View>
-                {/* Right arrow icon */}
                 <MaterialIcons name="chevron-right" size={24} color="#585858" />
               </TouchableOpacity>
             ))}
-            {/* Logout button placed inside the ScrollView to ensure scrollability */}
             <TouchableOpacity
               style={styles.logoutButton}
-              onPress={() => navigation.navigate("Login")} // Navigate to Login screen on press
+              onPress={() => navigation.navigate("Login")}
             >
               <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
@@ -123,8 +95,6 @@ const Profile = ({ navigation, route }) => {
     </SafeAreaView>
   );
 };
-
-// StyleSheet for the component's styles
 const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1, // Takes up the entire screen

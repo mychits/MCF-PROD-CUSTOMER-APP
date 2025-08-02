@@ -27,32 +27,21 @@ const Colors = {
   cardBackground: "#FFFFFF", // Pure white for card base
   darkText: "#263238", // Darker text for main info
   mediumText: "#546E7A", // Medium gray for secondary info/labels
-  lightText: "#B0BEC5", // Light gray for subtle hints
-
-  // Subtle Card Gradient
+  lightText: "#B0BEC5",
   cardGradientStart: "#FFFFFF",
   cardGradientEnd: "#F5F8FA",
-
-  // Balance Box Gradients (very subtle)
   excessBackgroundStart: '#E8F5E9', // Light green for excess
   excessBackgroundEnd: '#F2FAF2', // Even lighter green
   duesBackgroundStart: '#FBE9E7', // Light orange-red for dues
-  duesBackgroundEnd: '#FFF6F5', // Even lighter orange-red
-
-  // Status Icons & Text
+  duesBackgroundEnd: '#FFF6F5', 
   successColor: "#388E3C", // Darker green for success icon/text
-  warningColor: "#D32F2F", // Darker red for warning/dues icon/text
-
-  // Pay Now Button
+  warningColor: "#D32F2F", 
   payNowButtonBackground: "#007BFF", // Standard blue for button
   payNowButtonText: "#FFFFFF",
-
   shadowColor: "rgba(0,0,0,0.08)", // Very subtle shadow
   borderColor: "#ECEFF1", // Light, almost invisible border
-  groupNameColor: '#1976D2', // A professional medium blue for group names
+  groupNameColor: '#1976D2', 
 };
-
-// Helper function to format numbers with commas in Indian style (e.g., 2,51,500)
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) {
     return "0";
@@ -60,8 +49,6 @@ const formatNumberIndianStyle = (num) => {
   const parts = num.toString().split('.');
   let integerPart = parts[0];
   let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
-
-  // Handle negative numbers
   let isNegative = false;
   if (integerPart.startsWith('-')) {
     isNegative = true;
@@ -90,10 +77,7 @@ const PayYourDues = ({ navigation, route }) => {
   const [TotalToBepaid, setTotalToBePaid] = useState(0);
   const [Totalpaid, setTotalPaid] = useState(0);
   const [Totalprofit, setTotalProfit] = useState(0);
-  // New state to store individual group overview data
   const [groupOverviews, setGroupOverviews] = useState({});
-
-  // Refactored fetch functions to return data
   const fetchTicketsData = useCallback(async (currentUserId) => {
     if (!currentUserId) {
       return [];
@@ -168,8 +152,6 @@ const PayYourDues = ({ navigation, route }) => {
       return { key: null, data: null };
     }
   }, []);
-
-  // Consolidated data fetching logic
   const fetchData = useCallback(async () => {
     if (!userId) {
       setLoading(false);
@@ -183,7 +165,6 @@ const PayYourDues = ({ navigation, route }) => {
 
     setLoading(true);
     try {
-      // Fetch tickets and overall overview in parallel
       const [fetchedCards, overviewSummary] = await Promise.all([
         fetchTicketsData(userId),
         fetchAllOverviewData(userId),
@@ -193,8 +174,6 @@ const PayYourDues = ({ navigation, route }) => {
       setTotalToBePaid(overviewSummary.totalToBePaid);
       setTotalPaid(overviewSummary.totalPaid);
       setTotalProfit(overviewSummary.totalProfit);
-
-      // Now fetch individual group overviews based on the fetched cards
       if (fetchedCards.length > 0) {
         const overviewPromises = fetchedCards.map(card =>
           fetchIndividualGroupOverview(userId, card)
@@ -213,7 +192,6 @@ const PayYourDues = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error("Error during overall data fetch:", error);
-      // Optionally reset states or show error message
     } finally {
       setLoading(false);
     }
@@ -228,8 +206,6 @@ const PayYourDues = ({ navigation, route }) => {
       fetchData(); // Re-fetch all data when screen comes into focus
     }, [fetchData])
   );
-
-  // Filter cards: Do not show if group name contains "loan"
   const filteredCardsToDisplay = cardsData.filter((card) => {
     const isLoanGroup = card.group_id?.group_name
       ? card.group_id.group_name.toLowerCase().includes("loan")
@@ -242,7 +218,6 @@ const PayYourDues = ({ navigation, route }) => {
   const handleViewDetails = (groupId, ticket) => {
     Vibration.vibrate(50);
     navigation.navigate("BottomTab", {
-      // Name of the Tab Navigator in the main stack
       screen: "EnrollTab", // Name of the tab containing EnrollStackNavigator
       params: {
         screen: "EnrollGroup", // Name of the EnrollGroup screen within EnrollStackNavigator
@@ -258,7 +233,6 @@ const PayYourDues = ({ navigation, route }) => {
   const handlePayNow = (groupId, ticket, amount) => {
     Vibration.vibrate(50);
     console.log(`Initiating payment for Group: ${groupId}, Ticket: ${ticket}, Amount: ${amount}`);
-    // Navigate to a payment screen, passing the necessary details
     navigation.navigate("PaymentScreen", {
       userId: userId,
       groupId: groupId,
@@ -295,9 +269,8 @@ const PayYourDues = ({ navigation, route }) => {
             >
               {filteredCardsToDisplay.map((card, index) => {
                 const groupOverview = groupOverviews[`${card.group_id._id}_${card.tickets}`];
-                // Render card only if its specific overview data is loaded
                 if (!groupOverview) {
-                  return null; // Or render a skeleton card if desired
+                  return null; 
                 }
 
                 const totalToBePaidAmount = groupOverview?.totalInvestment || 0; // Use totalInvestment from groupOverview
@@ -326,7 +299,6 @@ const PayYourDues = ({ navigation, route }) => {
                       end={{ x: 1, y: 1 }}
                       style={styles.cardContentWrapper}
                     >
-                      {/* Card Header */}
                       <View style={styles.cardHeader}>
                         <Text style={styles.groupCardNameEnhanced}>
                           {card.group_id.group_name}
@@ -335,8 +307,6 @@ const PayYourDues = ({ navigation, route }) => {
                           Ticket: {card.tickets}
                         </Text>
                       </View>
-
-                      {/* Financial Details Section */}
                       <View style={styles.financialDetailsSection}>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Amount to be Paid:</Text>
@@ -351,8 +321,6 @@ const PayYourDues = ({ navigation, route }) => {
                           <Text style={styles.detailAmount}>₹ {formatNumberIndianStyle(totalProfit)}</Text>
                         </View>
                       </View>
-
-                      {/* Balance Status and Action Section */}
                       <LinearGradient
                         colors={balanceBoxColors}
                         start={{ x: 0, y: 0 }}

@@ -121,7 +121,6 @@ const Fq = ({ route, navigation }) => {
             )}
           </View>
         ))}
-        {/* This empty view creates the space at the very bottom of the scrollable content */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>

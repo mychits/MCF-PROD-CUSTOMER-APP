@@ -29,8 +29,6 @@ const Privacy = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.blueBackgroundContainer}>
       <StatusBar barStyle="light-content" backgroundColor="#0A4B9F" />{" "}
-      {/* Consistent deep blue for status bar */}
-      {/* Pass userName and userNumber to the Header component */}
       <Header
         title="Privacy Policy"
         userId={userId}
@@ -44,9 +42,7 @@ const Privacy = ({ route, navigation }) => {
       >
         <View style={styles.innerContentPadding}>
           {" "}
-          {/* New wrapper for internal padding */}
           <Text style={styles.header}>Privacy Policy</Text>
-          {/* New content starts here */}
           <View>
             <Text style={styles.paragraph}>
               For the purpose of this privacy policy,{" "}

@@ -80,8 +80,6 @@ const EligibilityScreen = ({ route, navigation }) => {
             a chit group. Adherence to these guidelines ensures a transparent
             and mutually beneficial arrangement for all participants.
           </Text>
-
-          {/* 1. Basic Eligibility Criteria */}
           <Text style={styles.sectionTitle}>1. Basic Eligibility Criteria</Text>
           <Text style={styles.sectionDescription}>
             These are the fundamental requirements for all our potential
@@ -118,8 +116,6 @@ const EligibilityScreen = ({ route, navigation }) => {
               Applicants must not be an undischarged insolvent.
             </Text>
           </View>
-
-          {/* 2. Financial Stability & Ability to Pay */}
           <Text style={styles.sectionTitle}>
             2. Financial Stability & Ability to Pay
           </Text>
@@ -155,8 +151,6 @@ const EligibilityScreen = ({ route, navigation }) => {
               essential expenses can cover the installment.
             </Text>
           </View>
-
-          {/* 3. KYC (Know Your Customer) Documents */}
           <Text style={styles.sectionTitle}>
             3. KYC (Know Your Customer) Documents
           </Text>
@@ -231,8 +225,6 @@ const EligibilityScreen = ({ route, navigation }) => {
               monthly payments and prize money disbursement.
             </Text>
           </View>
-
-          {/* 4. Specific Conditions for Prize Money Disbursement */}
           <Text style={styles.sectionTitle}>
             4. Conditions for Prize Money Disbursement
           </Text>
@@ -274,8 +266,6 @@ const EligibilityScreen = ({ route, navigation }) => {
               to be eligible to bid for the prize money.
             </Text>
           </View>
-
-          {/* 5. Important Disclaimers & Advice */}
           <Text style={styles.sectionTitle}>
             5. Important Disclaimers & Advice
           </Text>

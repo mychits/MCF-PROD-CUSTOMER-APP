@@ -157,10 +157,7 @@ const MyPassbookScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             </View>
           )}
-
-          {/* Summary Cards - Enhanced Layout */}
           <View style={styles.summaryCardsColumn}>
-            {/* Investment Card */}
             <View style={[styles.summaryCard, styles.investmentCardBackground]}>
               <FontAwesome5
                 name="wallet"
@@ -175,7 +172,6 @@ const MyPassbookScreen = ({ navigation, route }) => {
                 </Text>
               </View>
             </View>
-            {/* Profit Card */}
             <View style={[styles.summaryCard, styles.profitCardBackground]}>
               <FontAwesome5
                 name="chart-line"
@@ -190,7 +186,6 @@ const MyPassbookScreen = ({ navigation, route }) => {
                 </Text>
               </View>
             </View>
-            {/* Enrolled Groups Card */}
             <View
               style={[styles.summaryCard, styles.enrolledGroupsCardBackground]}
             >
@@ -206,11 +201,8 @@ const MyPassbookScreen = ({ navigation, route }) => {
               </View>
             </View>
           </View>
-
-          {/* Section Header for Chit Groups */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Your Chit Groups</Text>
-            {/* Only show "View All" if there are groups to view or if not loading/error */}
             {(chitGroups.length > 0 || (!isLoadingData && !dataError)) && (
               <TouchableOpacity
                 onPress={handleViewAllChits}
@@ -227,8 +219,6 @@ const MyPassbookScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             )}
           </View>
-
-          {/* Display No Data message if no groups */}
           {chitGroups.length === 0 && !isLoadingData && !dataError && (
             <View style={styles.noDataContainer}>
               <Image

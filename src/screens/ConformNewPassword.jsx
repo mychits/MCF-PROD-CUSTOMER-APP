@@ -200,7 +200,6 @@ const ConformNewPassword = ({ navigation, route }) => {
           colors={["#053B90", "#053B90"]}
           style={styles.container}
         >
-          {/* Hide header when keyboard is visible */}
           {!keyboardVisible && (
             <View style={styles.header}>
               <Image
@@ -211,8 +210,6 @@ const ConformNewPassword = ({ navigation, route }) => {
               <Text style={styles.title}>MyChits</Text>
             </View>
           )}
-
-          {/* Apply animated paddingTop to the content section */}
           <Animated.View style={[styles.content, { paddingTop: 50 }]}>
             <Text style={[styles.inputLabel, { marginTop: 30 }]}>
               New Password

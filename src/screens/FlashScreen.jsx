@@ -8,24 +8,19 @@ const FlashScreen = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace("Login"); // Ensure 'Login' matches your registered screen name in your navigator.
+      navigation.replace("Login");
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [navigation]); // Re-run effect if navigation object changes (though it typically won't).
+  }, [navigation]); 
 
   return (
     <View style={styles.container}>
-      {/* Container for the image and text, centered within the main container. */}
       <View style={styles.imageTextContainer}>
-        {/* Image component: Displays the logo from assets. */}
-        {/* Ensure the path '../../assets/Group400.png' is correct for your project structure. */}
         <Image
           source={require("../../assets/Group400.png")}
           style={styles.image}
         />
-        {/* Text component: Displays the app name. */}
-        {/* This text is correctly wrapped in a <Text> component. */}
         <Text style={styles.mainText}>MyChits</Text>
       </View>
     </View>

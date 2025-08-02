@@ -32,28 +32,18 @@ const Help = ({ route, navigation }) => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [focusedField, setFocusedField] = useState(null);
-
-  // --- Back Button Handling for Android ---
   useFocusEffect(
     useCallback(() => {
       if (Platform.OS === 'android') {
         const onBackPress = () => {
-          // Navigate to the HomeScreen within the BottomTab navigator
-          // This will go back to the tab navigator and specifically select the Home screen
           navigation.navigate('BottomTab', { screen: 'HomeScreen' });
-          return true; // Indicate that we've handled the back press
+          return true; 
         };
-
-        // Add event listener when the screen is focused
-        // This now returns a subscription object
         const subscription = BackHandler.addEventListener(
           'hardwareBackPress',
           onBackPress
         );
-
-        // Clean up the event listener when the screen loses focus
         return () => {
-          // Call the remove method on the subscription object
           subscription.remove();
         };
       }
@@ -63,7 +53,6 @@ const Help = ({ route, navigation }) => {
 
   const handleSubmit = () => {
     const recipientEmail = 'info.mychits@gmail.com';
-    // Corrected emailBody string interpolation
     const emailBody = `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\nMessage:\n${message}`;
     const encodedSubject = encodeURIComponent(subject);
     const encodedBody = encodeURIComponent(emailBody);
@@ -72,7 +61,6 @@ const Help = ({ route, navigation }) => {
     Linking.openURL(mailtoUrl)
       .then(() => {
         console.log("Email client opened successfully.");
-        // Clear form fields after successful attempt
         setName('');
         setEmail('');
         setPhone('');
@@ -81,7 +69,6 @@ const Help = ({ route, navigation }) => {
       })
       .catch((err) => {
         console.error("Failed to open email client:", err);
-        // Using alert for demonstration; consider a custom modal or Toast in a real app
         alert("Could not open email app. Please send your message to info.mychits@gmail.com directly.");
       });
   };
@@ -96,7 +83,6 @@ const Help = ({ route, navigation }) => {
     Linking.openURL(whatsappUrl)
       .catch((err) => {
         console.error("Failed to open WhatsApp:", err);
-        // Using alert for demonstration; consider a custom modal or Toast in a real app
         alert("WhatsApp is not installed on your device, or an error occurred.");
       });
   };
@@ -113,7 +99,6 @@ const Help = ({ route, navigation }) => {
         style={styles.scrollViewStyle}
         contentContainerStyle={styles.whiteContentContainer}
       >
-        {/* Registered Office Section */}
         <Text style={styles.sectionTitle}>Registered Office</Text>
         <View style={styles.sectionCard}>
           <TouchableOpacity
@@ -143,8 +128,6 @@ const Help = ({ route, navigation }) => {
             <Text style={styles.contactText}>info.mychits@gmail.com</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Send us a Message Form Section */}
         <Text style={[styles.sectionTitle, { marginTop: height * 0.03 }]}>Send us a Message</Text>
         <View style={styles.formContainer}>
           <TextInput
@@ -224,8 +207,6 @@ const Help = ({ route, navigation }) => {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-
-        {/* Connect With Us Social Media Section */}
         <Text style={[styles.sectionTitle, { marginTop: height * 0.02 }]}>Connect With Us</Text>
         <View style={styles.socialMediaContainer}>
           <TouchableOpacity onPress={() => openLink('https://www.facebook.com/MyChits')} style={styles.socialIcon} activeOpacity={0.7}>
@@ -265,18 +246,15 @@ const Help = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  // Base Background (Header and overall screen)
   blueBackgroundContainer: {
     flex: 1,
     backgroundColor: "#053B90",
     paddingTop: StatusBar.currentHeight || 0,
   },
-  // Main Scrollable Area Background
   scrollViewStyle: {
     flex: 1,
     backgroundColor: '#053B90',
   },
-  // Main Content Card
   whiteContentContainer: {
     backgroundColor: "#fff",
     borderRadius: 20, // Reduced radius

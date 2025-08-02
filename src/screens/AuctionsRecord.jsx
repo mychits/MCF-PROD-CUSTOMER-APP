@@ -135,7 +135,6 @@ const AuctionsRecord = ({ route, navigation }) => {
               fetchData(); // Call fetchData again to retry
             }}
           >
-            {/* Removed Text component here */}
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -166,7 +165,6 @@ const AuctionsRecord = ({ route, navigation }) => {
           </View>
 
           <ScrollView contentContainerStyle={styles.scrollContainer}>
-            {/* Commencement Card (always visible if data loaded) */}
             <View
               key={groups._id || "commencement"} // Use a unique key for commencement
               style={[styles.cards]}
@@ -183,8 +181,6 @@ const AuctionsRecord = ({ route, navigation }) => {
                 </Text>
               </View>
             </View>
-
-            {/* Auction Records List */}
             {paymentData.length > 0 ? (
               paymentData.map((card, index) => (
                 <View
@@ -236,7 +232,6 @@ const AuctionsRecord = ({ route, navigation }) => {
                   style={styles.noDataImage}
                   resizeMode="contain"
                 />
-                {/* Removed Text component here */}
                 <TouchableOpacity
                   style={styles.retryButton}
                   onPress={() => {
@@ -244,7 +239,6 @@ const AuctionsRecord = ({ route, navigation }) => {
                     fetchData(); // Call fetchData again to retry
                   }}
                 >
-                  {/* Removed Text component here */}
                 </TouchableOpacity>
               </View>
             ) : error ? (
@@ -259,8 +253,6 @@ const AuctionsRecord = ({ route, navigation }) => {
               </View>
             )}
           </ScrollView>
-
-          {/* Date Pickers (unchanged) */}
           {isFromDatePickerVisible && (
             <DateTimePicker
               value={fromDate}

@@ -20,8 +20,6 @@ import Toast from "react-native-toast-message";
 
 import NoDataIllustration from "../../assets/9264885.jpg";
 import { ContextProvider } from "../context/UserProvider";
-
-// Helper function to format numbers with commas in Indian style (e.g., 2,51,500)
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) {
     return "0";
@@ -29,8 +27,6 @@ const formatNumberIndianStyle = (num) => {
   const parts = num.toString().split('.');
   let integerPart = parts[0];
   let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
-
-  // Handle negative numbers
   let isNegative = false;
   if (integerPart.startsWith('-')) {
     isNegative = true;
@@ -63,7 +59,6 @@ const EnrollGroup = ({ route, navigation }) => {
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
 
   const handleViewMore = () => {
-    // Navigate to the 'ViewMore' screen and pass groupId and ticket
     navigation.navigate('ViewMore', { groupId: groupId, ticket: ticket, userId: userId });
   };
 
@@ -136,12 +131,11 @@ const EnrollGroup = ({ route, navigation }) => {
       } else {
         const paymentListData = await paymentResponse.json();
         if (paymentListData.success) {
-          // Sort payment data by pay_date in descending order to get the latest transactions first
           const sortedPaymentData = paymentListData.data.sort((a, b) =>
             new Date(b.pay_date) - new Date(a.pay_date)
           );
           setPaymentData(sortedPaymentData);
-          setError(null); // Clear error if data is fetched successfully
+          setError(null); 
         } else {
           setError(paymentListData.message || "No payment data available");
           setPaymentData([]);
@@ -179,7 +173,7 @@ const EnrollGroup = ({ route, navigation }) => {
 
   useEffect(() => {
     fetchData();
-  }, [userId, groupId, ticket, isConnected, isInternetReachable]); // Re-fetch if params or network status change
+  }, [userId, groupId, ticket, isConnected, isInternetReachable]); 
 
   const toBePaidAmount =
     groups.group_type === "double"
@@ -188,11 +182,10 @@ const EnrollGroup = ({ route, navigation }) => {
       parseFloat(auctions[0]?.divident_head || 0);
 
   const balanceAmount = toBePaidAmount - (singleOverview.totalPaid || 0);
-  const isBalanceExcess = balanceAmount < 0; // Check if balance is in excess (negative)
+  const isBalanceExcess = balanceAmount < 0; 
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Always display the Header */}
       <Header userId={userId} navigation={navigation} />
       <StatusBar
         barStyle={loading ? "dark-content" : "light-content"}
@@ -223,21 +216,16 @@ const EnrollGroup = ({ route, navigation }) => {
         <View style={styles.mainContentWrapper}>
           <View style={styles.contentCard}>
             <View style={styles.dropdownContainer}>
-              {/* Display numeric group value with a unique identifier */}
               <Text style={styles.numericGroupValue}>
                 ₹ {formatNumberIndianStyle(groups.group_value || 0)}
               </Text>
-              {/* Group Name on its own line */}
               <Text style={styles.groupTitle}>
                 {groups.group_name}
               </Text>
-              {/* Ticket number on a new line */}
               <Text style={styles.ticketNumberText}>
                 Ticket: <Text style={styles.ticketNumberValue}>{ticket}</Text>
               </Text>
             </View>
-
-            {/* Investment and Divident/Profit cards */}
             <View style={styles.row}>
               <View
                 style={[styles.summaryCard, styles.investmentCardBackground]}
@@ -281,7 +269,7 @@ const EnrollGroup = ({ route, navigation }) => {
                     borderColor: statBoxBorderColors.toBePaid,
                     backgroundColor: "#fff",
                   },
-                  styles.summaryCardBordered, // Apply the new bordered style
+                  styles.summaryCardBordered, 
                 ]}
               >
                 <Ionicons
@@ -315,7 +303,7 @@ const EnrollGroup = ({ route, navigation }) => {
                     borderColor: statBoxBorderColors.totalPaid,
                     backgroundColor: "#fff",
                   },
-                  styles.summaryCardBordered, // Apply the new bordered style
+                  styles.summaryCardBordered,
                 ]}
               >
                 <Ionicons
@@ -341,8 +329,6 @@ const EnrollGroup = ({ route, navigation }) => {
                   TOTAL PAID
                 </Text>
               </View>
-
-              {/* Conditional rendering for Balance Excess/Outstanding box */}
               {paymentData.length > 0 && (
                 <View
                   style={[
@@ -353,7 +339,7 @@ const EnrollGroup = ({ route, navigation }) => {
                         : statBoxBorderColors.balance,
                       backgroundColor: "#fff",
                     },
-                    styles.summaryCardBordered, // Apply the new bordered style
+                    styles.summaryCardBordered, 
                   ]}
                 >
                   <Ionicons
@@ -397,8 +383,6 @@ const EnrollGroup = ({ route, navigation }) => {
                 </View>
               )}
             </View>
-
-            {/* Transactions Header with View More button */}
             <View style={styles.transactionsHeader}>
               <Text style={styles.transactionsTitle}>Last 10 Transactions</Text>
               <TouchableOpacity onPress={handleViewMore}>
@@ -413,16 +397,11 @@ const EnrollGroup = ({ route, navigation }) => {
                 </View>
               </TouchableOpacity>
             </View>
-
-            {/* The ScrollView for transactions */}
-            {/* It's crucial that the ScrollView itself or its parent has a defined height */}
-            {/* or is allowed to take up remaining flexible space for scrolling to work. */}
             <ScrollView
               contentContainerStyle={styles.scrollContentContainer}
-              showsVerticalScrollIndicator={true} // <<<--- This makes the scrollbar visible
+              showsVerticalScrollIndicator={true} 
             >
               {paymentData.length > 0 ? (
-                // Slice the paymentData array to display only the first 10 (most recent) transactions
                 paymentData.slice(0, 10).map((card, index) => (
                   <View key={card._id} style={[styles.transactionCard]}>
                     <View style={styles.transactionLeftSide}>

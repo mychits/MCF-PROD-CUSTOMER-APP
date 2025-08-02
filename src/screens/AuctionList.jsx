@@ -31,11 +31,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NoGroupImage from "../../assets/Nogroup.png";
 import NoRecordFoundImage from "../../assets/NoRecordFound.png";
 import AuctionIcon from "../../assets/Auction.png";
-// Removed ScrollIndicatorImage import
 import { ContextProvider } from "../context/UserProvider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
-// Enable LayoutAnimation for Android
 if (Platform.OS === "android") {
   if (NativeModules.UIManager) {
     NativeModules.UIManager.setLayoutAnimationEnabledExperimental &&
@@ -68,8 +65,6 @@ const Colors = {
   dateLabel: "#5D6D7E",
   selectedGroupBorder: "#007BFF",
   selectedGroupBackground: "#EBF5FF",
-
-  // New color for "free" auction type
   accentOrange: "#FFA500",
 };
 
@@ -144,14 +139,9 @@ const AuctionList = ({ navigation, route }) => {
   const [highlightedCardId, setHighlightedCardId] = useState(null);
 
   const scrollViewRef = useRef(null);
-  // Removed animationStoppedByUser ref as auto-scroll is gone.
-
-  // Removed scrollArrowAnim and scrollXAnim
   const contentWidthRef = useRef(0);
   const scrollViewWidthRef = useRef(0);
   const [maxScrollOffset, setMaxScrollOffset] = useState(0);
-
-  // Removed stopAutoScroll as auto-scroll animation is removed
 
   const fetchTickets = useCallback(async () => {
     if (!userId) {

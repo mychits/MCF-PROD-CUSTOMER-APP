@@ -89,8 +89,6 @@ const Payments = ({ navigation, route }) => {
   const [Totalpaid, setTotalPaid] = useState(0);
   const [Totalprofit, setTotalProfit] = useState(0);
   const [allOverviewData, setAllOverviewData] = useState([]);
-
-  // New state to manage expanded card visibility
   const [expandedCards, setExpandedCards] = useState({});
 
   const toggleExpand = (cardId) => {
@@ -240,9 +238,6 @@ const Payments = ({ navigation, route }) => {
                   <TouchableOpacity
                     key={card._id || index}
                     onPress={() => {
-                      // Optionally, you can still navigate on card press,
-                      // or only navigate if not pressing the expand button.
-                      // For now, let's keep the navigation on the main card touch.
                       Vibration.vibrate(50);
                       navigation.navigate("EnrollTab", {
                         screen: "EnrollGroup",
@@ -262,7 +257,6 @@ const Payments = ({ navigation, route }) => {
                       end={{ x: 0, y: 1 }}
                       style={styles.cardContentBox}
                     >
-                      {/* Top Section: Group Value, Group Name, and Members Count with Icon */}
                       <View style={styles.cardHeaderArea}>
                         <View style={styles.iconContainer}>
                           <MaterialCommunityIcons
@@ -290,13 +284,9 @@ const Payments = ({ navigation, route }) => {
                           </View>
                         )}
                       </View>
-
-                      {/* Ticket number below group name */}
                       <Text style={styles.ticketNumberTextBelowGroup}>
                         Ticket Number: {card.tickets}
                       </Text>
-
-                      {/* Expand/Collapse Button */}
                       <TouchableOpacity
                         onPress={() => toggleExpand(card._id)}
                         style={styles.expandButton}
@@ -311,15 +301,10 @@ const Payments = ({ navigation, route }) => {
                           color={Colors.primaryBlue}
                         />
                       </TouchableOpacity>
-
-                      {/* Conditional Rendering of Details Section */}
                       {isExpanded && (
                         <>
                           <View style={styles.cardDivider} />
-
-                          {/* Details Section */}
                           <View style={styles.detailsGrid}>
-                            {/* Start Date and End Date each with label on one line, date on another */}
                             {card.group_id?.start_date && (
                               <View style={[styles.detailItem, styles.halfWidthDetailItem]}>
                                 <MaterialIcons name="date-range" size={16} color={Colors.mediumText} />
@@ -350,8 +335,6 @@ const Payments = ({ navigation, route }) => {
                                 </View>
                               </View>
                             )}
-
-                            {/* Individual Paid Amount centered with minimal space */}
                             <View style={[styles.detailItem, styles.fullWidthDetailItem, styles.centeredDetailItem]}>
                               <MaterialIcons name="payments" size={18} color={Colors.mediumText} style={styles.iconBeforeText} />
                               <Text style={[styles.detailText, styles.noMarginLeft, { color: Colors.primaryBlue, fontWeight: 'bold' }]}>

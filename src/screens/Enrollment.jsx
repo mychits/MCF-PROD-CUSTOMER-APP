@@ -11,7 +11,7 @@ import {
     StatusBar,
     SafeAreaView,
     Platform,
-    Image, // Import Image for the no groups illustration
+    Image,
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -24,8 +24,6 @@ import { NetworkContext } from '../context/NetworkProvider';
 
 import Toast from 'react-native-toast-message';
 import { ContextProvider } from "../context/UserProvider"
-
-// Helper function to format numbers with commas in Indian style (e.g., 2,51,500)
 const formatNumberIndianStyle = (num) => {
     if (num === null || num === undefined) {
         return "0";
@@ -33,8 +31,6 @@ const formatNumberIndianStyle = (num) => {
     const parts = num.toString().split(',');
     let integerPart = parts[0];
     let decimalPart = parts.length > 1 ? ',' + parts[1] : '';
-
-    // Handle negative numbers
     let isNegative = false;
     if (integerPart.startsWith('-')) {
         isNegative = true;
@@ -125,7 +121,6 @@ const Enrollment = ({ route, navigation }) => {
                 setCardsData(data); // Set fetched data directly
                 setIsLoading(false);
             } else {
-                // Attempt to read error message from response even if !response.ok
                 const errorData = await response.json();
                 setError(errorData.message || "Failed to load groups. Please try again.");
                 setIsLoading(false);
@@ -242,7 +237,6 @@ const Enrollment = ({ route, navigation }) => {
     const NoGroupsIllustration = require('../../assets/Nogroup.png'); // Path to your illustration
 
     const CardContent = ({ card, colors, isSelected }) => {
-        // Helper function to format date
         const formatDate = (dateString) => {
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
             return new Date(dateString).toLocaleDateString('en-GB', options);
@@ -272,8 +266,6 @@ const Enrollment = ({ route, navigation }) => {
                         <Text style={[styles.groupNameLabel, { color: colors.darkText }]}>Group Name:</Text> {card.group_name}
                     </Text>
                 </View>
-
-                {/* Display Starts Date, Ends Date, and Members */}
                 <View style={styles.cardDetailsRow}>
                     <View style={styles.detailItem}>
                         <Text style={[styles.detailLabel, { color: colors.darkText }]}>Starts Date</Text>
@@ -294,8 +286,6 @@ const Enrollment = ({ route, navigation }) => {
                         </Text>
                     </View>
                 </View>
-
-                {/* View More button on a new line */}
                 <View style={styles.viewMoreContainer}>
                     <TouchableOpacity
                         style={styles.viewMoreButton}
@@ -397,8 +387,6 @@ const Enrollment = ({ route, navigation }) => {
                             </View>
                         </ScrollView>
                     </View>
-                    {/* End of filter container */}
-
                     <ScrollView
                         contentContainerStyle={styles.scrollContentContainer}
                         showsVerticalScrollIndicator={false}
@@ -417,7 +405,6 @@ const Enrollment = ({ route, navigation }) => {
                                                 key: customColorKey,
                                                 ...(groupColors[customColorKey] || groupColors[primaryGroupType] || groupColors.default)
                                             };
-                                            // Check if the current card's _id matches the selected card's _id
                                             const isSelected = selectedCardIndex === card._id;
 
                                             const CardWrapper = ({ children }) => (

@@ -28,7 +28,6 @@ const About = ({ route, navigation }) => {
         contentContainerStyle={styles.whiteContentContainer}
       >
         <View style={styles.aboutUsContainer}>
-          {/* Image with simplified styling */}
           <View style={styles.imageFrame}>
             <Image
               source={require('../../assets/image.png')}

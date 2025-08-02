@@ -304,7 +304,6 @@ const Insurance = ({ navigation, route }) => {
 
   const handleInsuranceOptionPress = (optionType) => {
     console.log(`Navigating to ${optionType} insurance details`);
-    // Implement actual navigation logic here, e.g., navigation.navigate('DetailsScreen', { type: optionType });
   };
 
   const insuranceOptions = [

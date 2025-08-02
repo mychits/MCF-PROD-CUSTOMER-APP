@@ -44,7 +44,7 @@ const Checkbox = ({
       />
       <Text style={styles.agreementText}>
         {" "}
-        {/* Using existing agreementText style or define a new one */}I have
+       I have
         read and agree to the Terms & Conditions and Privacy Policy.
       </Text>
     </TouchableOpacity>

@@ -125,7 +125,6 @@ const Otp = ({ route, navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
-          {/* Top Section - Hide when keyboard is visible */}
           {!keyboardVisible && (
             <View style={styles.topSection}>
               <Image
@@ -136,8 +135,6 @@ const Otp = ({ route, navigation }) => {
               <Text style={styles.title}>MyChits</Text>
             </View>
           )}
-
-          {/* Bottom Section - Apply Animated padding */}
           <Animated.View
             style={[
               styles.bottomSection,

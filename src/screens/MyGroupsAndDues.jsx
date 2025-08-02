@@ -74,7 +74,6 @@ const MyGroupsAndDues = ({ navigation }) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Changed to POST /enroll/get-user-tickets as used in Mygroups.jsx
       const groupsFetchUrl = `${url}/enroll/get-user-tickets/${currentUserId}`;
       const overviewFetchUrl = `${url}/enroll/get-user-tickets-report/${currentUserId}`;
 
@@ -85,8 +84,6 @@ const MyGroupsAndDues = ({ navigation }) => {
         axios.post(groupsFetchUrl), // Changed to POST request
         axios.post(overviewFetchUrl),
       ]);
-
-      // Process groups data from get-user-tickets
       if (groupsResponse.status === 'fulfilled' && groupsResponse.value.data) {
         const rawGroupsData = Array.isArray(groupsResponse.value.data) ? groupsResponse.value.data : [];
         const transformedGroups = rawGroupsData
@@ -98,8 +95,7 @@ const MyGroupsAndDues = ({ navigation }) => {
             chitValue: ticketDetail.group_id.chitValue,
             numberOfMembers: ticketDetail.group_id.numberOfMembers,
             nextPaymentDate: ticketDetail.next_payment_date,
-            status: ticketDetail.status || 'Active', // Default to Active if status is not provided
-            // Add other properties from group_id or ticketDetail as needed for display
+            status: ticketDetail.status || 'Active', 
           }));
         setGroupsData(transformedGroups);
       } else {
@@ -107,15 +103,12 @@ const MyGroupsAndDues = ({ navigation }) => {
         setError("Failed to load your groups. Please check network and endpoint.");
         setGroupsData([]);
       }
-
-      // Process overview data (remains largely the same)
       if (overviewResponse.status === 'fulfilled' && overviewResponse.value.data) {
         const overviewData = Array.isArray(overviewResponse.value.data) ? overviewResponse.value.data : [];
         
         let calculatedTotalPaid = 0;
         let calculatedTotalProfit = 0;
-        const groupDuesMap = {}; // Temporarily store group-specific data
-
+        const groupDuesMap = {}; 
         overviewData.forEach(groupReport => {
           if (groupReport && groupReport._id) { // _id here is the group ID from the report
             calculatedTotalPaid += (groupReport?.payments?.totalPaidAmount || 0);
@@ -241,8 +234,6 @@ const MyGroupsAndDues = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           )}
-
-          {/* Summary Cards Section */}
           <View style={styles.summaryCardsContainer}>
             <LinearGradient
               colors={['#053B90', '#1C5B9B']} // Darker blue gradient
@@ -290,14 +281,12 @@ const MyGroupsAndDues = ({ navigation }) => {
           ) : (
             <View style={styles.groupsListContainer}>
               {groupsData.map((group) => {
-                // group._id here is the actual group ID from group_id._id
-                // group.ticketId is the ticket _id
                 const duesDetail = groupDuesOverview[group._id] || { totalPaidAmount: 0, totalProfit: 0 };
                 return (
                   <TouchableOpacity
-                    key={group.ticketId} // Use ticketId as key as it represents a unique enrollment
+                    key={group.ticketId} 
                     style={styles.groupCard}
-                    // Pass both group ID and ticket ID for the detailed screen
+              
                     onPress={() => navigation.navigate("GroupDetails", { groupId: group._id, groupName: group.chitGroupName, ticket: group.ticketId })}
                   >
                     <LinearGradient
@@ -333,8 +322,6 @@ const MyGroupsAndDues = ({ navigation }) => {
                           </Text>
                         </View>
                       </View>
-
-                      {/* Display Group-Specific Dues/Profit */}
                       <View style={styles.groupDuesSection}>
                         <View style={styles.detailRow}>
                             <Ionicons name="receipt-outline" size={18} color={Colors.darkText} />

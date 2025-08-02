@@ -19,8 +19,6 @@ import Header from "../components/layouts/Header";
 import { NetworkContext } from "../context/NetworkProvider";
 import Toast from "react-native-toast-message";
 import { ContextProvider } from "../context/UserProvider";
-
-// Helper function to format numbers with commas in Indian style (e.g., 2,51,500)
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) {
     return "0";
@@ -28,8 +26,6 @@ const formatNumberIndianStyle = (num) => {
   const parts = num.toString().split('.');
   let integerPart = parts[0];
   let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
-
-  // Handle negative numbers
   let isNegative = false;
   if (integerPart.startsWith('-')) {
     isNegative = true;
@@ -414,7 +410,6 @@ const EnrollForm = ({ navigation, route }) => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              {/* --- Start of NEW Value Display --- */}
               <View style={styles.valueDisplayContainer}>
                 <LinearGradient
                   colors={["#4287f5", "#2a64c4"]} // Shades of blue for attractiveness
@@ -427,8 +422,6 @@ const EnrollForm = ({ navigation, route }) => {
                   </Text>
                 </LinearGradient>
               </View>
-              {/* --- End of NEW Value Display --- */}
-
               <Text style={styles.highlightedGroupName}>
                 {cardsData.group_name}
               </Text>
@@ -953,7 +946,7 @@ const styles = StyleSheet.create({
   linkText: {
     color: Colors.linkBlue,
     fontWeight: "bold",
-      fontSize: 16,
+      fontSize: 12,
     textDecorationLine: "underline",
   },
   checkboxContainer: {
