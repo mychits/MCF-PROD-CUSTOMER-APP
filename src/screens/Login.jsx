@@ -16,17 +16,14 @@ import {
   Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native"; // Import useRoute
+import { useNavigation, useRoute } from "@react-navigation/native";
 import url from "../data/url";
 import { NetworkContext } from "../context/NetworkProvider";
 import { ContextProvider } from "../context/UserProvider";
 
 const { height: screenHeight } = Dimensions.get("window");
 
-/**
- * Custom Toast component for displaying messages as popups at the top of the screen.
- * Works on both Android and iOS.
- */
+
 const Toast = React.forwardRef(({ duration = 2000 }, ref) => {
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState("");
@@ -77,7 +74,7 @@ const Toast = React.forwardRef(({ duration = 2000 }, ref) => {
 export default function Login() {
   const navigation = useNavigation();
   const [appUser, setAppUser] = useContext(ContextProvider);
-  const route = useRoute(); // Initialize useRoute to access route parameters
+  const route = useRoute();
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
 
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -91,10 +88,9 @@ export default function Login() {
   useEffect(() => {
     if (route.params?.mobileNumber) {
       setPhoneNumber(route.params.mobileNumber);
-
       setPassword("");
     }
-  }, [route.params?.mobileNumber]); // Dependency on the mobileNumber parameter
+  }, [route.params?.mobileNumber]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -153,7 +149,9 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${url}/user/login-user`, {
+      const loginUrl = `${url}/user/signin-user`;
+      console.log("Attempting to log in to:", loginUrl,trimmedPhoneNumber,trimmedPassword);
+      const response = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -164,11 +162,9 @@ export default function Login() {
         }),
       });
 
-      const data = await response.json();
-
-      setLoading(false);
-
-      if (response.ok) {
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.includes("application/json")) {
+        const data = await response.json();
         showAppToast(
           data.message || "Login Successful!",
           require("../../assets/Group400.png")
@@ -176,39 +172,27 @@ export default function Login() {
         setAppUser((prev) => ({ ...prev, userId: data.userId }));
         navigation.replace("BottomTab", { userId: data.userId });
       } else {
-        handleErrorResponse(response.status, data.message);
+        let errorMessage = "An unexpected error occurred. Please try again.";
+        if (contentType && contentType.includes("application/json")) {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+            console.error("Login error (JSON response):", errorData);
+        } else {
+            const errorText = await response.text();
+            console.error("Login error (non-JSON response):", response.status, errorText);
+            errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route or server logs.`;
+        }
+        showAppToast(errorMessage, require("../../assets/Group400.png"));
       }
     } catch (error) {
-      console.error("Login error:", error);
-      setLoading(false);
+      console.error("Login error (network or unexpected):", error);
       showAppToast(
         "Login failed. Please check your network connection and try again.",
         require("../../assets/Group400.png")
       );
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleErrorResponse = (statusCode, message) => {
-    let toastMessage = "Please check your credentials!";
-
-    if (statusCode === 400) {
-      if (message === "phone number and password are required") {
-        toastMessage = "Phone number and password are required";
-      } else if (message === "phone number must be exactly 10 digits") {
-        toastMessage = "Phone number must be exactly 10 digits";
-      } else {
-        toastMessage = message || "Invalid input. Please check your details.";
-      }
-    } else if (statusCode === 404) {
-      toastMessage = "User not found";
-    } else if (statusCode === 500) {
-      toastMessage = message || "Server error. Please try again later.";
-    } else {
-      toastMessage =
-        message || "An unexpected error occurred. Please try again.";
-    }
-
-    showAppToast(toastMessage, require("../../assets/Group400.png"));
   };
 
   const handlePhoneNumberChange = (text) => {
@@ -385,7 +369,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   bottomSection: {
-    
     minHeight: screenHeight * 0.06,
     flexGrow: 1,
     backgroundColor: "#C7E3EF",

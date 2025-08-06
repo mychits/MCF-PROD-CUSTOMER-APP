@@ -64,7 +64,8 @@ const Colors = {
   buttonPrimary: "#00BCD4",
   buttonText: "#FFFFFF",
   shadowColor: "rgba(0,0,0,0.1)",
-  gradientStartLight: "#E3F2FD",
+  // Updated colors for a more modern look
+  gradientStartLight: "#F8FBFF", // A very light, almost white blue
   gradientEndLight: "#FFFFFF",
   actionBoxBackground: "#F8F8F8",
   borderColor: "#E0E0E0",
@@ -75,6 +76,7 @@ const Colors = {
   lightGray: "#F5F5F5",
   darkGray: "#A9A9A9",
   iconBorderHighlight: "#FFFFFF",
+  lightDivider: "#EBEBEB", // A lighter divider color
 };
 
 const Payments = ({ navigation, route }) => {
@@ -183,7 +185,7 @@ const Payments = ({ navigation, route }) => {
 
       <View style={styles.outerBoxContainer}>
         <View style={styles.mainContentWrapper}>
-          <Text style={styles.sectionTitle}>My Payment</Text>
+          <Text style={styles.sectionTitle}>My Payments</Text>
 
           <View style={styles.summaryCardsRow}>
             <View style={[styles.summaryCard, styles.investmentCardBackground]}>
@@ -232,23 +234,11 @@ const Payments = ({ navigation, route }) => {
                 const individualPaidAmount =
                   correspondingOverview?.payments?.totalPaidAmount || 0;
 
-                const isExpanded = expandedCards[card._id]; // Check if this card is expanded
+                const isExpanded = expandedCards[card._id];
 
                 return (
-                  <TouchableOpacity
+                  <View
                     key={card._id || index}
-                    onPress={() => {
-                      Vibration.vibrate(50);
-                      navigation.navigate("EnrollTab", {
-                        screen: "EnrollGroup",
-                        params: {
-                          userId: userId,
-                          groupId: card.group_id?._id,
-                          ticket: card.tickets,
-                        },
-                      });
-                    }}
-                    activeOpacity={0.8}
                     style={styles.groupCardEnhanced}
                   >
                     <LinearGradient
@@ -257,50 +247,66 @@ const Payments = ({ navigation, route }) => {
                       end={{ x: 0, y: 1 }}
                       style={styles.cardContentBox}
                     >
-                      <View style={styles.cardHeaderArea}>
-                        <View style={styles.iconContainer}>
-                          <MaterialCommunityIcons
-                            name="currency-inr"
-                            size={30}
-                            color={Colors.accentGold}
-                          />
-                        </View>
-                        <View style={styles.headerInfo}>
-                          {card.group_id?.group_value !== undefined && (
-                            <Text style={styles.groupValueProminent}>
-                              ₹ {formatNumberIndianStyle(card.group_id.group_value)}
-                            </Text>
-                          )}
-                          <Text style={styles.groupNameSubtitle}>
-                            {card.group_id.group_name}
-                          </Text>
-                        </View>
-                        {card.group_id?.members?.length > 0 && (
-                          <View style={styles.membersIconContainer}>
-                            <Ionicons name="people" size={24} color={Colors.primaryBlue} />
-                            <Text style={styles.membersCountText}>
-                              {card.group_id.members.length}
+                      <TouchableOpacity
+                        onPress={() => {
+                          Vibration.vibrate(50);
+                          navigation.navigate("EnrollTab", {
+                            screen: "EnrollGroup",
+                            params: {
+                              userId: userId,
+                              groupId: card.group_id?._id,
+                              ticket: card.tickets,
+                            },
+                          });
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.cardHeaderArea}>
+                          <View style={styles.iconContainer}>
+                            <MaterialCommunityIcons
+                              name="currency-inr"
+                              size={30}
+                              color={Colors.accentGold}
+                            />
+                          </View>
+                          <View style={styles.headerInfo}>
+                            {card.group_id?.group_value !== undefined && (
+                              <Text style={styles.groupValueProminent}>
+                                ₹ {formatNumberIndianStyle(card.group_id.group_value)}
+                              </Text>
+                            )}
+                            <Text style={styles.groupNameSubtitle}>
+                              {card.group_id.group_name}
                             </Text>
                           </View>
-                        )}
-                      </View>
-                      <Text style={styles.ticketNumberTextBelowGroup}>
-                        Ticket Number: {card.tickets}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => toggleExpand(card._id)}
-                        style={styles.expandButton}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.expandButtonText}>
-                          {isExpanded ? "Expand less" : "Expand more"}
-                        </Text>
-                        <MaterialIcons
-                          name={isExpanded ? "expand-less" : "expand-more"}
-                          size={24}
-                          color={Colors.primaryBlue}
-                        />
+                          {card.group_id && card.group_id.members && card.group_id.members.length > 0 && (
+                            <View style={styles.membersIconContainer}>
+                              <Ionicons name="people" size={24} color={Colors.primaryBlue} />
+                              <Text style={styles.membersCountText}>
+                                {card.group_id.members.length}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                       </TouchableOpacity>
+
+                      <View style={styles.ticketNumberContainer}>
+                        <Text style={styles.ticketNumberText}>
+                          Ticket Number: {card.tickets}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => toggleExpand(card._id)}
+                          style={styles.expandButton}
+                          activeOpacity={0.7}
+                        >
+                          <MaterialIcons
+                            name={isExpanded ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+                            size={30}
+                            color={Colors.primaryBlue}
+                          />
+                        </TouchableOpacity>
+                      </View>
+
                       {isExpanded && (
                         <>
                           <View style={styles.cardDivider} />
@@ -308,8 +314,8 @@ const Payments = ({ navigation, route }) => {
                             {card.group_id?.start_date && (
                               <View style={[styles.detailItem, styles.halfWidthDetailItem]}>
                                 <MaterialIcons name="date-range" size={16} color={Colors.mediumText} />
-                                <View>
-                                  <Text style={styles.detailText}>Start Date:</Text>
+                                <View style={styles.detailTextGroup}>
+                                  <Text style={styles.detailText}>Start Date</Text>
                                   <Text style={styles.detailDateText}>
                                     {new Date(card.group_id.start_date).toLocaleDateString("en-GB", {
                                       day: "2-digit",
@@ -323,8 +329,8 @@ const Payments = ({ navigation, route }) => {
                             {card.group_id?.end_date && (
                               <View style={[styles.detailItem, styles.halfWidthDetailItem]}>
                                 <MaterialIcons name="date-range" size={16} color={Colors.mediumText} />
-                                <View>
-                                  <Text style={styles.detailText}>End Date:</Text>
+                                <View style={styles.detailTextGroup}>
+                                  <Text style={styles.detailText}>End Date</Text>
                                   <Text style={styles.detailDateText}>
                                     {new Date(card.group_id.end_date).toLocaleDateString("en-GB", {
                                       day: "2-digit",
@@ -336,21 +342,38 @@ const Payments = ({ navigation, route }) => {
                               </View>
                             )}
                             <View style={[styles.detailItem, styles.fullWidthDetailItem, styles.centeredDetailItem]}>
-                              <MaterialIcons name="payments" size={18} color={Colors.mediumText} style={styles.iconBeforeText} />
-                              <Text style={[styles.detailText, styles.noMarginLeft, { color: Colors.primaryBlue, fontWeight: 'bold' }]}>
+                              <MaterialIcons name="payments" size={18} color={Colors.primaryBlue} style={styles.iconBeforeText} />
+                              <Text style={[styles.detailText, styles.noMarginLeft, styles.paidAmountText]}>
                                 Paid: ₹ {formatNumberIndianStyle(individualPaidAmount)}
                               </Text>
+                              <TouchableOpacity
+                                style={styles.viewButton}
+                                onPress={() => {
+                                  Vibration.vibrate(50);
+                                  navigation.navigate("EnrollTab", {
+                                    screen: "EnrollGroup",
+                                    params: {
+                                      userId: userId,
+                                      groupId: card.group_id?._id,
+                                      ticket: card.tickets,
+                                    },
+                                  });
+                                }}
+                                activeOpacity={0.8}
+                              >
+                                <Text style={styles.viewButtonText}>View</Text>
+                              </TouchableOpacity>
                             </View>
 
                             {card.group_id?.amount_due !== undefined && (
-                              <View style={[styles.detailItem, styles.fullWidthDetailItem, styles.centeredDetailItem]}>
-                                <MaterialIcons name="money" size={18} color={Colors.mediumText} style={styles.iconBeforeText} />
+                              <View style={[styles.detailItem, styles.fullWidthDetailItem]}>
+                                <MaterialIcons name="money" size={18} color={Colors.amountHighlight} style={styles.iconBeforeText} />
                                 <Text style={[styles.detailText, styles.noMarginLeft, styles.highlightedAmountEnhanced]}>
                                   Due: ₹ {formatNumberIndianStyle(card.group_id.amount_due)}
                                 </Text>
                               </View>
                             )}
-                            {card.group_id?.members?.length > 0 && (
+                            {card.group_id && card.group_id.members && card.group_id.members.length > 0 && (
                               <View style={styles.detailItem}>
                                 <Ionicons name="people" size={18} color={Colors.mediumText} />
                                 <Text style={styles.detailText}>
@@ -362,7 +385,7 @@ const Payments = ({ navigation, route }) => {
                         </>
                       )}
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
             </ScrollView>
@@ -377,7 +400,7 @@ const Payments = ({ navigation, route }) => {
                 No Groups Yet!
               </Text>
               <Text style={styles.noGroupsSubText}>
-                It looks like you haven't joined any groups. Start your investment journey by exploring and enrolling in a new group!
+                Start your investment journey by exploring and enrolling in a new group.
               </Text>
               <TouchableOpacity
                 style={styles.joinGroupButton}
@@ -502,6 +525,7 @@ const styles = StyleSheet.create({
         elevation: 8,
       },
     }),
+    position: 'relative',
   },
   cardContentBox: {
     padding: 20,
@@ -548,13 +572,17 @@ const styles = StyleSheet.create({
     color: Colors.mediumText,
     fontWeight: "600",
   },
-  // New style for ticket number when placed below group name
-  ticketNumberTextBelowGroup: {
+  ticketNumberContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  ticketNumberText: {
     fontSize: 18,
     color: Colors.mediumText,
     fontWeight: '500',
-    marginBottom: 15, // Space before the divider
-    textAlign: 'center',
+    textAlign: 'left',
   },
   membersIconContainer: {
     flexDirection: "row",
@@ -572,7 +600,7 @@ const styles = StyleSheet.create({
   },
   cardDivider: {
     height: 1,
-    backgroundColor: Colors.borderColor,
+    backgroundColor: Colors.lightDivider,
     marginVertical: 15,
   },
   detailsGrid: {
@@ -588,13 +616,18 @@ const styles = StyleSheet.create({
   },
   fullWidthDetailItem: {
     width: "100%",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   centeredDetailItem: {
-    justifyContent: "center",
+    justifyContent: "flex-start",
   },
   detailText: {
     fontSize: 18,
     color: Colors.darkText,
+    marginLeft: 8,
+  },
+  detailTextGroup: {
     marginLeft: 8,
   },
   noMarginLeft: {
@@ -608,11 +641,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.amountHighlight,
   },
+  paidAmountText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: Colors.primaryBlue,
+  },
   detailDateText: {
     fontSize: 16,
     color: Colors.mediumText,
-    marginLeft: 6,
     marginTop: 2,
+    fontWeight: "500",
   },
   halfWidthDetailItem: {
     width: "49%",
@@ -668,7 +706,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   joinGroupButton: {
-    backgroundColor: Colors.buttonPrimary,
+    backgroundColor: Colors.primaryBlue,
     paddingVertical: 14,
     paddingHorizontal: 30,
     borderRadius: 30,
@@ -676,7 +714,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: Colors.buttonPrimary,
+        shadowColor: Colors.primaryBlue,
         shadowOffset: { width: 0, height: 5 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
@@ -693,22 +731,31 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   expandButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    marginBottom: 5,
-    borderWidth: 1,
-    borderColor: Colors.borderColor,
-    borderRadius: 10,
-    backgroundColor: Colors.lightBackground,
+    padding: 5,
   },
-  expandButtonText: {
-    color: Colors.primaryBlue,
-    fontSize: 16,
-    fontWeight: '600',
-    marginRight: 5,
+  viewButton: {
+    backgroundColor: Colors.accentBlue,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 'auto',
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.accentBlue,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
+  viewButtonText: {
+    color: Colors.buttonText,
+    fontSize: 14,
+    fontWeight: 'bold',
+  }
 });
 
 export default Payments;

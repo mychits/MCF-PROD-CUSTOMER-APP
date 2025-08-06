@@ -23,19 +23,22 @@ import healthImage from "../../assets/health.png";
 import homeImage from "../../assets/home_image.png";
 import travelImage from "../../assets/travel.png";
 import goldImage from "../../assets/gold.png";
+import termLifeImage from "../../assets/Termlife.png";
+import savingsImage from "../../assets/Savings.png"; // Added import for Savings.png
 
 import Header from "../components/layouts/Header";
 import { ContextProvider } from "../context/UserProvider";
 
 const { width } = Dimensions.get("window");
 
+// Updated card background colors to match EnrollGroup's style
 const cardBackgroundColors = [
-  "#E0F7FA", // Light Cyan - for Health
-  "#FFFDE7", // Very Light Yellow - for Car
-  "#F3E5F5", // Light Purple - for Bike
-  "#E8F5E5", // Light Green - for Home
-  "rgba(251, 233, 231, 0.9)", // Light Peach - for Travel (slightly transparent for layering)
-  "#FFF3E0", // Light Orange - for Gold
+  "#004775", // Dark Blue for Health (matches EnrollGroup's investmentCardBackground)
+  "#357500", // Dark Green for Car (matches EnrollGroup's profitCardBackground)
+  "#800080", // Purple for Bike (matches EnrollGroup's totalPaid color)
+  "#E74C3C", // Red for Home (matches EnrollGroup's balance color)
+  "#FF6347", // Tomato for Travel (matches EnrollGroup's toBePaid color)
+  "#2ECC71", // Emerald Green for Gold (matches EnrollGroup's balanceExcess color)
 ];
 
 const InsuranceCard = ({
@@ -64,24 +67,24 @@ const InsuranceCard = ({
           toValue: 1,
           friction: 6,
           tension: 100,
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
         Animated.timing(translateYAnim, {
           toValue: 0,
           duration: 500,
           easing: Easing.out(Easing.bezier(0.25, 0.1, 0.25, 1)),
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 400,
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
         Animated.timing(rotateXAnim, {
           toValue: 0,
           duration: 600,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
       ]),
     ]).start(() => {
@@ -90,12 +93,12 @@ const InsuranceCard = ({
           toValue: 0,
           duration: 300,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true, // This can remain true as it's on a separate Animated.View
+          useNativeDriver: true,
         }),
         Animated.timing(arrowOpacity, {
           toValue: 1,
           duration: 250,
-          useNativeDriver: true, // This can remain true as it's on a separate Animated.View
+          useNativeDriver: true,
         }),
       ]).start();
     });
@@ -115,7 +118,7 @@ const InsuranceCard = ({
       Animated.timing(scaleAnim, {
         toValue: 0.95,
         duration: 100,
-        useNativeDriver: false, // Already false, keep it
+        useNativeDriver: false,
       }),
       Animated.timing(shadowOpacityAnim, {
         toValue: 0.25,
@@ -142,7 +145,7 @@ const InsuranceCard = ({
         toValue: 1,
         friction: 4,
         tension: 60,
-        useNativeDriver: false, // Already false, keep it
+        useNativeDriver: false,
       }),
       Animated.timing(shadowOpacityAnim, {
         toValue: 0.1,
@@ -169,7 +172,7 @@ const InsuranceCard = ({
   });
 
   const animatedCardStyle = {
-    backgroundColor: backgroundColor || "#FFFFFF",
+    backgroundColor: backgroundColor || "#282828",
     opacity: fadeAnim,
     transform: [
       { scale: scaleAnim },
@@ -193,6 +196,7 @@ const InsuranceCard = ({
         <View style={styles.cardContentWrapper}>
           <View style={styles.cardTitleContainer}>
             <Text style={styles.cardTitle}>{title}</Text>
+            {title === "Health"}
             <Animated.View
               style={{
                 transform: [
@@ -202,7 +206,7 @@ const InsuranceCard = ({
                 opacity: arrowOpacity,
               }}
             >
-              <MaterialIcons name="arrow-forward" size={22} color="#053B90" />
+              <MaterialIcons name="arrow-forward" size={22} color="#E0E0E0" />
             </Animated.View>
           </View>
           {imageSource && (
@@ -240,31 +244,37 @@ const Insurance = ({ navigation, route }) => {
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentTranslateY = useRef(new Animated.Value(50)).current;
 
+  const exploreTranslateY = useRef(new Animated.Value(50)).current;
+  const exploreOpacity = useRef(new Animated.Value(0)).current;
+
+  const vehicleInsuranceTranslateY = useRef(new Animated.Value(50)).current;
+  const vehicleInsuranceOpacity = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     Animated.sequence([
       Animated.timing(headerTranslateY, {
         toValue: 0,
         duration: 400,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: false, // Changed to false
+        useNativeDriver: false,
       }),
       Animated.parallel([
         Animated.spring(mainTitleTranslateY, {
           toValue: 0,
           friction: 8,
           tension: 120,
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
         Animated.spring(mainTitleScale, {
           toValue: 1,
           friction: 8,
           tension: 120,
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
         Animated.timing(mainTitleOpacity, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -272,12 +282,12 @@ const Insurance = ({ navigation, route }) => {
           toValue: 0,
           duration: 350,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
         Animated.timing(subTitleOpacity, {
           toValue: 1,
           duration: 350,
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -285,18 +295,44 @@ const Insurance = ({ navigation, route }) => {
           toValue: 1,
           friction: 7,
           tension: 90,
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
         Animated.timing(contentOpacity, {
           toValue: 1,
           duration: 500,
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
         }),
         Animated.timing(contentTranslateY, {
           toValue: 0,
           duration: 600,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: false, // Changed to false
+          useNativeDriver: false,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(exploreTranslateY, {
+          toValue: 0,
+          duration: 400,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(exploreOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(vehicleInsuranceTranslateY, {
+          toValue: 0,
+          duration: 400,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(vehicleInsuranceOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -307,12 +343,20 @@ const Insurance = ({ navigation, route }) => {
   };
 
   const insuranceOptions = [
-    { title: "Health", image: healthImage, color: cardBackgroundColors[0] },
-    { title: "Car", image: carImage, color: cardBackgroundColors[1] },
     { title: "Bike", image: bikeImage, color: cardBackgroundColors[2] },
-    { title: "Home", image: homeImage, color: cardBackgroundColors[3] },
+    { title: "Car", image: carImage, color: cardBackgroundColors[1] },
+    { title: "Term life", image: termLifeImage, color: "#053B90" }, // Use EnrollGroup's primary color
+    { title: "Health", image: healthImage, color: cardBackgroundColors[0] },
+    { title: "Savings", image: savingsImage, color: "#004775" }, // Updated 'image' to savingsImage
     { title: "Travel", image: travelImage, color: cardBackgroundColors[4] },
-    { title: "Gold", image: goldImage, color: cardBackgroundColors[5] },
+  ];
+
+  const exploreOptions = [
+    { title: "Pension", icon: "face" },
+    { title: "Cyber Insurance", icon: "security" },
+    { title: "Shop", icon: "store" },
+    { title: "Hospital cash", icon: "local-hospital" },
+    { title: "Home Insurance", icon: "home" },
   ];
 
   return (
@@ -325,9 +369,9 @@ const Insurance = ({ navigation, route }) => {
         },
       ]}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#F0F8FF" />
+      <StatusBar barStyle="light-content" backgroundColor="#053B90" />
       <Animated.View style={{ transform: [{ translateY: headerTranslateY }] }}>
-        <Header userId={userId} navigation={navigation} />
+        <Header userId={userId} navigation={navigation} style={styles.darkHeader} />
       </Animated.View>
 
       <Animated.View
@@ -367,6 +411,10 @@ const Insurance = ({ navigation, route }) => {
             >
               Secure what you love
             </Animated.Text>
+            <TouchableOpacity style={styles.myPoliciesButton}>
+              <MaterialIcons name="list-alt" size={20} color="#053B90" />
+              <Text style={styles.myPoliciesText}>My Policies</Text>
+            </TouchableOpacity>
           </Animated.View>
 
           <ScrollView
@@ -381,10 +429,45 @@ const Insurance = ({ navigation, route }) => {
                   imageSource={option.image}
                   onPress={() => handleInsuranceOptionPress(option.title)}
                   backgroundColor={option.color}
-                  animationDelay={index * 80 + 1700}
+                  animationDelay={index * 80 + 1000}
                 />
               ))}
             </View>
+
+            <Animated.View
+              style={[
+                styles.exploreOtherContainer,
+                {
+                  transform: [{ translateY: exploreTranslateY }],
+                  opacity: exploreOpacity,
+                },
+              ]}
+            >
+              <Text style={styles.exploreOtherTitle}>Explore other insurances</Text>
+              <View style={styles.exploreGrid}>
+                {exploreOptions.map((option, index) => (
+                  <TouchableOpacity key={index} style={styles.exploreItem}>
+                    <View style={styles.exploreIconCircle}>
+                      <MaterialIcons name={option.icon} size={30} color="#053B90" />
+                    </View>
+                    <Text style={styles.exploreItemText}>{option.title}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Animated.View>
+
+            <Animated.View
+              style={[
+                styles.insureVehicleContainer,
+                {
+                  transform: [{ translateY: vehicleInsuranceTranslateY }],
+                  opacity: vehicleInsuranceOpacity,
+                },
+              ]}
+            >
+              {/* This section was empty in your provided code, adding a placeholder */}
+              
+            </Animated.View>
           </ScrollView>
         </View>
       </Animated.View>
@@ -395,55 +478,84 @@ const Insurance = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#053B90",
+    backgroundColor: "#053B90", // Changed to EnrollGroup's primary background
+  },
+  darkHeader: {
+    backgroundColor: "#053B90", // Changed to EnrollGroup's primary background
   },
   mainContentArea: {
     flex: 1,
-    backgroundColor: "#053B90",
-    marginHorizontal: 12,
-    marginBottom: 12,
-    borderRadius: 20,
-      paddingBottom: 45,
+    backgroundColor: "#fff", // Changed to white to match EnrollGroup's content card
+    marginHorizontal: 10, // Added margin to match EnrollGroup's content card
+    marginBottom: 50, // Adjusted margin to match EnrollGroup's content card
+    borderRadius: 12, // Added borderRadius to match EnrollGroup's content card
+    paddingBottom: 0,
     overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 6 }, // Adjusted shadow to match EnrollGroup
+        shadowOpacity: 0.1, // Adjusted shadow to match EnrollGroup
+        shadowRadius: 10, // Adjusted shadow to match EnrollGroup
       },
       android: {
-        elevation: 10,
+        elevation: 8, // Adjusted elevation to match EnrollGroup
       },
     }),
   },
   bottomSection: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#FFFFFF",
-    padding: 20,
+    backgroundColor: "#fff", // Changed to white
+    padding: 15, // Adjusted padding to match EnrollGroup's content card
     alignItems: "center",
-      
   },
   mainTitleContainer: {
     width: "100%",
     paddingLeft: 5,
     marginBottom: 12,
-     paddingBottom: 55,
+    paddingBottom: 20,
     alignItems: "flex-start",
+    position: "relative",
   },
   mainTitleBold: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "#053B90",
+    color: "#333", // Changed to dark grey
     textAlign: "left",
   },
   mainTitleNormal: {
     fontSize: 18,
-    color: "#555555",
+    color: "#666", // Changed to softer grey
     marginTop: 0,
     textAlign: "left",
   },
+  // --- My Policies Button Styles ---
+  myPoliciesButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F0FE", // A very light blue, subtle background
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    borderWidth: 1, // Added a subtle border
+    borderColor: "#A7D3FE", // A slightly darker light blue for the border
+    shadowColor: "#000", // Subtle shadow for depth
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3, // Android shadow
+  },
+  myPoliciesText: {
+    color: "#053B90", // EnrollGroup's primary blue for text
+    fontSize: 14,
+    marginLeft: 5,
+    fontWeight: "700", // Slightly bolder for emphasis
+  },
+  // --- End My Policies Button Styles ---
   cardsScrollViewContent: {
     flexGrow: 1,
     paddingBottom: 5,
@@ -451,25 +563,25 @@ const styles = StyleSheet.create({
   cardsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     paddingHorizontal: 0,
     width: "100%",
   },
   insuranceCard: {
-    width: "46%",
-    borderRadius: 15,
+    width: "48%",
+    borderRadius: 12, // Increased border radius
     paddingVertical: 15,
     paddingHorizontal: 15,
     marginBottom: 15,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 6,
-    borderColor: "#E6EBF5",
+    shadowOffset: { width: 0, height: 4 }, // Adjusted shadow
+    shadowOpacity: 0.1, // Adjusted shadow
+    shadowRadius: 6, // Adjusted shadow
+    elevation: 6, // Adjusted elevation
+    borderColor: "#E0E0E0", // Changed to a lighter border color
     borderWidth: 1,
     alignItems: "flex-start",
-    height: 120,
+    height: 160,
     justifyContent: "space-between",
   },
   touchableCardContent: {
@@ -483,24 +595,139 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitleContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
     width: "100%",
     marginBottom: 8,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#053B90",
+    color: "#FFF",
     flexShrink: 1,
     marginRight: 8,
   },
+  cardSubtitle: {
+    fontSize: 13,
+    color: "#CCC",
+    marginTop: 2,
+  },
+  badge: {
+    backgroundColor: "#800080", // Changed to purple
+    borderRadius: 5,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    marginTop: 5,
+  },
+  badgeText: {
+    color: "#FFF",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
   cardImage: {
-    width: "160%",
-    height: 60,
-    alignSelf: "flex-start",
+    width: "110%",
+    height: 85,
+    alignSelf: "flex-end",
     resizeMode: "contain",
+  },
+  exploreOtherContainer: {
+    width: "100%",
+    marginTop: 20,
+    alignItems: "flex-start",
+    paddingHorizontal: 5,
+  },
+  exploreOtherTitle: {
+    fontSize: 18,
+    fontWeight: "800", // Bolder font weight
+    color: "#333", // Changed to dark grey
+    marginBottom: 15,
+  },
+  exploreGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+    width: "100%",
+  },
+  exploreItem: {
+    alignItems: "center",
+    width: "25%",
+    marginBottom: 20,
+  },
+  // --- Explore Icon Circle Styles ---
+  exploreIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#F2F7FF", // A very light, subtle blue for the background
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+    borderWidth: 1, // Added a thin border
+    borderColor: "#D0E0FF", // A slightly darker blue for the border
+    shadowColor: "#000", // Subtle shadow for depth
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1, // Android shadow
+  },
+  exploreItemText: {
+    color: "#053B90", // EnrollGroup's primary blue for text
+    fontSize: 12,
+    textAlign: "center",
+    fontWeight: "600", // Slightly bolder
+  },
+  // --- End Explore Icon Circle Styles ---
+  insureVehicleContainer: {
+    width: "100%",
+    marginTop: 20,
+    paddingHorizontal: 5,
+  },
+  insureVehicleButton: {
+    flexDirection: "row",
+    backgroundColor: "#F0F8FF", // A very light, almost white blue
+    borderRadius: 12, // Increased border radius
+    padding: 15,
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1, // Added a border
+    borderColor: "#E0EFFF", // A very light blue for the border
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  insureVehicleTextContent: {
+    flex: 1,
+  },
+  insureVehicleTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#053B90", // Changed to primary blue
+    marginBottom: 5,
+  },
+  insureVehicleSubtitle: {
+    fontSize: 13,
+    color: "#4A90E2", // A medium blue for contrast
+  },
+  insureVehicleImageContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  insureVehicleImage: {
+    width: 70,
+    height: 70,
+    marginRight: 10,
+  },
+  insureVehicleArrow: {
+    color: "#053B90", // Primary blue for the arrow
   },
 });
 

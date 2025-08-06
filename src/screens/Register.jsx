@@ -77,12 +77,10 @@ export default function Register() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [otp, setOtp] = useState(""); // New state for OTP
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false); // New state to track if OTP has been sent
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -144,96 +142,48 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const response = await fetch(`${url}/user/send-otp`, { // You need to create this endpoint
+      const payload = {
+        phone_number: phoneNumber.replace(/\s/g, ""),
+        full_name: fullName.trim(),
+      };
+     
+      // Corrected line: Add /api/ to the endpoint
+      const apiEndpoint = `${url}/user/send-register-otp`; //
+      console.log("Attempting to send OTP to:", apiEndpoint); 
+      console.log("Sending OTP payload:", payload);
+
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone_number: phoneNumber.replace(/\s/g, "") }),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        showAppToast("OTP sent successfully!");
-        setOtpSent(true);
-      } else {
-        const errorData = await response.json();
-        showAppToast(errorData.message || "Failed to send OTP. Please try again.");
-      }
-    } catch (error) {
-      showAppToast("An error occurred while sending OTP. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async () => {
-    if (!validateInputs()) {
-      return;
-    }
-
-    if (!otpSent) {
-      showAppToast("Please send and verify OTP first.");
-      return;
-    }
-
-    if (!otp.trim()) {
-      showAppToast("Please enter the OTP.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Step 1: Verify OTP
-      const otpVerificationResponse = await fetch(`${url}/user/verify-otp`, { // You need to create this endpoint
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone_number: phoneNumber.replace(/\s/g, ""),
-          otp: otp.trim(),
-        }),
-      });
-
-      if (!otpVerificationResponse.ok) {
-        const errorData = await otpVerificationResponse.json();
-        showAppToast(errorData.message || "OTP verification failed. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      // Step 2: Register User (only if OTP verification is successful)
-      const response = await fetch(`${url}/user/signup-user`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: fullName.trim(),
-          phone_number: phoneNumber.replace(/\s/g, ""),
-          password: password.trim(),
-          track_source: "mobile",
-        }),
-      });
-
-      if (response.ok) {
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.includes("application/json")) {
         const data = await response.json();
-        showAppToast("Registration Successful!");
-        setTimeout(() => {
-          setAppUser((prev) => ({ ...prev, userId: data.user?._id }));
-          navigation.navigate("BottomTab", { userId: data.user?._id });
-        }, 2000);
+        console.log("OTP send success response:", data);
+        showAppToast(data.message || "OTP sent successfully!");
+        navigation.navigate("RegisterOtpVerify", {
+          mobileNumber: phoneNumber.replace(/\s/g, ""),
+          fullName: fullName.trim(),
+          password: password.trim(),
+        });
       } else {
-        const errorData = await response.json();
-        if (response.status === 400) {
-          showAppToast("User with this phone number already exists");
-        } else if (response.status === 500) {
-          showAppToast(
-            errorData.message || "Server error. Please try again later."
-          );
+        let errorMessage = "Failed to send OTP. Please try again.";
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+          console.error("OTP send error (JSON response):", errorData);
         } else {
-          showAppToast(
-            errorData.message || "Registration failed. Please try again."
-          );
+          const errorText = await response.text();
+          console.error("OTP send error (non-JSON response):", response.status, errorText);
+          errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route.`; // Show truncated HTML
         }
+        showAppToast(errorMessage);
       }
     } catch (error) {
-      showAppToast("An error occurred during registration. Please try again.");
+      console.error("Network or unexpected error sending OTP:", error);
+      showAppToast("An unexpected error occurred. Please check your network and try again.");
     } finally {
       setLoading(false);
     }
@@ -268,7 +218,7 @@ export default function Register() {
             <Text style={styles.registerTitle}>Register</Text>
             <Text style={styles.registerSubtitle}>Create your account</Text>
 
-            {/* Full Name Input */}
+           
             <TextInput
               style={styles.input}
               placeholder="Full Name"
@@ -281,7 +231,7 @@ export default function Register() {
               autoCorrect={false}
             />
 
-            {/* Phone Number Input */}
+           
             <TextInput
               style={styles.input}
               placeholder="Phone Number"
@@ -298,7 +248,7 @@ export default function Register() {
               autoCorrect={false}
             />
 
-            {/* Create Password Input */}
+           
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -326,7 +276,7 @@ export default function Register() {
               </TouchableOpacity>
             </View>
 
-            {/* Confirm Password Input */}
+           
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -354,46 +304,19 @@ export default function Register() {
               </TouchableOpacity>
             </View>
 
-            {/* Send OTP Button */}
-            {!otpSent && (
-              <TouchableOpacity
-                style={styles.registerButton}
-                onPress={handleSendOtp}
-                accessible
-                accessibilityLabel="Send OTP"
-              >
+            <TouchableOpacity
+              style={styles.registerButton}
+              onPress={handleSendOtp}
+              accessible
+              accessibilityLabel="Send OTP"
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
                 <Text style={styles.registerButtonText}>Send OTP</Text>
-              </TouchableOpacity>
-            )}
-
-            {/* OTP Input Field (conditionally rendered) */}
-            {otpSent && (
-              <TextInput
-                style={styles.input}
-                placeholder="Enter OTP"
-                placeholderTextColor="#78909C"
-                keyboardType="numeric"
-                value={otp}
-                onChangeText={setOtp}
-                maxLength={6} // Assuming 6-digit OTP
-                accessible
-                accessibilityLabel="OTP input"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            )}
-
-            {/* Register Button (conditionally enabled/visible) */}
-            {otpSent && (
-              <TouchableOpacity
-                style={styles.registerButton}
-                onPress={handleRegister}
-                accessible
-                accessibilityLabel="Register"
-              >
-                <Text style={styles.registerButtonText}>Register</Text>
-              </TouchableOpacity>
-            )}
+              )}
+            </TouchableOpacity>
 
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Already have an account? </Text>
@@ -411,15 +334,12 @@ export default function Register() {
           {loading && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color="#053B90" />
-              <Text style={styles.loadingText}>
-                {otpSent ? "Registering..." : "Sending OTP..."}
-              </Text>
+              <Text style={styles.loadingText}>Sending OTP...</Text>
             </View>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Toast popup */}
       <Toast ref={toastRef} />
     </SafeAreaView>
   );

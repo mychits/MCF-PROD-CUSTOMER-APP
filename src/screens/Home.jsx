@@ -510,7 +510,7 @@ const Home = ({ route, navigation }) => {
                             <View style={styles.bottomIcon}>
                                 <MaterialIcons name="more" size={34} color="#053B90" />
                             </View>
-                            <Text style={styles.bottomServiceTitle}>More Informe</Text>
+                            <Text style={styles.bottomServiceTitle}>More Inform</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.bottomGridItem}

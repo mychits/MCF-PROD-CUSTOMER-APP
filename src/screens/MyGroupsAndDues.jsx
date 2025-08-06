@@ -45,7 +45,6 @@ const Colors = {
   summaryCardInvestment: "#053B90",
   summaryCardProfit: "#2ECC71",
   summaryCardText: "#FFFFFF",
-  // Added for specific group profit/loss display
   profitText: "#2ECC71", // Green for profit
   lossText: "#E74C3C", // Red for loss
 };
