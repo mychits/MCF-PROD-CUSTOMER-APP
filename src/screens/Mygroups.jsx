@@ -21,41 +21,23 @@ import NoGroupImage from "../../assets/Nogroup.png";
 import { ContextProvider } from "../context/UserProvider";
 
 const Colors = {
-  primaryBlue: "#053B90", // Dark blue, main app color
-  lightBackground: "#F0F5F9", // Very light grey-blue for screen background
-  cardBackground: "#FFFFFF", // Pure white for card base
-  darkText: "#2C3E50", // Dark grey for primary text
-  mediumText: "#7F8C8D", // Medium grey for secondary text
-  lightText: "#BDC3C7", // Light grey for subtle labels
-  accentGreen: "#2ECC71", // Bright green for profit/positive
-  accentBlue: "#3499DB", // Vibrant blue for investment/neutral
-  buttonPrimary: "#00BCD4", // Teal/Cyan for main action button
-  buttonText: "#FFFFFF", // White for button text
-  shadowColor: "rgba(0,0,0,0.1)", // Light shadow for depth
-
-  gradientStart: "#FFFFFF", // White or very light blue
-  gradientEnd: "#C4D9ED", // Lighter blue for a soft transition
-  actionBoxBackground: "#F8F8F8", // Very light grey for action section
-  borderColor: "#E0E0E0", // Consistent light border
-  amountHighlight: "#E74C3C", // Red for amounts (or you could use a strong blue/green if it represents a positive due amount)
-
-  darkInvestment: "#0A2647", // A very dark blue, almost black-blue
-  darkProfit: "#196F3D", // A deep, rich green
-  dateTextHighlight: "#007BFF", // A distinct blue for dates
-  dateLabel: "#5D6D7E", // Slightly darker grey for date labels
-
-  // New/Adjusted colors for enhanced design
-  cardGradientStart: "#F8FBFE", // Lighter start for card background
-  cardGradientEnd: "#EBF3FC", // Light blue tint for card background
-  groupValueColor: "#E67E22", // A vibrant orange for group value
-  ticketColor: "#3498DB", // A distinct blue for ticket number
-  paidAmountColor: "#27AE60", // Green for paid amount
-  cardBorder: "#DCE1E7", // Soft border for cards
-  subtleText: '#5A6A7D', // A softer dark text
-  iconBorderHighlight: 'rgba(255,255,255,0.5)', // Brighter border for icon
-  cardShadowLight: 'rgba(0,0,0,0.08)', // Lighter, more diffused shadow
-  goldColor: '#FFD700', // Gold color for currency icon
+  // New color palette inspired by the provided image
+  primaryBlue: "#053B90",
+  secondaryBlue: "#0C53B3",
+  lightBackground: "#E8F0F7",
+  cardBackground: "#FFFFFF",
+  darkText: "#2C3E50",
+  mediumText: "#7F8C8D",
+  lightText: "#BDC3C7",
+  accentColor: "#3498DB",
+  investmentCardBackground: "#0A2647",
+  profitCardBackground: "#196F3D",
+  buttonText: "#FFFFFF",
+  shadowColor: "rgba(0,0,0,0.1)",
+  progressFill: "#3498DB",
+  progressBackground: "#E0E0E0",
 };
+
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) {
     return "0";
@@ -78,21 +60,13 @@ const formatNumberIndianStyle = (num) => {
     return (isNegative ? "-" : "") + lastThree + decimalPart;
   }
 };
-const formatDate = (dateString) => {
-  if (!dateString) return "N/A";
-  const options = { year: "numeric", month: "short", day: "numeric" };
-  return new Date(dateString).toLocaleDateString(undefined, options);
-};
 
 const Mygroups = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-
   const [appUser, setAppUser] = useContext(ContextProvider);
   const userId = appUser.userId || {};
-
   const [cardsData, setCardsData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [TotalToBepaid, setTotalToBePaid] = useState(0);
   const [Totalpaid, setTotalPaid] = useState(0);
   const [Totalprofit, setTotalProfit] = useState(0);
   const [individualGroupReports, setIndividualGroupReports] = useState({});
@@ -106,7 +80,6 @@ const Mygroups = ({ navigation, route }) => {
       const response = await axios.post(
         `${url}/enroll/get-user-tickets/${userId}`
       );
-
       setCardsData(response.data || []);
     } catch (error) {
       console.error("Error fetching tickets:", error);
@@ -125,16 +98,6 @@ const Mygroups = ({ navigation, route }) => {
         `${url}/enroll/get-user-tickets-report/${userId}`
       );
       const data = response.data;
-
-      const totalToBePaidAmount = data.reduce(
-        (sum, group) =>
-          sum +
-          (group?.payable?.totalPayable +
-            (parseInt(group?.enrollment?.group?.group_install) || 0) || 0),
-        0
-      );
-      setTotalToBePaid(totalToBePaidAmount);
-
       const totalPaidAmount = data.reduce(
         (sum, group) => sum + (group?.payments?.totalPaidAmount || 0),
         0
@@ -197,7 +160,15 @@ const Mygroups = ({ navigation, route }) => {
       },
     });
   };
+
   const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit;
+
+  const calculatePaidPercentage = (group_value, paid_amount) => {
+    if (!group_value || !paid_amount) return 0;
+    const percentage = (paid_amount / group_value) * 100;
+    return Math.min(100, Math.round(percentage));
+  };
+
 
   return (
     <View style={[styles.screenContainer, { paddingTop: insets.top }]}>
@@ -205,7 +176,7 @@ const Mygroups = ({ navigation, route }) => {
         barStyle="light-content"
         backgroundColor={Colors.primaryBlue}
       />
-
+      
       <Header userId={userId} navigation={navigation} />
 
       <View style={styles.outerBoxContainer}>
@@ -255,6 +226,7 @@ const Mygroups = ({ navigation, route }) => {
                 const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
                 const individualPaidAmount =
                   individualGroupReports[groupReportKey]?.totalPaid || 0;
+                const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
 
                 return (
                   <TouchableOpacity
@@ -265,67 +237,54 @@ const Mygroups = ({ navigation, route }) => {
                     }
                     activeOpacity={0.8}
                   >
-                    <LinearGradient
-                      colors={[Colors.cardGradientStart, Colors.cardGradientEnd]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.infoGradientBox}
-                    >
-                      <View style={styles.iconContainer}>
-                        <MaterialCommunityIcons
-                          name="currency-inr"
-                          size={30}
-                          color={Colors.goldColor}
-                        />
-                      </View>
-                      <View style={styles.textDetailsContainer}>
-                        <Text style={styles.groupValue}>
-                          ₹ {formatNumberIndianStyle(card.group_id.group_value)}
-                        </Text>
-                        <Text style={styles.groupCardNameEnhanced}>
-                          {card.group_id.group_name}
-                        </Text>
-                        <Text style={styles.groupCardTicketEnhanced}>
-                          Ticket: <Text style={{ fontWeight: 'bold', color: Colors.ticketColor }}>{card.tickets}</Text>
-                        </Text>
-                        <View style={styles.amountRow}>
-                          <Text style={styles.amountLabel}>Paid:</Text>
-                          <Text style={styles.highlightedAmountEnhanced}>
-                            ₹ {formatNumberIndianStyle(individualPaidAmount)}
+                    <View style={styles.groupCard}>
+                      <View style={styles.cardHeader}>
+                        <View style={styles.iconContainer}>
+                          <MaterialCommunityIcons
+                            name="currency-inr"
+                            size={28}
+                            color={Colors.buttonText}
+                          />
+                        </View>
+                        <View style={styles.cardTitleContainer}>
+                          <Text style={styles.cardTitle}>
+                            {card.group_id.group_name}
+                          </Text>
+                          <Text style={styles.cardSubtitle}>
+                            Ticket: {card.tickets}
                           </Text>
                         </View>
-                        {(card.group_id?.start_date || card.group_id?.end_date) && (
-                          <View style={styles.dateContainer}>
-                            {card.group_id?.start_date && (
-                              <View style={styles.dateItem}>
-                                <MaterialIcons
-                                  name="event-available"
-                                  size={16}
-                                  color={Colors.dateLabel}
-                                />
-                                <Text style={styles.dateLabelText}>Start:</Text>
-                                <Text style={styles.dateTextHighlight}>
-                                  {formatDate(card.group_id.start_date)}
-                                </Text>
-                              </View>
-                            )}
-                            {card.group_id?.end_date && (
-                              <View style={styles.dateItem}>
-                                <MaterialIcons
-                                  name="event-busy"
-                                  size={16}
-                                  color={Colors.dateLabel}
-                                />
-                                <Text style={styles.dateLabelText}>End:</Text>
-                                <Text style={styles.dateTextHighlight}>
-                                  {formatDate(card.group_id.end_date)}
-                                </Text>
-                              </View>
-                            )}
-                          </View>
-                        )}
                       </View>
-                    </LinearGradient>
+                      <View style={styles.cardBody}>
+                        <View style={styles.progressSection}>
+                          <View style={styles.progressTextRow}>
+                            <Text style={styles.progressLabel}>Paid</Text>
+                            <Text style={styles.progressPercentage}>
+                              {paidPercentage}%
+                            </Text>
+                          </View>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={[styles.progressBarFill, { width: `${paidPercentage}%` }]}
+                            />
+                          </View>
+                        </View>
+                        <View style={styles.amountDetails}>
+                          <View style={styles.amountItem}>
+                            <Text style={styles.amountLabel}>Total Value</Text>
+                            <Text style={styles.amountValue}>
+                              ₹ {formatNumberIndianStyle(card.group_id.group_value)}
+                            </Text>
+                          </View>
+                          <View style={styles.amountItem}>
+                            <Text style={styles.amountLabel}>Paid</Text>
+                            <Text style={[styles.amountValue, { color: Colors.accentColor }]}>
+                              ₹ {formatNumberIndianStyle(individualPaidAmount)}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -417,10 +376,10 @@ const styles = StyleSheet.create({
     }),
   },
   investmentCardBackground: {
-    backgroundColor: Colors.darkInvestment,
+    backgroundColor: Colors.investmentCardBackground,
   },
   profitCardBackground: {
-    backgroundColor: Colors.darkProfit,
+    backgroundColor: Colors.profitCardBackground,
   },
   summaryIcon: {
     marginBottom: 10,
@@ -440,116 +399,6 @@ const styles = StyleSheet.create({
   groupListContentContainer: {
     paddingBottom: 20,
   },
-  groupCardTouchable: {
-    marginVertical: 10,
-    borderRadius: 20,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    backgroundColor: Colors.cardBackground, // Ensure background is set for shadow consistency
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.cardShadowLight,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  infoGradientBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: 22,
-    minHeight: 150,
-  },
-  iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.primaryBlue,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 20,
-    borderWidth: 2,
-    borderColor: Colors.iconBorderHighlight,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.primaryBlue,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.4,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  textDetailsContainer: {
-    flex: 1,
-    justifyContent: 'flex-start',
-  },
-  groupValue: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: Colors.groupValueColor,
-    marginBottom: 6,
-    letterSpacing: -0.5,
-  },
-  groupCardNameEnhanced: {
-    fontWeight: "800",
-    fontSize: 20,
-    color: Colors.darkText,
-    marginBottom: 6,
-  },
-  groupCardTicketEnhanced: {
-    fontSize: 15,
-    color: Colors.subtleText,
-    marginBottom: 10,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  amountLabel: {
-    fontSize: 15,
-    color: Colors.mediumText,
-    marginRight: 8,
-    fontWeight: '600',
-  },
-  highlightedAmountEnhanced: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: Colors.paidAmountColor,
-  },
-  dateContainer: {
-    flexDirection: "column",
-    marginTop: 12,
-    gap: 4,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderColor,
-  },
-  dateItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  dateLabelText: {
-    fontFamily: 'YourRegularFont',
-    fontSize: 14, // Slightly larger date label
-    color: Colors.dateLabel,
-    fontWeight: "600",
-    marginRight: 8, // More space
-  },
-  dateTextHighlight: {
-    fontFamily: 'YourSemiBoldFont',
-    fontSize: 15, // Slightly larger date text
-    fontWeight: "700",
-    color: Colors.dateTextHighlight,
-  },
   loader: {
     flex: 1,
     justifyContent: "center",
@@ -560,10 +409,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 30, // Increased padding
-    paddingVertical: 60, // Increased vertical padding
+    paddingHorizontal: 30,
+    paddingVertical: 60,
     backgroundColor: Colors.lightBackground,
-    borderRadius: 20, // Match main container's rounding
+    borderRadius: 20,
     marginVertical: 25,
     ...Platform.select({
       ios: {
@@ -578,25 +427,128 @@ const styles = StyleSheet.create({
     }),
   },
   noGroupImage: {
-    width: 180, // Larger image
+    width: 180,
     height: 180,
-    marginBottom: 20, // More space
+    marginBottom: 20,
   },
   noGroupsText: {
-    fontFamily: 'YourBoldFont',
     textAlign: "center",
     color: Colors.darkText,
-    fontSize: 22, // Larger text
+    fontSize: 22,
     fontWeight: "bold",
     marginBottom: 12,
   },
   noGroupsSubText: {
-    fontFamily: 'YourRegularFont',
     textAlign: "center",
     color: Colors.mediumText,
-    fontSize: 17, // Slightly larger subtext
-    lineHeight: 26, // Improved line height
+    fontSize: 17,
+    lineHeight: 26,
     maxWidth: "90%",
   },
+
+  // NEW STYLES FOR THE IMAGE-INSPIRED CARD
+  groupCardTouchable: {
+    marginVertical: 10,
+    borderRadius: 20,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.shadowColor,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 15,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  groupCard: {
+    padding: 20,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 20,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  iconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.secondaryBlue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  cardTitleContainer: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.darkText,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: Colors.mediumText,
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  cardBody: {
+    marginTop: 10,
+  },
+  progressSection: {
+    marginBottom: 15,
+  },
+  progressTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  progressLabel: {
+    fontSize: 14,
+    color: Colors.mediumText,
+    fontWeight: '500',
+  },
+  progressPercentage: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.accentColor,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.progressBackground,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: Colors.progressFill,
+  },
+  amountDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  amountItem: {
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  amountLabel: {
+    fontSize: 14,
+    color: Colors.mediumText,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  amountValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.darkText,
+  },
 });
+
 export default Mygroups;

@@ -645,12 +645,12 @@ const styles = StyleSheet.create({
   },
   transactionsTitle: {
     fontWeight: "800",
-    fontSize: 18,
+    fontSize: 15,
     color: "#333",
   },
   viewMoreText: {
     color: "#fff",
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: "800",
   },
 

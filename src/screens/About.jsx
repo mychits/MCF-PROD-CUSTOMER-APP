@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff", // White background for the main content area
     borderRadius: 15, // Reduced border radius for a cleaner look
     marginHorizontal: width * 0.03, // Slightly less horizontal margin
-    marginTop: height * 0.02, // Slightly reduced top margin
-    marginBottom: height * 0.03, // Slightly reduced bottom margin
+    marginTop: height * 0.01, // Slightly reduced top margin
+    marginBottom: height * 0.01, // Slightly reduced bottom margin
     paddingVertical: height * 0.035, // Reduced vertical padding
     paddingHorizontal: width * 0.05, // Reduced horizontal padding
     paddingBottom: height * 0.1, // Less space at the very bottom

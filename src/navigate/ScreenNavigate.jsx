@@ -14,7 +14,7 @@ import ReportScreen from "./Screens/ReportScreen";
 import IntroduceNewCustomers from "../screens/IntroduceNewCustomers";
 import Insurance from "../screens/Insurance";
 import EligibilityScreen from "../screens/EligibilityScreen";
-import RegisterOtpVerify from "../screens/RegisterOtpVerify.jsx";  
+import RegisterOtpVerify from "../screens/RegisterOtpVerify.jsx";
 import HomeScreen from "./Screens/HomeScreen";
 import EnrollScreen from "./Screens/EnrollScreen";
 import PaymentScreen from "./Screens/PaymentScreen";
@@ -48,6 +48,7 @@ import UserProvider, { ContextProvider } from "../context/UserProvider";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const EnrollStack = createNativeStackNavigator();
+
 const EnrollStackNavigator = ({ route }) => {
   const [appUser, setAppUser] = useContext(ContextProvider);
   const userId = appUser.userId;
@@ -330,6 +331,11 @@ export default function ScreenNavigate() {
             name="AuctionList"
             component={AuctionList}
             options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="AuctionsRecord"
+            component={AuctionsRecord}
+            options={{ headerShown: true, title: 'Auction Records' }}
           />
         </Stack.Navigator>
       </NavigationContainer>
