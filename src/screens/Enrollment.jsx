@@ -524,7 +524,7 @@ const Enrollment = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#F5F5F5', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+    safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
     errorText: { fontSize: 15, color: '#DC143C', textAlign: 'center', marginTop: 10, fontWeight: 'bold' },
@@ -532,11 +532,7 @@ const styles = StyleSheet.create({
     retryButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     mainContentWrapper: { flex: 1, alignItems: 'center', paddingVertical: 1, backgroundColor: '#053B90', paddingHorizontal: 15 },
     innerContentArea: { flex: 1, backgroundColor: '#F5F5F5', marginHorizontal: 0, borderRadius: 15, paddingVertical: 15, paddingBottom: 25, width: '104%' },
-
-    filterContainer: {
-        paddingHorizontal: 15,
-        paddingBottom: 10,
-    },
+    filterContainer: {paddingHorizontal: 15,paddingBottom: 10,},
     chipsScrollContainer: { paddingRight: 30 },
     chipsContainer: { flexDirection: 'row', gap: 10, alignItems: 'center' },
     chip: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 22, borderRadius: 5, backgroundColor: '#E0EFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, minWidth: 100, justifyContent: 'center' },
