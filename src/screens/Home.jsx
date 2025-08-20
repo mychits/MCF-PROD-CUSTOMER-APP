@@ -91,10 +91,10 @@ const Home = ({ route, navigation }) => {
     ];
 
     const sideMenuItems = [
-        { title: "Activity", icon: "time-outline", link: "Mygroups" },
+       
         { title: "Chat with MyChit", icon: "chatbubbles-outline", onPress: handleWhatsAppPress },
         { title: "Get Help", icon: "help-circle-outline", link: "Help" },
-        { title: "Settings", icon: "settings-outline", link: "FeatureComingSoon", featureTitle: "Settings" },
+     
         { title: "Earn Rewards", icon: "gift-outline", link: "FeatureComingSoon", featureTitle: "Rewards" },
     ];
 
@@ -837,7 +837,7 @@ const Home = ({ route, navigation }) => {
                                             <View key={index} style={styles.relationshipManagerCard}>
                                                 <Text style={styles.rmGroupName}>{rm.groupName}</Text>
                                                 <View style={styles.managerDetailsRow}>
-                                                    <Text style={styles.rmManagerName}>{rm.name}</Text>
+                                                    <Text style={styles.rmManagerName}>Manager: {rm.name}</Text>
                                                     <Text style={styles.rmPhoneNumberText}> {rm.phoneNumber}</Text>
                                                     <TouchableOpacity
                                                         onPress={() => handleRelationshipManagerCall(rm.phoneNumber)}
@@ -1004,14 +1004,12 @@ const styles = StyleSheet.create({
         marginBottom: 5,
         marginHorizontal: 15,
         padding: 5,
-        // Increase this value to make the box wider
-        width: '118%',
-        alignSelf: 'center'
+        width: '100%', // Set width to 100% to fill the container
+        alignSelf: 'center',
     },
     rmListScrollView: {
-        maxHeight: 180, // Adjust height as needed
-        paddingRight: 10, // Add padding to the right for scroll indicator
-        flexGrow: 1, // Add this line
+        maxHeight: 300, // Adjust height as needed
+        paddingHorizontal: 5,
     },
     relationshipManagerCard: {
         flexDirection: 'column',
@@ -1021,7 +1019,8 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         borderWidth: 1,
         borderColor: '#FFD54F',
-        alignSelf: 'center'
+        alignSelf: 'center',
+        width: '100%', // Corrected: Set a fixed width to prevent overflow
     },
     rmGroupName: {
         fontSize: 15,
@@ -1032,6 +1031,7 @@ const styles = StyleSheet.create({
     managerDetailsRow: {
         flexDirection: 'row', // Align manager name, phone number, and icon horizontally
         alignItems: 'center',
+        flexWrap: 'wrap', // Corrected: Added flexWrap to handle long text
     },
     rmManagerName: {
         fontSize: 14,
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
     sideMenuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 15,
+        paddingVertical: 10,
     },
     sideMenuIcon: {
         marginRight: 20,
