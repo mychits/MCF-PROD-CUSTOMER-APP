@@ -175,7 +175,7 @@ const RegisterOtpVerify = ({ route }) => {
         otp: fullOtp,
       };
       // Endpoint updated as per previous turn's request
-      const verifyApiEndpoint = `${url}/user/verify-register-otp`; //
+      const verifyApiEndpoint = `${url}/user/verify-register-otp`;
       console.log("Attempting to verify OTP to:", verifyApiEndpoint);
       console.log("Verifying OTP payload:", otpVerificationPayload);
 
@@ -188,45 +188,56 @@ const RegisterOtpVerify = ({ route }) => {
       const contentType = response.headers.get("content-type");
       if (response.ok && contentType && contentType.includes("application/json")) {
         const data = await response.json();
-        console.log("OTP verification success response:", data);
-        showAppToast(data.message || "OTP Verified Successfully!");
-        const registrationPayload = {
-          full_name: fullName,
-          phone_number: mobileNumber,
-          password: password,
-          track_source: "mobile",
-        };
-        const signupApiEndpoint = `${url}/user/signup-user`; //
-        console.log("Attempting to sign up user to:", signupApiEndpoint);
-        console.log("Registering user payload:", registrationPayload);
 
-        const registerResponse = await fetch(signupApiEndpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(registrationPayload),
-        });
+        // New logic to check for success/failure
+        if (data.success) { // Assuming the server sends { success: true, ... } for a correct OTP
+            console.log("OTP verification success response:", data);
+            showAppToast("OTP Verified Successfully!");
 
-        const registerContentType = registerResponse.headers.get("content-type");
-        if (registerResponse.ok && registerContentType && registerContentType.includes("application/json")) {
-          const registerData = await registerResponse.json();
-          showAppToast("Registration Successful!");
-          setTimeout(() => {
-            setAppUser((prev) => ({ ...prev, userId: registerData.user?._id }));
-            navigation.navigate("BottomTab", { userId: registerData.user?._id });
-          }, 2000);
+            const registrationPayload = {
+              full_name: fullName,
+              phone_number: mobileNumber,
+              password: password,
+              track_source: "mobile",
+            };
+            const signupApiEndpoint = `${url}/user/signup-user`;
+            console.log("Attempting to sign up user to:", signupApiEndpoint);
+            console.log("Registering user payload:", registrationPayload);
+
+            const registerResponse = await fetch(signupApiEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(registrationPayload),
+            });
+
+            const registerContentType = registerResponse.headers.get("content-type");
+            if (registerResponse.ok && registerContentType && registerContentType.includes("application/json")) {
+              const registerData = await registerResponse.json();
+              showAppToast("Registration Successful!");
+              setTimeout(() => {
+                setAppUser((prev) => ({ ...prev, userId: registerData.user?._id }));
+                navigation.navigate("BottomTab", { userId: registerData.user?._id });
+              }, 2000);
+            } else {
+              let registerErrorMessage = "Registration failed. Please try again.";
+              if (registerContentType && registerContentType.includes("application/json")) {
+                const errorData = await registerResponse.json();
+                registerErrorMessage = errorData.message || registerErrorMessage;
+                console.error("Registration error (JSON response):", errorData);
+              } else {
+                const errorText = await registerResponse.text();
+                console.error("Registration error (non-JSON response):", registerResponse.status, errorText);
+                registerErrorMessage = `Server Error (${registerResponse.status}) during registration: ${errorText.substring(0, 100)}...`;
+              }
+              showAppToast(registerErrorMessage);
+            }
         } else {
-          let registerErrorMessage = "Registration failed. Please try again.";
-          if (registerContentType && registerContentType.includes("application/json")) {
-            const errorData = await registerResponse.json();
-            registerErrorMessage = errorData.message || registerErrorMessage;
-            console.error("Registration error (JSON response):", errorData);
-          } else {
-            const errorText = await registerResponse.text();
-            console.error("Registration error (non-JSON response):", registerResponse.status, errorText);
-            registerErrorMessage = `Server Error (${registerResponse.status}) during registration: ${errorText.substring(0, 100)}...`;
-          }
-          showAppToast(registerErrorMessage);
+          // New logic for when OTP is incorrect (success: false)
+          showAppToast(data.message || "OTP is incorrect. Please try again.");
+          console.error("OTP verification error:", data);
         }
+        
+
       } else {
         let errorMessage = "OTP verification failed. Please try again.";
         if (contentType && contentType.includes("application/json")) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import {
     View,
     Image,
@@ -16,6 +16,8 @@ import {
     Platform,
     Modal,
     Alert,
+    Animated,
+    PanResponder,
 } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
@@ -47,6 +49,56 @@ const Home = ({ route, navigation }) => {
     const { isConnected, isInternetReachable } = useContext(NetworkContext);
     const [isHelpModalVisible, setHelpModalVisible] = useState(false);
     const [isSideMenuVisible, setSideMenuVisible] = useState(false);
+
+    // Animation and PanResponder setup
+    const slideAnim = useRef(new Animated.Value(-screenWidth)).current;
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: (evt, gestureState) => true,
+            onMoveShouldSetPanResponder: (evt, gestureState) => {
+                return isSideMenuVisible && gestureState.dx < -10;
+            },
+            onPanResponderMove: (evt, gestureState) => {
+                if (gestureState.dx < 0) {
+                    slideAnim.setValue(Math.max(gestureState.dx, -screenWidth));
+                }
+            },
+            onPanResponderRelease: (evt, gestureState) => {
+                if (gestureState.dx < -screenWidth / 2) {
+                    closeSideMenu();
+                } else {
+                    openSideMenu();
+                }
+            },
+        })
+    ).current;
+
+    const openSideMenu = () => {
+        if (!isConnected || !isInternetReachable) {
+            Toast.show({
+                type: 'error',
+                text1: 'Offline',
+                text2: 'Please connect to the internet to access menu options.',
+                position: 'bottom',
+                visibilityTime: 4000,
+            });
+            return;
+        }
+        setSideMenuVisible(true);
+        Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const closeSideMenu = () => {
+        Animated.timing(slideAnim, {
+            toValue: -screenWidth,
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => setSideMenuVisible(false));
+    };
 
     // Change state to an array to hold multiple relationship managers
     const [relationshipManagers, setRelationshipManagers] = useState([]);
@@ -82,6 +134,49 @@ const Home = ({ route, navigation }) => {
         }
     };
 
+    const handleRateApp = async () => {
+        // Replace 'com.mychits.app' and 'com.mychits' with your actual app bundle IDs
+        const appId = Platform.OS === 'ios' ? 'com.mychits.app' : 'com.mychits';
+        const appStoreLink = Platform.OS === 'ios'
+            ? `itms-apps://itunes.apple.com/app/id${appId}`
+            : `market://details?id=${appId}`;
+
+        if (!isConnected || !isInternetReachable) {
+            Toast.show({
+                type: 'error',
+                text1: 'Offline',
+                text2: 'Please connect to the internet to rate the app.',
+                position: 'bottom',
+                visibilityTime: 4000,
+            });
+            return;
+        }
+
+        try {
+            const supported = await Linking.canOpenURL(appStoreLink);
+            if (supported) {
+                await Linking.openURL(appStoreLink);
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Cannot Open Store',
+                    text2: 'Could not open app store. Please check your settings.',
+                    position: 'bottom',
+                    visibilityTime: 4000,
+                });
+            }
+        } catch (error) {
+            console.error('An error occurred opening app store:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An unexpected error occurred.',
+                position: 'bottom',
+                visibilityTime: 4000,
+            });
+        }
+    };
+
     const menuItems = [
         { title: "About Us", icon: "info", link: "About" },
         { title: "Privacy Policy", icon: "privacy-tip", link: "Privacy" },
@@ -91,10 +186,10 @@ const Home = ({ route, navigation }) => {
     ];
 
     const sideMenuItems = [
-       
+
         { title: "Chat with MyChit", icon: "chatbubbles-outline", onPress: handleWhatsAppPress },
         { title: "Get Help", icon: "help-circle-outline", link: "Help" },
-     
+
         { title: "Earn Rewards", icon: "gift-outline", link: "FeatureComingSoon", featureTitle: "Rewards" },
     ];
 
@@ -123,7 +218,7 @@ const Home = ({ route, navigation }) => {
             });
             return;
         }
-        setSideMenuVisible(true);
+        openSideMenu();
     };
 
     const handleCallUs = () => {
@@ -261,7 +356,7 @@ const Home = ({ route, navigation }) => {
     };
 
     const handleLogout = () => {
-        setSideMenuVisible(false);
+        closeSideMenu();
         navigation.dispatch(StackActions.replace('Login'));
     };
 
@@ -408,9 +503,12 @@ const Home = ({ route, navigation }) => {
         useCallback(() => {
             if (Platform.OS === 'android') {
                 const onBackPress = () => {
-                    if (isHelpModalVisible || isSideMenuVisible) {
+                    if (isHelpModalVisible) {
                         setHelpModalVisible(false);
-                        setSideMenuVisible(false);
+                        return true;
+                    }
+                    if (isSideMenuVisible) {
+                        closeSideMenu();
                         return true;
                     }
                     BackHandler.exitApp();
@@ -618,7 +716,7 @@ const Home = ({ route, navigation }) => {
                     <View style={styles.bottomContainer}>
                         <TouchableOpacity
                             style={styles.bottomGridItem}
-                            onPress={() => navigation.navigate('MyPassbook', { userId: userId})}
+                            onPress={() => navigation.navigate('MyPassbook', { userId: userId })}
                         >
                             <View style={styles.bottomIcon}>
                                 <MaterialIcons name="book" size={34} color="#053B90" />
@@ -627,16 +725,16 @@ const Home = ({ route, navigation }) => {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.bottomGridItem}
-                            onPress={() => navigation.navigate('MoreInformation', { userId: userId, featureTitle: 'More Information'})}
+                            onPress={() => navigation.navigate('MoreInformation', { userId: userId, featureTitle: 'More Information' })}
                         >
                             <View style={styles.bottomIcon}>
                                 <MaterialIcons name="more" size={34} color="#053B90" />
                             </View>
-                            <Text style={styles.bottomServiceTitle}>More Inform</Text>
+                            <Text style={styles.bottomServiceTitle}>More Information</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.bottomGridItem}
-                            onPress={() => navigation.navigate('Insurance', { userId: userId})}
+                            onPress={() => navigation.navigate('Insurance', { userId: userId })}
                         >
                             <View style={styles.bottomIcon}>
                                 <MaterialIcons name="health-and-safety" size={34} color="#053B90" />
@@ -645,7 +743,7 @@ const Home = ({ route, navigation }) => {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.bottomGridItem}
-                            onPress={() => navigation.navigate('Becomeanagent', { userId: userId})}
+                            onPress={() => navigation.navigate('Becomeanagent', { userId: userId })}
                         >
                             <View style={styles.bottomIcon}>
                                 <MaterialCommunityIcons name="account-tie" size={34} color="#053B90" />
@@ -802,21 +900,21 @@ const Home = ({ route, navigation }) => {
                 </TouchableOpacity>
             </Modal>
 
-            <Modal
-                animationType="fade"
-                transparent={true}
-                visible={isSideMenuVisible}
-                onRequestClose={() => {
-                    setSideMenuVisible(!isSideMenuVisible);
-                }}
-            >
+            {isSideMenuVisible && (
                 <TouchableOpacity
                     style={styles.modalOverlaySideMenu}
                     activeOpacity={1}
-                    onPressOut={() => setSideMenuVisible(false)} // This allows tapping outside to close
+                    onPress={closeSideMenu}
                 >
-                    <View style={styles.sideMenuContent} onStartShouldSetResponder={() => true}>
-                        <TouchableOpacity onPress={() => setSideMenuVisible(false)} style={styles.sideMenuCloseButton}>
+                    <Animated.View
+                        style={[
+                            styles.sideMenuContent,
+                            { transform: [{ translateX: slideAnim }] },
+                        ]}
+                        {...panResponder.panHandlers}
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <TouchableOpacity onPress={closeSideMenu} style={styles.sideMenuCloseButton}>
                             <MaterialIcons name="close" size={24} color="#585858" />
                         </TouchableOpacity>
                         <View style={styles.sideMenuHeader}>
@@ -829,7 +927,6 @@ const Home = ({ route, navigation }) => {
                                 <Text style={styles.sideMenuUserName}>{userData.full_name || 'User'}</Text>
                                 <Text style={styles.sideMenuOnTrackText}>You're on track, {userData.full_name.split(' ')[0] || 'User'}!</Text>
                             </View>
-                            {/* This is the updated section to display multiple managers in a single scrollable box */}
                             {relationshipManagers.length > 0 && (
                                 <View style={styles.rmListBox}>
                                     <ScrollView style={styles.rmListScrollView}>
@@ -858,7 +955,7 @@ const Home = ({ route, navigation }) => {
                                     key={index}
                                     style={styles.sideMenuItem}
                                     onPress={() => {
-                                        setSideMenuVisible(false);
+                                        closeSideMenu();
                                         if (item.onPress) {
                                             item.onPress();
                                         } else if (item.link) {
@@ -887,13 +984,20 @@ const Home = ({ route, navigation }) => {
                             </TouchableOpacity>
                         </ScrollView>
                         <View style={styles.sideMenuFooter}>
-                            <Text style={styles.sideMenuFooterText}>
-                                Love us? Rate the app! <Ionicons name="star" size={16} color="#F7C641" />
-                            </Text>
+                            <TouchableOpacity
+                                onPress={handleRateApp}
+                                disabled={!isConnected || !isInternetReachable}
+                            >
+                                <View style={styles.sideMenuFooter}>
+                                    <Text style={styles.sideMenuFooterText}>
+                                        Love us? Rate the app! <Ionicons name="star" size={16} color="#F7C641" />
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
                         </View>
-                    </View>
+                    </Animated.View>
                 </TouchableOpacity>
-            </Modal>
+            )}
             <Toast />
         </SafeAreaView>
     );
@@ -934,7 +1038,6 @@ const styles = StyleSheet.create({
     retryButton: { marginTop: 30, backgroundColor: '#053B90', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 8 },
     retryButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
     modalOverlay: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', backgroundColor: 'rgba(12,12,12,0.6)' },
-    modalOverlaySideMenu: { flex: 1, justifyContent: 'flex-start', alignItems: 'flex-start', backgroundColor: 'rgba(12,12,12,0.6)' },
     modalContent: { width: '97%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 25, paddingBottom: 0, shadowColor: 'transparent', elevation: 0 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
     modalTitle: { fontSize: 22, fontWeight: '800', color: '#1A237E' },
@@ -946,6 +1049,15 @@ const styles = StyleSheet.create({
     modalCallButton: { flexDirection: 'row', backgroundColor: '#4CAF50', paddingVertical: 14, paddingHorizontal: 26, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
     modalCallIcon: { marginRight: 12 },
     modalCallButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', letterSpacing: 0.5 },
+    modalOverlaySideMenu: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(12,12,12,0.6)',
+        zIndex: 10,
+    },
     sideMenuContent: {
         width: '80%',
         height: '100%',
@@ -1004,56 +1116,57 @@ const styles = StyleSheet.create({
         marginBottom: 5,
         marginHorizontal: 15,
         padding: 5,
-        width: '100%', // Set width to 100% to fill the container
+        width: '100%',
         alignSelf: 'center',
     },
     rmListScrollView: {
-        maxHeight: 300, // Adjust height as needed
+        maxHeight: 300,
         paddingHorizontal: 5,
     },
     relationshipManagerCard: {
         flexDirection: 'column',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
         borderRadius: 15,
-        marginBottom: 8,
+        marginBottom: 4,
         borderWidth: 1,
         borderColor: '#FFD54F',
         alignSelf: 'center',
-        width: '100%', // Corrected: Set a fixed width to prevent overflow
+        width: '100%',
     },
     rmGroupName: {
         fontSize: 15,
         fontWeight: 'bold',
         color: '#333',
-        marginBottom: 5, // Space between group name and manager details
+        marginBottom: -2,
     },
     managerDetailsRow: {
-        flexDirection: 'row', // Align manager name, phone number, and icon horizontally
+        flexDirection: 'row',
         alignItems: 'center',
-        flexWrap: 'wrap', // Corrected: Added flexWrap to handle long text
+        flexWrap: 'wrap',
     },
     rmManagerName: {
         fontSize: 14,
         color: '#555',
-        marginRight: 5, // Space between manager name and phone number
+        fontWeight: 800,
+        marginRight: 5,
     },
     rmPhoneNumberText: {
-        fontSize: 14,
+        fontSize: 13,
         color: '#555',
-        marginRight: 8, // Space between phone number and icon
+        marginRight: 8,
     },
     inlineCallButton: {
         backgroundColor: '#B3E5FC',
-        padding: 5, // Smaller padding for inline button
-        borderRadius: 15, // Makes it circular
+        padding: 5,
+        borderRadius: 15,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    callButton: { // This style is no longer directly used in the RM card but kept for other uses if any
+    callButton: {
         backgroundColor: '#B3E5FC',
         padding: 8,
-        borderRadius: 20, // Makes it a perfect circle
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -1081,15 +1194,21 @@ const styles = StyleSheet.create({
         marginVertical: 10,
     },
     sideMenuFooter: {
-        paddingVertical: 20,
+        paddingVertical: 12,
         alignItems: 'center',
         borderTopWidth: 1,
         borderTopColor: '#eee',
         backgroundColor: '#f9f9f9',
     },
+    menuItemsScrollView: {
+    flex: 1, // Add this line
+    paddingHorizontal: 20,
+    paddingTop: 10,
+},
     sideMenuFooterText: {
         fontSize: 14,
         color: '#666',
+        fontWeight: '600',
     },
     sideMenuVersionText: {
         fontSize: 12,

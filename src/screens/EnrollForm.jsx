@@ -216,14 +216,14 @@ const EnrollForm = ({ navigation, route }) => {
               group_id: groupId,
               user_id: userId,
               no_of_tickets: ticketsCountInt,
-              tickets: availableTickets[0],
+             // tickets: availableTickets[0],
               chit_asking_month: Number(cardsData?.group_duration) || 0,
             };
 
             console.log("Payload being sent:", payload);
 
             try {
-              await axios.post(`${url}/enroll/add-enroll`, payload, {
+              await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
                 headers: {
                   "Content-Type": "application/json",
                 },
@@ -239,7 +239,7 @@ const EnrollForm = ({ navigation, route }) => {
               });
               navigation.navigate("EnrollConfirm", {
                 group_name: cardsData?.group_name,
-                tickets: ticketsCountInt,
+               // tickets: ticketsCountInt,
                 userId: userId,
               });
             } catch (err) {
