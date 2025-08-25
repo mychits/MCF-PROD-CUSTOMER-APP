@@ -106,7 +106,11 @@ const Enrollment = ({ route, navigation }) => {
 
         setIsLoading(true);
         setError(null);
-        let endpoint = `${url}/group/get-group`; // Default for "AllGroups"
+        let endpoint = `${url}/group/get-group/`; // Default for "AllGroups"
+
+        if(selectedGroup === "AllGroups"){
+            endpoint = `${url}/group/get-group-by-filter/AllGroups`;
+        }
 
         if (selectedGroup === "NewGroups") {
             endpoint = `${url}/group/get-group-by-filter/NewGroups`;
