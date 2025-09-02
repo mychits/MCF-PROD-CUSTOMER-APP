@@ -30,15 +30,15 @@ import Toast from 'react-native-toast-message';
 import { useFocusEffect, StackActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ContextProvider } from '../context/UserProvider';
-
 import Group400 from '../../assets/Group400.png';
+
+const screenWidth = Dimensions.get('window').width;
 
 const Home = ({ route, navigation }) => {
 
     const [appUser, setAppUser] = useContext(ContextProvider);
     const userId = appUser.userId || {};
     const [activeIndex, setActiveIndex] = useState(0);
-    const screenWidth = Dimensions.get('window').width;
     const insets = useSafeAreaInsets();
     const [greeting, setGreeting] = useState('');
     const [userData, setUserData] = useState({
@@ -567,6 +567,87 @@ const Home = ({ route, navigation }) => {
         { icon: 'groups', text1: 'Chit Plans for', text2: 'everyone', iconColor: '#4CAF50' },
     ];
 
+    const customerReviews = [
+        {
+            id: '1',
+            name: 'Prakash Sharma',
+            rating: 5,
+            review: 'Great service! The app is easy to use, and I got my money on time. I recommend this fund.',
+        },
+        {
+            id: '2',
+            name: 'Geetha Kumari',
+            rating: 5,
+            review: 'Very transparent and trustworthy. The team is always available to help and the process is seamless. A great way to save and invest.',
+        },
+        {
+            id: '3',
+            name: 'Ravi Kumar',
+            rating: 4,
+            review: 'A good app for managing my investments. The interface is easy to understand. One small suggestion would be to add more payment options.',
+        },
+        {
+            id: '4',
+            name: 'Nisha Singh',
+            rating: 5,
+            review: 'The best chit fund experience I’ve had. Secure, simple, and transparent. The digital process saves a lot of time.',
+        },
+        {
+            id: '5',
+            name: 'Raja Reddy',
+            rating: 5,
+            review: 'I was not sure at first, but the good service and clear papers made me trust this app. I am very happy I chose it.',
+        },
+        {
+            id: '6',
+            name: 'Sangeeta Rao',
+            rating: 4,
+            review: 'The app is good and the people who help customers answer fast. It is a good way to save money and get it when you need it.',
+        },
+    ];
+
+    const ReviewsSection = () => {
+        const renderStarRating = (rating) => {
+            const stars = [];
+            for (let i = 1; i <= 5; i++) {
+                stars.push(
+                    <Ionicons
+                        key={i}
+                        name={i <= rating ? "star" : "star-outline"}
+                        size={16}
+                        color={i <= rating ? "#FFD700" : "#ccc"}
+                        style={styles.reviewStar}
+                    />
+                );
+            }
+            return <View style={styles.reviewRatingContainer}>{stars}</View>;
+        };
+
+        const renderReviewCard = ({ item }) => (
+            <View style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewName}>{item.name}</Text>
+                    {renderStarRating(item.rating)}
+                </View>
+                <Text style={styles.reviewText}>{item.review}</Text>
+            </View>
+        );
+
+        return (
+            <View style={styles.reviewsContainer}>
+                <Text style={styles.reviewTitle}>What Our Customers Say</Text>
+                <FlatList
+                    data={customerReviews}
+                    renderItem={renderReviewCard}
+                    keyExtractor={item => item.id}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 5 }}
+                />
+            </View>
+        );
+    };
+
     if (isLoadingUserData) {
         return (
             <SafeAreaView style={styles.loadingContainer}>
@@ -786,6 +867,7 @@ const Home = ({ route, navigation }) => {
                                 </Text>
                             </View>
                         </View>
+                        <ReviewsSection />
                         <View style={styles.advantagesBox}>
                             <Text style={styles.advantagesHeadline}>Advantages of MyChits</Text>
                             <View style={styles.advantagesGrid}>
@@ -1201,10 +1283,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#f9f9f9',
     },
     menuItemsScrollView: {
-    flex: 1, // Add this line
-    paddingHorizontal: 20,
-    paddingTop: 10,
-},
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 10,
+    },
     sideMenuFooterText: {
         fontSize: 14,
         color: '#666',
@@ -1304,6 +1386,50 @@ const styles = StyleSheet.create({
         fontSize: 9,
         textAlign: 'center',
         color: '#555',
+    },
+    reviewsContainer: {
+        marginTop: 20,
+        paddingVertical: 15,
+        width: '97%',
+        alignSelf: 'center',
+    },
+    reviewTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#053B90',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    reviewCard: {
+        backgroundColor: '#E3F2FD',
+        borderRadius: 15,
+        padding: 15,
+        marginHorizontal: 10,
+        width: 250,
+        borderWidth: 1,
+        borderColor: '#B3E5FC',
+    },
+    reviewHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    reviewName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#1A237E',
+    },
+    reviewRatingContainer: {
+        flexDirection: 'row',
+    },
+    reviewStar: {
+        marginHorizontal: 1,
+    },
+    reviewText: {
+        fontSize: 13,
+        lineHeight: 20,
+        color: '#455A64',
     },
 });
 

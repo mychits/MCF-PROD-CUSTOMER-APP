@@ -246,6 +246,8 @@ const Enrollment = ({ route, navigation }) => {
             return new Date(dateString).toLocaleDateString('en-GB', options);
         };
 
+        const groupType = getGroupType(card);
+
         return (
             <>
                 <View style={styles.cardHeader}>
@@ -269,6 +271,16 @@ const Enrollment = ({ route, navigation }) => {
                     <Text style={[styles.groupName, { color: isSelected ? colors.text : colors.darkText }]} numberOfLines={1} ellipsizeMode="tail">
                         <Text style={[styles.groupNameLabel, { color: colors.darkText }]}>Group Name:</Text> {card.group_name}
                     </Text>
+                    {groupType === 'new' && (
+                        <View style={styles.newLeadBadgeContainer}>
+                            <Text style={styles.newLeadBadgeText}>New</Text>
+                        </View>
+                    )}
+                    {groupType === 'ongoing' && (
+                        <View style={styles.ongoingBadgeContainer}>
+                            <Text style={styles.ongoingBadgeText}>Ongoing</Text>
+                        </View>
+                    )}
                 </View>
                 <View style={styles.cardDetailsRow}>
                     <View style={styles.detailItem}>
@@ -566,7 +578,8 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        marginBottom: 16
+        marginBottom: 16,
+        position: 'relative', // Added to position the badges
     },
     groupValueContainer: {
         flexDirection: 'row', // Arrange items in a row
@@ -677,6 +690,37 @@ const styles = StyleSheet.create({
     modalCloseButton: { backgroundColor: '#053B90', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginTop: 10 },
     modalCloseButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
+    // New styles for the badges
+    newLeadBadgeContainer: {
+        position: 'absolute',
+        top: -13,
+        right: -15,
+        backgroundColor: 'green',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderTopRightRadius: 15,
+        borderBottomLeftRadius: 15,
+    },
+    newLeadBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    ongoingBadgeContainer: {
+        position: 'absolute',
+        top: -13,
+        right: -15,
+        backgroundColor: 'orange',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderTopRightRadius: 15,
+        borderBottomLeftRadius: 15,
+    },
+    ongoingBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
 });
 
 export default Enrollment;
