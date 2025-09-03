@@ -27,6 +27,7 @@ import FeatureComingSoon from "../screens/FeatureComingSoon";
 import PayYourDues from "../screens/PayYourDues";
 import AuctionList from "../screens/AuctionList";
 import Enrollment from "../screens/Enrollment";
+import NewGroupsEnrolls from "../screens/NewGroupsEnrolls.jsx";
 
 import About from "../screens/About";
 import Privacy from "../screens/Privacy";
@@ -233,6 +234,12 @@ export default function ScreenNavigate() {
             <Stack.Screen
             name="RegisterOtpVerify"
             component={RegisterOtpVerify}
+            options={{ headerShown: false }}
+          />
+
+              <Stack.Screen
+            name="NewGroupsEnrolls"
+            component={NewGroupsEnrolls}
             options={{ headerShown: false }}
           />
        

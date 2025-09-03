@@ -533,7 +533,7 @@ const Home = ({ route, navigation }) => {
         { navigateTo: 'ProfileScreen', icon: 'event-note', title: 'My Profile', bgColor: '#E0F7FA', iconBg: '#006064', disabled: false },
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
         { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Introduce New Customers', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
-        { navigateTo: 'EnrollTab', screen: 'EnrollScreenMain', icon: 'how-to-reg', title: 'New Groups Enrolls', bgColor: '#EDE7F6', iconBg: '#5E35B1', filter: 'New Groups', disabled: false },
+        { navigateTo: 'NewGroupsEnrolls', screen: 'EnrollScreenMain', icon: 'how-to-reg', title: 'New Groups Enrolls', bgColor: '#EDE7F6', iconBg: '#5E35B1', filter: 'New Groups', disabled: false },
         { navigateTo: 'PayYourDues', icon: 'currency-rupee', title: 'Pay Your Dues', bgColor: '#FFEBEE', iconBg: '#B71C1C', disabled: false },
     ];
 
@@ -570,39 +570,115 @@ const Home = ({ route, navigation }) => {
     const customerReviews = [
         {
             id: '1',
-            name: 'Prakash Sharma',
+            name: 'Prakash ',
             rating: 5,
             review: 'Great service! The app is easy to use, and I got my money on time. I recommend this fund.',
+           
+            location: 'Bangalore'
         },
         {
             id: '2',
             name: 'Geetha Kumari',
-            rating: 5,
+            rating: 4,
             review: 'Very transparent and trustworthy. The team is always available to help and the process is seamless. A great way to save and invest.',
+           
+            location: 'Chamarajanagr'
         },
         {
             id: '3',
             name: 'Ravi Kumar',
             rating: 4,
             review: 'A good app for managing my investments. The interface is easy to understand. One small suggestion would be to add more payment options.',
+            
+            location: 'Bangalore'
         },
         {
             id: '4',
             name: 'Nisha Singh',
-            rating: 5,
+            rating: 4,
             review: 'The best chit fund experience I’ve had. Secure, simple, and transparent. The digital process saves a lot of time.',
+            
+            location: 'Davanagere'
         },
         {
             id: '5',
             name: 'Raja Reddy',
             rating: 5,
             review: 'I was not sure at first, but the good service and clear papers made me trust this app. I am very happy I chose it.',
+            
+            location: 'Mysure'
         },
         {
             id: '6',
             name: 'Sangeeta Rao',
             rating: 4,
             review: 'The app is good and the people who help customers answer fast. It is a good way to save money and get it when you need it.',
+           
+            location: 'Mandya'
+        },
+        {
+            id: '7',
+            name: 'Vikram Patel',
+            rating: 5,
+            review: 'The process of joining and managing my chit fund is so simple. Highly recommend MyChits to everyone looking for a reliable chit fund.',
+            
+            location: 'Bidar'
+        },
+        {
+            id: '8',
+            name: 'Anjali Desai',
+            rating: 5,
+            review: 'Excellent app! It’s simple, secure, and I can manage everything from my phone. The customer support is also very responsive and helpful.',
+           
+            location: 'Bangalore'
+        },
+        {
+            id: '9',
+            name: 'Mukesh Choudhary',
+            rating: 4,
+            review: 'A reliable and easy-to-use platform. The process for joining a chit and making payments is very straightforward. Highly satisfied with my experience.',
+        
+            location: 'Davanagere'
+        },
+        {
+            id: '10',
+            name: 'Priya Reddy',
+            rating: 5,
+            review: 'The best way to save money for my future goals. The entire process is transparent. I recommend this app to my friends and family.',
+          
+            location: 'Bangalore'
+        },
+        {
+            id: '11',
+            name: 'Suresh Kumar',
+            rating: 5,
+            review: 'I love how easy it is to track my chit progress and auction status. Great job!',
+            
+            location: 'Mandya'
+        },
+        {
+            id: '12',
+            name: 'Kavita Singh',
+            rating: 4,
+            review: 'A very good overall.',
+            
+            location: 'Bangalore'
+        },
+        {
+            id: '13',
+            name: 'Rajesh Nair',
+            rating: 5,
+            review: 'Superb platform for my savings needs. The app is fast and reliable, and I never faced any issues. The team is also very supportive.',
+           
+            location: 'Mysore'
+        },
+        {
+            id: '14',
+            name: 'Sneha Sharma',
+            rating: 3,
+            review: ' I appreciate the transparency and the constant support from the team.',
+            
+            location: 'Bangalore'
         },
     ];
 
@@ -614,8 +690,8 @@ const Home = ({ route, navigation }) => {
                     <Ionicons
                         key={i}
                         name={i <= rating ? "star" : "star-outline"}
-                        size={16}
-                        color={i <= rating ? "#FFD700" : "#ccc"}
+                        size={24}
+                        color={i <= rating ? "#FFA500" : "#ccc"}
                         style={styles.reviewStar}
                     />
                 );
@@ -627,6 +703,7 @@ const Home = ({ route, navigation }) => {
             <View style={styles.reviewCard}>
                 <View style={styles.reviewHeader}>
                     <Text style={styles.reviewName}>{item.name}</Text>
+                    <Text style={styles.reviewLocation}>{item.location}</Text>
                     {renderStarRating(item.rating)}
                 </View>
                 <Text style={styles.reviewText}>{item.review}</Text>
@@ -1410,15 +1487,21 @@ const styles = StyleSheet.create({
         borderColor: '#B3E5FC',
     },
     reviewHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        flexDirection: 'column',
         alignItems: 'center',
         marginBottom: 10,
     },
     reviewName: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: 'bold',
         color: '#1A237E',
+        textAlign: 'center',
+    },
+    reviewLocation: {
+        fontSize: 13,
+        color: '#555',
+        marginBottom: 5,
+        textAlign: 'center',
     },
     reviewRatingContainer: {
         flexDirection: 'row',
@@ -1430,6 +1513,8 @@ const styles = StyleSheet.create({
         fontSize: 13,
         lineHeight: 20,
         color: '#455A64',
+        fontWeight:600,
+        fontStyle: 'italic'
     },
 });
 
