@@ -606,7 +606,7 @@ const Home = ({ route, navigation }) => {
             rating: 5,
             review: 'I was not sure at first, but the good service and clear papers made me trust this app. I am very happy I chose it.',
 
-            location: 'Mysure'
+            location: 'Mysore'
         },
         {
             id: '6',
