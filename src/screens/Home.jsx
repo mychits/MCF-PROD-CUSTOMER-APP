@@ -573,7 +573,7 @@ const Home = ({ route, navigation }) => {
             name: 'Prakash ',
             rating: 5,
             review: 'Great service! The app is easy to use, and I got my money on time. I recommend this fund.',
-           
+
             location: 'Bangalore'
         },
         {
@@ -581,7 +581,7 @@ const Home = ({ route, navigation }) => {
             name: 'Geetha Kumari',
             rating: 4,
             review: 'Very transparent and trustworthy. The team is always available to help and the process is seamless. A great way to save and invest.',
-           
+
             location: 'Chamarajanagr'
         },
         {
@@ -589,7 +589,7 @@ const Home = ({ route, navigation }) => {
             name: 'Ravi Kumar',
             rating: 4,
             review: 'A good app for managing my investments. The interface is easy to understand. One small suggestion would be to add more payment options.',
-            
+
             location: 'Bangalore'
         },
         {
@@ -597,7 +597,7 @@ const Home = ({ route, navigation }) => {
             name: 'Nisha Singh',
             rating: 4,
             review: 'The best chit fund experience I’ve had. Secure, simple, and transparent. The digital process saves a lot of time.',
-            
+
             location: 'Davanagere'
         },
         {
@@ -605,7 +605,7 @@ const Home = ({ route, navigation }) => {
             name: 'Raja Reddy',
             rating: 5,
             review: 'I was not sure at first, but the good service and clear papers made me trust this app. I am very happy I chose it.',
-            
+
             location: 'Mysure'
         },
         {
@@ -613,7 +613,7 @@ const Home = ({ route, navigation }) => {
             name: 'Sangeeta Rao',
             rating: 4,
             review: 'The app is good and the people who help customers answer fast. It is a good way to save money and get it when you need it.',
-           
+
             location: 'Mandya'
         },
         {
@@ -621,7 +621,7 @@ const Home = ({ route, navigation }) => {
             name: 'Vikram Patel',
             rating: 5,
             review: 'The process of joining and managing my chit fund is so simple. Highly recommend MyChits to everyone looking for a reliable chit fund.',
-            
+
             location: 'Bidar'
         },
         {
@@ -629,7 +629,7 @@ const Home = ({ route, navigation }) => {
             name: 'Anjali Desai',
             rating: 5,
             review: 'Excellent app! It’s simple, secure, and I can manage everything from my phone. The customer support is also very responsive and helpful.',
-           
+
             location: 'Bangalore'
         },
         {
@@ -637,7 +637,7 @@ const Home = ({ route, navigation }) => {
             name: 'Mukesh Choudhary',
             rating: 4,
             review: 'A reliable and easy-to-use platform. The process for joining a chit and making payments is very straightforward. Highly satisfied with my experience.',
-        
+
             location: 'Davanagere'
         },
         {
@@ -645,7 +645,7 @@ const Home = ({ route, navigation }) => {
             name: 'Priya Reddy',
             rating: 5,
             review: 'The best way to save money for my future goals. The entire process is transparent. I recommend this app to my friends and family.',
-          
+
             location: 'Bangalore'
         },
         {
@@ -653,7 +653,7 @@ const Home = ({ route, navigation }) => {
             name: 'Suresh Kumar',
             rating: 5,
             review: 'I love how easy it is to track my chit progress and auction status. Great job!',
-            
+
             location: 'Mandya'
         },
         {
@@ -661,7 +661,7 @@ const Home = ({ route, navigation }) => {
             name: 'Kavita Singh',
             rating: 4,
             review: 'A very good overall.',
-            
+
             location: 'Bangalore'
         },
         {
@@ -669,7 +669,7 @@ const Home = ({ route, navigation }) => {
             name: 'Rajesh Nair',
             rating: 5,
             review: 'Superb platform for my savings needs. The app is fast and reliable, and I never faced any issues. The team is also very supportive.',
-           
+
             location: 'Mysore'
         },
         {
@@ -677,7 +677,7 @@ const Home = ({ route, navigation }) => {
             name: 'Sneha Sharma',
             rating: 3,
             review: ' I appreciate the transparency and the constant support from the team.',
-            
+
             location: 'Bangalore'
         },
     ];
@@ -1076,19 +1076,29 @@ const Home = ({ route, navigation }) => {
                         <TouchableOpacity onPress={closeSideMenu} style={styles.sideMenuCloseButton}>
                             <MaterialIcons name="close" size={24} color="#585858" />
                         </TouchableOpacity>
-                        <View style={styles.sideMenuHeader}>
-                            <Image
-                                source={Group400}
-                                style={styles.headerImage}
-                                resizeMode="contain"
-                            />
-                            <View style={styles.headerTextContainer}>
-                                <Text style={styles.sideMenuUserName}>{userData.full_name || 'User'}</Text>
-                                <Text style={styles.sideMenuOnTrackText}>You're on track, {userData.full_name.split(' ')[0] || 'User'}!</Text>
-                            </View>
-                            {relationshipManagers.length > 0 && (
-                                <View style={styles.rmListBox}>
-                                    <ScrollView style={styles.rmListScrollView}>
+
+                        {/* 🔽 Wrap content in a ScrollView */}
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={styles.sideMenuScrollContent}
+                        >
+                            {/* Header */}
+                            <View style={styles.sideMenuHeader}>
+                                <Image
+                                    source={Group400}
+                                    style={styles.headerImage}
+                                    resizeMode="contain"
+                                />
+                                <View style={styles.headerTextContainer}>
+                                    <Text style={styles.sideMenuUserName}>{userData.full_name || 'User'}</Text>
+                                    <Text style={styles.sideMenuOnTrackText}>
+                                        You're on track, {userData.full_name.split(' ')[0] || 'User'}!
+                                    </Text>
+                                </View>
+
+                                {/* RM list */}
+                                {relationshipManagers.length > 0 && (
+                                    <View style={styles.rmListBox}>
                                         {relationshipManagers.map((rm, index) => (
                                             <View key={index} style={styles.relationshipManagerCard}>
                                                 <Text style={styles.rmGroupName}>{rm.groupName}</Text>
@@ -1104,11 +1114,11 @@ const Home = ({ route, navigation }) => {
                                                 </View>
                                             </View>
                                         ))}
-                                    </ScrollView>
-                                </View>
-                            )}
-                        </View>
-                        <ScrollView showsVerticalScrollIndicator={false} style={styles.menuItemsScrollView}>
+                                    </View>
+                                )}
+                            </View>
+
+                            {/* Menu items */}
                             {sideMenuItems.map((item, index) => (
                                 <TouchableOpacity
                                     key={index}
@@ -1121,7 +1131,7 @@ const Home = ({ route, navigation }) => {
                                             if (item.featureTitle) {
                                                 navigation.navigate(item.link, {
                                                     userId: userId,
-                                                    featureTitle: item.featureTitle
+                                                    featureTitle: item.featureTitle,
                                                 });
                                             } else {
                                                 navigation.navigate(item.link);
@@ -1133,30 +1143,29 @@ const Home = ({ route, navigation }) => {
                                     <Text style={styles.sideMenuText}>{item.title}</Text>
                                 </TouchableOpacity>
                             ))}
+
                             <View style={styles.sideMenuSeparator} />
-                            <TouchableOpacity
-                                style={styles.sideMenuItem}
-                                onPress={handleLogout}
-                            >
+
+                            {/* Sign Out */}
+                            <TouchableOpacity style={styles.sideMenuItem} onPress={handleLogout}>
                                 <Ionicons name="log-out-outline" size={24} color="red" style={styles.sideMenuIcon} />
                                 <Text style={[styles.sideMenuText, { color: 'red' }]}>Sign Out</Text>
                             </TouchableOpacity>
-                        </ScrollView>
-                        <View style={styles.sideMenuFooter}>
-                            <TouchableOpacity
-                                onPress={handleRateApp}
-                                disabled={!isConnected || !isInternetReachable}
-                            >
-                                <View style={styles.sideMenuFooter}>
+
+                            {/* Footer */}
+                            <View style={styles.sideMenuFooter}>
+                                <TouchableOpacity onPress={handleRateApp} disabled={!isConnected || !isInternetReachable}>
                                     <Text style={styles.sideMenuFooterText}>
                                         Love us? Rate the app! <Ionicons name="star" size={16} color="#F7C641" />
                                     </Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
                     </Animated.View>
                 </TouchableOpacity>
             )}
+
+
             <Toast />
         </SafeAreaView>
     );
@@ -1187,6 +1196,9 @@ const styles = StyleSheet.create({
     bottomGridItem: { width: '22%', alignItems: 'center', marginBottom: 10, paddingHorizontal: 8, justifyContent: 'center', borderWidth: 1, borderRadius: 12, borderColor: '#ddd' },
     bottomIcon: { justifyContent: 'center', alignItems: 'center', marginBottom: 0 },
     bottomServiceTitle: { marginTop: -2, fontSize: 10, color: '#000', textAlign: 'center', fontWeight: '600' },
+    sideMenuScrollContent: {
+        paddingBottom: 30, // avoid cut-off at bottom
+    },
     welcomeText: { fontSize: 20, fontWeight: 'bold', color: '#053B90', marginBottom: 0, textAlign: 'left', marginLeft: -15 },
     userNameText: { fontSize: 19, fontWeight: '600', color: '#053B90', textAlign: 'left', marginTop: 4 },
     errorTextSmall: { fontSize: 12, color: 'red', textAlign: 'center' },
@@ -1232,8 +1244,16 @@ const styles = StyleSheet.create({
     sideMenuCloseButton: {
         position: 'absolute',
         right: 20,
-        top: 20,
+        top: 50,
         zIndex: 1,
+        backgroundColor: '#c9d2daff',   // white background
+        borderRadius: 20,          // makes it circular
+        padding: 8,                // space around the icon
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.5,
+        elevation: 5,              // shadow for Android
     },
     sideMenuHeader: {
         width: '100%',
@@ -1254,17 +1274,20 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         alignSelf: 'center',
-        marginBottom: 10,
+        marginTop: 50, // increase value to move further down
     },
     sideMenuUserName: {
-        fontSize: 22,
+        fontSize: 17,
         fontWeight: 'bold',
         color: '#333',
+        marginTop: 10,
+        textAlign: 'center', // centers text
     },
     sideMenuOnTrackText: {
         fontSize: 14,
         color: '#666',
         marginTop: 5,
+        textAlign: 'center', // centers text
     },
     rmListBox: {
         backgroundColor: '#FFECB3',
@@ -1341,6 +1364,7 @@ const styles = StyleSheet.create({
     },
     sideMenuIcon: {
         marginRight: 20,
+        marginLeft: 20, 
     },
     sideMenuText: {
         fontSize: 16,
@@ -1513,7 +1537,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         lineHeight: 20,
         color: '#455A64',
-        fontWeight:600,
+        fontWeight: 600,
         fontStyle: 'italic'
     },
 });
