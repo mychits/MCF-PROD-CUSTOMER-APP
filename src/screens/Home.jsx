@@ -19,8 +19,6 @@ import {
     Animated,
     PanResponder,
 } from 'react-native';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import Feather from '@expo/vector-icons/Feather';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
@@ -31,6 +29,7 @@ import { useFocusEffect, StackActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ContextProvider } from '../context/UserProvider';
 import Group400 from '../../assets/Group400.png';
+import AnalogClock from '../Clock/AnalogClock'; // Corrected import path
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -186,10 +185,8 @@ const Home = ({ route, navigation }) => {
     ];
 
     const sideMenuItems = [
-
         { title: "Chat with MyChit", icon: "chatbubbles-outline", onPress: handleWhatsAppPress },
         { title: "Get Help", icon: "help-circle-outline", link: "Help" },
-
         { title: "Earn Rewards", icon: "gift-outline", link: "FeatureComingSoon", featureTitle: "Rewards" },
     ];
 
@@ -587,7 +584,7 @@ const Home = ({ route, navigation }) => {
         {
             id: '3',
             name: 'Ravi Kumar',
-            rating: 4,
+            rating: 5,
             review: 'A good app for managing my investments. The interface is easy to understand. One small suggestion would be to add more payment options.',
 
             location: 'Bangalore'
@@ -675,7 +672,7 @@ const Home = ({ route, navigation }) => {
         {
             id: '14',
             name: 'Sneha Sharma',
-            rating: 3,
+            rating: 4,
             review: ' I appreciate the transparency and the constant support from the team.',
 
             location: 'Bangalore'
@@ -783,12 +780,19 @@ const Home = ({ route, navigation }) => {
                         <Text style={styles.errorTextSmall}>{userDataError}</Text>
                     ) : (
                         <>
-                            <Text style={styles.welcomeText}>
-                                {greeting}!
-                            </Text>
-                            <Text style={styles.userNameText}>
-                                {userData.full_name || 'User'}
-                            </Text>
+                            <View style={styles.welcomeContainer}>
+                                <View>
+                                    <Text style={styles.welcomeText}>
+                                        {greeting}!
+                                    </Text>
+                                    <Text style={styles.userNameText}>
+                                        {userData.full_name || 'User'}
+                                    </Text>
+                                </View>
+                                <View style={styles.clockContainer}>
+                                    <AnalogClock />
+                                </View>
+                            </View>
                         </>
                     )}
                 </View>
@@ -796,8 +800,9 @@ const Home = ({ route, navigation }) => {
                     <Text style={styles.servicesTitle}>Services</Text>
                     <FlatList
                         data={services}
-                        renderItem={({ item }) => (
+                        renderItem={({ item, index }) => (
                             <TouchableOpacity
+                                key={index}
                                 onPress={() => {
                                     if (!item.disabled) {
                                         if (item.screen) {
@@ -832,6 +837,7 @@ const Home = ({ route, navigation }) => {
                         keyExtractor={(item, index) => index.toString()}
                         numColumns={3}
                         scrollEnabled={false}
+                        columnWrapperStyle={styles.row}
                     />
                     <View style={styles.blueContainer}>
                         <TouchableOpacity
@@ -1027,7 +1033,7 @@ const Home = ({ route, navigation }) => {
                         <ScrollView showsVerticalScrollIndicator={false}>
                             {menuItems.map((item, index) => (
                                 <TouchableOpacity
-                                    key={index}
+                                    key={`help-item-${index}`}
                                     style={styles.modalMenuItem}
                                     onPress={() => handleMenuItemPress(item)}
                                 >
@@ -1121,7 +1127,7 @@ const Home = ({ route, navigation }) => {
                             {/* Menu items */}
                             {sideMenuItems.map((item, index) => (
                                 <TouchableOpacity
-                                    key={index}
+                                    key={`side-menu-item-${index}`}
                                     style={styles.sideMenuItem}
                                     onPress={() => {
                                         closeSideMenu();
@@ -1182,7 +1188,9 @@ const styles = StyleSheet.create({
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
     mainScrollView: { flex: 1 },
     contentContainer: { overflow: 'hidden', paddingBottom: 85 },
-    skyBlueSection: { backgroundColor: '#B3E5FC', borderRadius: 15, marginTop: 5, width: '92%', height: 100, alignSelf: 'center', padding: 30, paddingLeft: 50, justifyContent: 'center', alignItems: 'flex-start' },
+    skyBlueSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#B3E5FC', borderRadius: 15, marginTop: 5, width: '92%', height: 100, alignSelf: 'center', padding: 15 },
+    welcomeContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1, },
+    clockContainer: { width: 60, height: 60 },
     servicesSection: { borderColor: '#053B90', borderWidth: 5, marginTop: 25, backgroundColor: '#FFFFFF', borderRadius: 15, paddingTop: 30, width: '97%', alignSelf: 'center', alignItems: 'center', paddingBottom: 13, borderColor: '#053B90' },
     servicesTitle: { position: 'absolute', top: -20, alignSelf: 'center', backgroundColor: '#B3E5FC', width: 230, height: 40, borderRadius: 11, textAlign: 'center', textAlignVertical: 'center', color: '#053B90', fontWeight: '900', fontSize: 20, lineHeight: 22, textTransform: 'capitalize', borderWidth: 1, borderColor: '#053B90' },
     gridItemBox: { width: '27%', alignItems: 'center', marginBottom: 8, paddingVertical: 8, paddingHorizontal: 5, borderRadius: 12, marginHorizontal: 5.8, marginLeft: 14, borderWidth: 3, borderColor: '#ddd' },
@@ -1199,8 +1207,8 @@ const styles = StyleSheet.create({
     sideMenuScrollContent: {
         paddingBottom: 30, // avoid cut-off at bottom
     },
-    welcomeText: { fontSize: 20, fontWeight: 'bold', color: '#053B90', marginBottom: 0, textAlign: 'left', marginLeft: -15 },
-    userNameText: { fontSize: 19, fontWeight: '600', color: '#053B90', textAlign: 'left', marginTop: 4 },
+    welcomeText: { fontSize: 20, fontWeight: 'bold', color: '#053B90', marginBottom: 0, textAlign: 'left', marginLeft: 15 },
+    userNameText: { fontSize: 19, fontWeight: '600', color: '#053B90', textAlign: 'left', marginTop: 4, marginLeft: 15 },
     errorTextSmall: { fontSize: 12, color: 'red', textAlign: 'center' },
     offlineContainer: { flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
     offlineContent: { justifyContent: 'center', alignItems: 'center', padding: 20 },
@@ -1364,7 +1372,7 @@ const styles = StyleSheet.create({
     },
     sideMenuIcon: {
         marginRight: 20,
-        marginLeft: 20, 
+        marginLeft: 20,
     },
     sideMenuText: {
         fontSize: 16,
@@ -1382,11 +1390,6 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#eee',
         backgroundColor: '#f9f9f9',
-    },
-    menuItemsScrollView: {
-        flex: 1,
-        paddingHorizontal: 20,
-        paddingTop: 10,
     },
     sideMenuFooterText: {
         fontSize: 14,
@@ -1539,6 +1542,11 @@ const styles = StyleSheet.create({
         color: '#455A64',
         fontWeight: 600,
         fontStyle: 'italic'
+    },
+    // Fix for FlatList item wrapping
+    row: {
+        justifyContent: 'space-around',
+        paddingHorizontal: 5,
     },
 });
 
