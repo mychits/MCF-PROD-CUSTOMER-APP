@@ -28,6 +28,8 @@ import PayYourDues from "../screens/PayYourDues";
 import AuctionList from "../screens/AuctionList";
 import Enrollment from "../screens/Enrollment";
 import NewGroupsEnrolls from "../screens/NewGroupsEnrolls.jsx";
+import OffersScreen from "../screens/OffersScreen.jsx";``
+import RewardsScreen from "../screens/RewardsScreen.jsx";
 
 import About from "../screens/About";
 import Privacy from "../screens/Privacy";
@@ -174,6 +176,16 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="FlashScreen"
             component={FlashScreen}
+            options={{ headerShown: false }}
+          />
+            <Stack.Screen
+            name="OffersScreen"
+            component={OffersScreen}
+            options={{ headerShown: false }}
+          />
+            <Stack.Screen
+            name="RewardsScreen"
+            component={RewardsScreen}
             options={{ headerShown: false }}
           />
           <Stack.Screen

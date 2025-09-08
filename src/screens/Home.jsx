@@ -29,7 +29,7 @@ import { useFocusEffect, StackActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ContextProvider } from '../context/UserProvider';
 import Group400 from '../../assets/Group400.png';
-import AnalogClock from '../Clock/AnalogClock'; // Corrected import path
+
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -789,9 +789,7 @@ const Home = ({ route, navigation }) => {
                                         {userData.full_name || 'User'}
                                     </Text>
                                 </View>
-                                <View style={styles.clockContainer}>
-                                    <AnalogClock />
-                                </View>
+
                             </View>
                         </>
                     )}
@@ -842,7 +840,7 @@ const Home = ({ route, navigation }) => {
                     <View style={styles.blueContainer}>
                         <TouchableOpacity
                             style={styles.blueGridItem}
-                            onPress={() => navigation.navigate('FeatureComingSoon', { userId: userId, featureTitle: 'Rewards' })}
+                            onPress={() => navigation.navigate('RewardsScreen', { userId: userId, featureTitle: 'Rewards' })}
                         >
                             <View style={styles.iconCircleBlue}>
                                 <MaterialIcons name="emoji-events" size={30} color="#053B90" />
@@ -851,7 +849,7 @@ const Home = ({ route, navigation }) => {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.blueGridItem}
-                            onPress={() => navigation.navigate('FeatureComingSoon', { userId: userId, featureTitle: 'Offers' })}
+                            onPress={() => navigation.navigate('OffersScreen', { userId: userId, featureTitle: 'Offers' })}
                         >
                             <View style={styles.iconCircleBlue}>
                                 <MaterialIcons name="local-offer" size={30} color="#053B90" />
@@ -1190,7 +1188,7 @@ const styles = StyleSheet.create({
     contentContainer: { overflow: 'hidden', paddingBottom: 85 },
     skyBlueSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#B3E5FC', borderRadius: 15, marginTop: 5, width: '92%', height: 100, alignSelf: 'center', padding: 15 },
     welcomeContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1, },
-    clockContainer: { width: 60, height: 60 },
+
     servicesSection: { borderColor: '#053B90', borderWidth: 5, marginTop: 25, backgroundColor: '#FFFFFF', borderRadius: 15, paddingTop: 30, width: '97%', alignSelf: 'center', alignItems: 'center', paddingBottom: 13, borderColor: '#053B90' },
     servicesTitle: { position: 'absolute', top: -20, alignSelf: 'center', backgroundColor: '#B3E5FC', width: 230, height: 40, borderRadius: 11, textAlign: 'center', textAlignVertical: 'center', color: '#053B90', fontWeight: '900', fontSize: 20, lineHeight: 22, textTransform: 'capitalize', borderWidth: 1, borderColor: '#053B90' },
     gridItemBox: { width: '27%', alignItems: 'center', marginBottom: 8, paddingVertical: 8, paddingHorizontal: 5, borderRadius: 12, marginHorizontal: 5.8, marginLeft: 14, borderWidth: 3, borderColor: '#ddd' },

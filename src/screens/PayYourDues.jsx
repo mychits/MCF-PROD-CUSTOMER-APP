@@ -11,6 +11,8 @@ import {
   Platform,
   Vibration,
   Linking,
+  TextInput,
+  Alert,
 } from "react-native";
 import url from "../data/url";
 import axios from "axios";
@@ -43,6 +45,7 @@ const Colors = {
   shadowColor: "rgba(0,0,0,0.08)",
   borderColor: "#ECEFF1",
   groupNameColor: '#1976D2',
+  logoBackgroundColor: "#FFFFFF",
 };
 
 const formatNumberIndianStyle = (num) => {
@@ -81,7 +84,6 @@ const PayYourDues = ({ navigation, route }) => {
   const [Totalprofit, setTotalProfit] = useState(0);
   const [groupOverviews, setGroupOverviews] = useState({});
 
-  // New state variables for the modal
   const [isModalVisible, setModalVisible] = useState(false);
   const [modalDetails, setModalDetails] = useState({
     groupId: null,
@@ -89,6 +91,7 @@ const PayYourDues = ({ navigation, route }) => {
     amount: null,
     groupName: ""
   });
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   const fetchTicketsData = useCallback(async (currentUserId) => {
     if (!currentUserId) {
@@ -252,6 +255,7 @@ const PayYourDues = ({ navigation, route }) => {
       amount,
       groupName,
     });
+    setPaymentAmount('');
     setModalVisible(true);
   };
 
@@ -259,23 +263,37 @@ const PayYourDues = ({ navigation, route }) => {
     setModalVisible(false);
   };
 
-  const handleShareViaWhatsApp = () => {
-    handleModalClose();
-    const phoneNumber = '+919483900777';
-    const message = `Payment Due for Group: ${modalDetails.groupName} (Ticket: ${modalDetails.ticket})\nAmount: ₹ ${formatNumberIndianStyle(modalDetails.amount)}\n\nTo pay your dues, please contact our support team.`;
-    Linking.openURL(`whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`).catch(err =>
-      console.error("An error occurred while opening WhatsApp", err)
+  const handlePaymentInitiate = () => {
+    Vibration.vibrate(50);
+    const amountToPay = parseFloat(paymentAmount || modalDetails.amount);
+
+    if (amountToPay > 20000) {
+      Alert.alert("Limit Reached", "You can pay up to ₹20,000 at a time.");
+      return;
+    }
+    
+    if (isNaN(amountToPay) || amountToPay < 100) {
+      Alert.alert("Invalid Amount", "Please enter a valid amount. Minimum amount is ₹100.");
+      return;
+    }
+
+    Alert.alert(
+      "Payment Initiated",
+      `A payment of ₹${formatNumberIndianStyle(amountToPay)} for ${modalDetails.groupName} is being processed.`,
+      [{ text: "OK", onPress: () => setModalVisible(false) }]
     );
   };
-
-  const handleShareViaEmail = () => {
-    handleModalClose();
-    const recipientEmail = 'info.mychits@gmail.com';
-    const subject = `Payment Dues for Group: ${modalDetails.groupName}`;
-    const body = `Dear User,\n\nThis is a friendly reminder that a payment is due for your group ticket.\n\nGroup Name: ${modalDetails.groupName}\nTicket: ${modalDetails.ticket}\nAmount Due: ₹ ${formatNumberIndianStyle(modalDetails.amount)}\n\nTo complete your payment, please reply to this email or contact our support team for assistance.\n\nThank you,\nThe Team`;
-    Linking.openURL(`mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`).catch(err =>
-      console.error("An error occurred while opening email client", err)
-    );
+  
+  const handleAmountChange = (text) => {
+    if (text.startsWith('0')) {
+      return;
+    }
+    const filteredText = text.replace(/[^0-9]/g, '');
+    if (parseFloat(filteredText) > 20000) {
+      Alert.alert("Limit Reached", "You can pay up to ₹20,000 at a time.");
+      return;
+    }
+    setPaymentAmount(filteredText);
   };
 
   return (
@@ -404,38 +422,52 @@ const PayYourDues = ({ navigation, route }) => {
           )}
         </View>
       </View>
-      {/* Payment Options Modal */}
+      {/* Payment Modal */}
       <Modal
         isVisible={isModalVisible}
         onBackdropPress={handleModalClose}
         style={styles.modal}
+        useNativeDriverForBackdrop={true}
       >
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Choose Payment Method</Text>
-          <Text style={styles.modalDescription}>
-            Select how you'd like to proceed with your payment for:
-          </Text>
-          <Text style={styles.modalInfo}>
-            <Text style={{ fontWeight: 'bold' }}>{modalDetails.groupName}</Text> (Ticket: {modalDetails.ticket})
-          </Text>
-          <Text style={styles.modalAmount}>Amount: ₹ {formatNumberIndianStyle(modalDetails.amount)}</Text>
+          {/* Company Logo and Name in a single horizontal line */}
+          <View style={styles.companyHeader}>
+            <Image
+              source={require('../../assets/Group400.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.companyName}>MyChits</Text>
+          </View>
 
+          <Text style={styles.duePaymentText}>Complete Your Chit Payment</Text>
+          <Text style={styles.minAmountText}>You can pay more than your due amount.</Text>
+          <View style={styles.dueAmountBox}>
+            <Text style={styles.dueAmountLabel}>Due Amount:</Text>
+            <Text style={styles.dueAmountTextModal}>₹ {formatNumberIndianStyle(modalDetails.amount)}</Text>
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Enter Amount to Pay</Text>
+            <View style={styles.inputBox}>
+              <Text style={styles.currencySymbol}>₹</Text>
+              <TextInput
+                style={styles.textInput}
+                keyboardType="numeric"
+                value={paymentAmount}
+                onChangeText={handleAmountChange}
+                placeholder="Enter amount"
+                placeholderTextColor={Colors.mediumText}
+              />
+            </View>
+          </View>
           <TouchableOpacity
-            style={styles.modalButton}
-            onPress={handleShareViaWhatsApp}
+            style={styles.payNowButtonModal}
+            onPress={handlePaymentInitiate}
+            activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="whatsapp" size={24} color={Colors.payNowButtonText} />
-            <Text style={styles.modalButtonText}>Share via WhatsApp</Text>
+            <Text style={styles.payNowButtonTextModal}>Pay ₹{formatNumberIndianStyle(paymentAmount || modalDetails.amount)} Now</Text>
+            <MaterialIcons name="payment" size={20} color={Colors.payNowButtonText} style={{ marginLeft: 8 }} />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.modalButton}
-            onPress={handleShareViaEmail}
-          >
-            <MaterialIcons name="email" size={24} color={Colors.payNowButtonText} />
-            <Text style={styles.modalButtonText}>Share via Email</Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity
             onPress={handleModalClose}
             style={styles.modalCloseButton}
@@ -662,57 +694,122 @@ const styles = StyleSheet.create({
   },
   // Modal Styles
   modal: {
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     margin: 0,
+    alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
-    padding: 22,
-    justifyContent: 'center',
+    backgroundColor: Colors.cardBackground,
+    padding: 20,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#053B90',
+    width: '90%',
     alignItems: 'center',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.mediumText,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: Colors.darkText,
-  },
-  modalDescription: {
-    fontSize: 16,
-    color: Colors.mediumText,
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  modalInfo: {
-    fontSize: 18,
-    color: Colors.darkText,
-    marginBottom: 5,
-  },
-  modalAmount: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.warningColor,
-    marginBottom: 20,
-  },
-  modalButton: {
+  companyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    backgroundColor: Colors.payNowButtonBackground,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    marginBottom: 20,
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 50,
+    height: 50,
+    marginRight: 10,
+  },
+  companyName: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.darkText,
+  },
+  duePaymentText: {
+    fontSize: 20,
+    color: Colors.mediumText,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  minAmountText: {
+    fontSize: 16,
+    color: Colors.mediumText,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  dueAmountBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 25,
+    padding: 15,
     borderRadius: 10,
+    backgroundColor: Colors.lightBackground,
+  },
+  dueAmountLabel: {
+    fontSize: 16,
+    color: Colors.mediumText,
+    marginRight: 10,
+  },
+  dueAmountTextModal: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.warningColor,
+  },
+  inputContainer: {
     width: '100%',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.darkText,
     marginBottom: 10,
   },
-  modalButtonText: {
+  inputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.borderColor,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    backgroundColor: Colors.lightBackground,
+    width: '80%',
+    height: 50,
+  },
+  currencySymbol: {
+    fontSize: 18,
+    color: Colors.mediumText,
+    marginRight: 5,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 18,
+    color: Colors.darkText,
+  },
+  payNowButtonModal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.payNowButtonBackground,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    width: '80%',
+  },
+  payNowButtonTextModal: {
     color: Colors.payNowButtonText,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 15,
   },
   modalCloseButton: {
     marginTop: 10,
