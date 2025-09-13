@@ -32,24 +32,18 @@ const Colors = {
 };
 
 const MyLoan = ({ route, navigation }) => {
-  const {  groupFilter,loanId } = route.params;
+  const { groupFilter } = route.params;
   const [appUser] = useContext(ContextProvider);
   const userId = appUser?.userId;
-  //const loanId = 
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedGroup] = useState(groupFilter);
   const [loans, setLoans] = useState([]);
-
-  // NEW: State for payments summary data
   const [paymentsSummary, setPaymentsSummary] = useState(null);
   const [isPaymentsLoading, setIsPaymentsLoading] = useState(false);
   const [paymentsError, setPaymentsError] = useState(null);
-
-  // NEW: State to hold the selected loan ID for specific payments summary
-  const [_id, set_id] = useState(null);
+  const [loanId, setLoanId] = useState(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -77,62 +71,34 @@ const MyLoan = ({ route, navigation }) => {
     fetchLoans();
   }, [userId]);
 
-  // NEW: useEffect hook to fetch payments summary data for a specific loan
   useEffect(() => {
-    if (!userId || !_id) return;
-
-    // const fetchPaymentsSummary = async () => {
-    //   setIsPaymentsLoading(true);
-    //   setPaymentsError(null);
-    //   try {
-    //     const apiUrl = `${url}/payments/user/${userId}/loan/${_id}/summary`;
-    //     const response = await axios.get(apiUrl);
-    //     console.log(response?.data, "sfsgsdg");
-    //     setPaymentsSummary(response.data);
-    //   } catch (err) {
-    //     console.error("Axios loan payments summary error: ", err);
-    //     setPaymentsError("Failed to fetch loan payments summary.");
-    //     Toast.show({
-    //       type: "error",
-    //       text1: "Payments Error",
-    //       text2: "Could not load loan payments summary.",
-    //     });
-    //   } finally {
-    //     setIsPaymentsLoading(false);
-    //   }
-    // };
+    if (!userId || !loanId) return;
     const fetchPaymentsSummary = async () => {
-  setIsPaymentsLoading(true);
-  setPaymentsError(null);
-  try {
-    const apiUrl = `${url}/payments/user/${userId}/loan/${loanId}/summary`;
-    console.log("Fetching summary from:",
-  `${url}/payments/user/${userId}/loan/${_id}/summary`,
-  "userId:", userId,
-  "loanId:", loanId,
-);
-    const response = await axios.get(apiUrl);
-
-    console.log("Payments summary response:", response.data);
-
-    // handle aggregation array
-    const summary = Array.isArray(response.data) ? response.data[0] : response.data;
-    setPaymentsSummary(summary);
-    console.log(summary);
-  } catch (err) {
-    console.error("Axios loan payments summary error: ", err);
-    setPaymentsError("Failed to fetch loan payments summary.");
-    Toast.show({
-      type: "error",
-      text1: "Payments Error",
-      text2: "Could not load loan payments summary.",
-    });
-  } finally {
-    setIsPaymentsLoading(false);
-  }
-};
+      setIsPaymentsLoading(true);
+      setPaymentsError(null);
+      try {
+        const apiUrl = `${url}/payment/user/${userId}/loan/${loanId}/summary`;
+        const response = await axios.get(apiUrl);
+        console.log("Payments summary response:", response.data);
+        const summary = Array.isArray(response.data)
+          ? response.data[0]
+          : response.data;
+        setPaymentsSummary(summary);
+        console.log(summary);
+      } catch (err) {
+        console.error("Axios loan payments summary error: ", err);
+        setPaymentsError("Failed to fetch loan payments summary.");
+        Toast.show({
+          type: "error",
+          text1: "Payments Error",
+          text2: "Could not load loan payments summary.",
+        });
+      } finally {
+        setIsPaymentsLoading(false);
+      }
+    };
     fetchPaymentsSummary();
-  }, [userId, _id]);
+  }, [userId, loanId]);
 
   const formatNumberIndianStyle = (num) => {
     if (num === null || num === undefined) {
@@ -150,21 +116,25 @@ const MyLoan = ({ route, navigation }) => {
     const lastThree = integerPart.substring(integerPart.length - 3);
     const otherNumbers = integerPart.substring(0, integerPart.length - 3);
     if (otherNumbers !== "") {
-      const formattedOtherNumbers = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
-      return (isNegative ? "-" : "") + formattedOtherNumbers + "," + lastThree + decimalPart;
+      const formattedOtherNumbers = otherNumbers.replace(
+        /\B(?=(\d{2})+(?!\d))/g,
+        ","
+      );
+      return (
+        (isNegative ? "-" : "") +
+        formattedOtherNumbers +
+        "," +
+        lastThree +
+        decimalPart
+      );
     } else {
       return (isNegative ? "-" : "") + lastThree + decimalPart;
     }
   };
 
-  // const handleViewPayments = () => {
-  // set_id();
-  // };
-
   const handleViewPayments = (loanId) => {
-  set_id(loanId); // update the state with the loan’s ObjectId
-  console.log(loanId, "testing my loanid");
-};
+    setLoanId(loanId);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -194,19 +164,34 @@ const MyLoan = ({ route, navigation }) => {
           >
             <View style={styles.titleContainer}>
               <Text style={styles.sectionTitle}>My Loan</Text>
-              <Text style={styles.subHeading}>Your current loan details and payment status.</Text>
+              <Text style={styles.subHeading}>
+                Your current loan details and payment status.
+              </Text>
             </View>
 
             {/* NEW: Display Payments Summary */}
-            {_id && (
+            {loanId && (
               <View style={[styles.loanCard, { backgroundColor: "#f0f8ff" }]}>
                 <View style={styles.cardHeader}>
-                  <View style={[styles.iconContainer, { backgroundColor: Colors.accentColor }]}>
-                    <Ionicons name="stats-chart-outline" size={28} color={Colors.cardBackground} />
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      { backgroundColor: Colors.accentColor },
+                    ]}
+                  >
+                    <Ionicons
+                      name="stats-chart-outline"
+                      size={28}
+                      color={Colors.cardBackground}
+                    />
                   </View>
                   <View style={styles.cardTitleContainer}>
-                    <Text style={styles.cardTitle}>Total Payments for Loan</Text>
-                    <Text style={styles.cardSubtitle}>Payments made for the selected loan.</Text>
+                    <Text style={styles.cardTitle}>
+                      Total Payments for Loan
+                    </Text>
+                    <Text style={styles.cardSubtitle}>
+                      Payments made for the selected loan.
+                    </Text>
                   </View>
                 </View>
                 {isPaymentsLoading ? (
@@ -214,11 +199,16 @@ const MyLoan = ({ route, navigation }) => {
                 ) : paymentsError ? (
                   <Text style={{ color: "#DC143C" }}>{paymentsError}</Text>
                 ) : (
-                 <View style={styles.summaryItem}>
-  <Text style={styles.detailValue}>
-    ₹ {paymentsSummary ? formatNumberIndianStyle(paymentsSummary.totalPaidAmount || 0) : "N/A"}
-  </Text>
-</View>
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.detailValue}>
+                      ₹{" "}
+                      {paymentsSummary
+                        ? formatNumberIndianStyle(
+                            paymentsSummary.totalPaidAmount || 0
+                          )
+                        : "N/A"}
+                    </Text>
+                  </View>
                 )}
               </View>
             )}
@@ -235,7 +225,9 @@ const MyLoan = ({ route, navigation }) => {
                       />
                     </View>
                     <View style={styles.cardTitleContainer}>
-                      <Text style={styles.cardTitle}>Loan ID: {loan.loan_id.substring(0, 10)}...</Text>
+                      <Text style={styles.cardTitle}>
+                        Loan ID: {loan.loan_id.substring(0, 10)}...
+                      </Text>
                       <Text style={styles.cardSubtitle}>
                         Tenure: {loan.tenure} days
                       </Text>
@@ -245,11 +237,15 @@ const MyLoan = ({ route, navigation }) => {
                   <View style={styles.detailsRow}>
                     <View style={styles.detailItem}>
                       <Text style={styles.detailLabel}>Loan Amount</Text>
-                      <Text style={styles.detailValue}>₹ {formatNumberIndianStyle(loan.loan_amount)}</Text>
+                      <Text style={styles.detailValue}>
+                        ₹ {formatNumberIndianStyle(loan.loan_amount)}
+                      </Text>
                     </View>
                     <View style={styles.detailItem}>
                       <Text style={styles.detailLabel}>Start Date</Text>
-                      <Text style={styles.detailValue}>{new Date(loan.start_date).toLocaleDateString()}</Text>
+                      <Text style={styles.detailValue}>
+                        {new Date(loan.start_date).toLocaleDateString()}
+                      </Text>
                     </View>
                   </View>
 
@@ -257,7 +253,9 @@ const MyLoan = ({ route, navigation }) => {
                     style={styles.viewPaymentsButton}
                     onPress={() => handleViewPayments(loan._id)}
                   >
-                    <Text style={styles.viewPaymentsButtonText}>View Payments</Text>
+                    <Text style={styles.viewPaymentsButtonText}>
+                      View Payments
+                    </Text>
                   </TouchableOpacity>
                 </View>
               ))
@@ -370,8 +368,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 15,
   },
   iconContainer: {
@@ -379,8 +377,8 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: Colors.primaryBlue,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 15,
   },
   cardTitleContainer: {
@@ -395,11 +393,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.mediumText,
     marginTop: 2,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   detailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 15,
   },
   detailItem: {
@@ -429,9 +427,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   summaryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 10,
   },
   viewPaymentsButton: {
