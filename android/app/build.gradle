@@ -92,8 +92,8 @@ android {
         applicationId 'com.gagansk.cusapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 17
+        versionName "1.4.7"
     }
      signingConfigs {
         debug {
