@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useContext } from "react";
+// NewGroupsEnrolls.jsx
 
+import React, { useState, useEffect, useContext } from "react";
 import {
     View,
     Text,
@@ -12,16 +13,13 @@ import {
     SafeAreaView,
     Platform,
     Image,
+    Alert,
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
-
 import url from "../data/url";
-
+import axios from "axios";
 import Header from "../components/layouts/Header";
-
 import { NetworkContext } from '../context/NetworkProvider';
-
 import Toast from 'react-native-toast-message';
 import { ContextProvider } from "../context/UserProvider"
 const formatNumberIndianStyle = (num) => {
@@ -36,7 +34,6 @@ const formatNumberIndianStyle = (num) => {
         isNegative = true;
         integerPart = integerPart.substring(1);
     }
-
     const lastThree = integerPart.substring(integerPart.length - 3);
     const otherNumbers = integerPart.substring(0, integerPart.length - 3);
     if (otherNumbers !== '') {
@@ -51,16 +48,33 @@ const Enrollment = ({ route, navigation }) => {
     const { groupFilter } = route.params;
     const [appUser, setAppUser] = useContext(ContextProvider);
     const userId = appUser.userId || {};
-    const [selectedCardIndex, setSelectedCardIndex] = useState(null); // This state will now hold the _id of the selected card
+    const [selectedCardIndex, setSelectedCardIndex] = useState(null);
     const [cardsData, setCardsData] = useState([]);
     const initialGroupFilter = groupFilter === "New Groups" ? "NewGroups" : (groupFilter === "Ongoing Groups" ? "OngoingGroups" : "AllGroups");
     const [selectedGroup, setSelectedGroup] = useState(initialGroupFilter);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [enrollmentModalVisible, setEnrollmentModalVisible] = useState(false);
-    const [modalMessage, setModalMessage] = useState(""); // Initialize with an empty string
+    const [modalMessage, setModalMessage] = useState("");
     const { isConnected, isInternetReachable } = useContext(NetworkContext);
 
+    // Provided function for fetching vacant seats for a specific group
+    const fetchVacantSeats = async (groupId) => {
+        try {
+            const ticketsResponse = await axios.post(
+                `${url}/enroll/get-next-tickets/${groupId}`
+            );
+            const fetchedTickets = Array.isArray(
+                ticketsResponse.data.availableTickets
+            )
+                ? ticketsResponse.data.availableTickets
+                : [];
+            return fetchedTickets.length;
+        } catch (err) {
+            console.error(`Error fetching tickets for group ${groupId}:`, err);
+            return 0;
+        }
+    };
     const groupColors = {
         new: { primary: '#E0F7FA', secondary: '#00BCD4', text: '#00BCD4', darkText: '#263238', buttonBackground: '#00BCD4', selectedBorder: '#00BCD4', iconColor: '#00BCD4' },
         ongoing: { primary: '#E8F5E9', secondary: '#4CAF50', text: '#4CAF50', darkText: '#263232', buttonBackground: '#4CAF50', selectedBorder: '#4CAF50', iconColor: '#4CAF50' },
@@ -93,7 +107,7 @@ const Enrollment = ({ route, navigation }) => {
         if (!isConnected || !isInternetReachable) {
             setIsLoading(false);
             setError("No internet connection. Please check your network and try again.");
-            setCardsData([]); // Clear data when offline
+            setCardsData([]);
             Toast.show({
                 type: 'error',
                 text1: 'Offline',
@@ -103,26 +117,28 @@ const Enrollment = ({ route, navigation }) => {
             });
             return;
         }
-
         setIsLoading(true);
         setError(null);
-        let endpoint = `${url}/group/get-group/`; // Default for "AllGroups"
-
-        if(selectedGroup === "AllGroups"){
+        let endpoint = `${url}/group/get-group/`;
+        if (selectedGroup === "AllGroups") {
             endpoint = `${url}/group/get-group-by-filter/AllGroups`;
         }
-
         if (selectedGroup === "NewGroups") {
             endpoint = `${url}/group/get-group-by-filter/NewGroups`;
         } else if (selectedGroup === "OngoingGroups") {
             endpoint = `${url}/group/get-group-by-filter/OngoingGroups`;
         }
-
         try {
             const response = await fetch(endpoint);
             if (response.ok) {
                 const data = await response.json();
-                setCardsData(data); // Set fetched data directly
+                const groupsWithVacantSeats = await Promise.all(
+                    data.map(async (group) => {
+                        const vacantSeats = await fetchVacantSeats(group._id);
+                        return { ...group, vacantSeats };
+                    })
+                );
+                setCardsData(groupsWithVacantSeats);
                 setIsLoading(false);
             } else {
                 const errorData = await response.json();
@@ -141,11 +157,9 @@ const Enrollment = ({ route, navigation }) => {
             });
         }
     };
-
     useEffect(() => {
         fetchGroups();
     }, [selectedGroup, isConnected, isInternetReachable]);
-
     useEffect(() => {
         if (groupFilter) {
             const normalizedGroupFilter = groupFilter === "New Groups" ? "NewGroups" : (groupFilter === "Ongoing Groups" ? "OngoingGroups" : groupFilter);
@@ -154,12 +168,10 @@ const Enrollment = ({ route, navigation }) => {
             }
         }
     }, [groupFilter]);
-
     const getGroupType = (card) => {
         const now = new Date();
         const startDate = new Date(card.start_date);
         const endDate = new Date(card.end_date);
-
         if (startDate > now) {
             return 'new';
         } else if (startDate <= now && endDate > now) {
@@ -169,13 +181,11 @@ const Enrollment = ({ route, navigation }) => {
         }
         return 'default';
     };
-
     const getCustomCardColorKey = (card) => {
         const members = typeof card.group_members === 'number' ? card.group_members : parseInt(card.group_members);
         const value = typeof card.group_value === 'number' ? card.group_value : parseFloat(card.group_value);
         const performanceStatus = card.performance_status;
         const category = card.category;
-
         if (category === 'tech_innovation') return 'tech_innovation';
         if (category === 'community_outreach') return 'community_outreach';
         if (category === 'creative_arts') return 'creative_arts';
@@ -198,7 +208,6 @@ const Enrollment = ({ route, navigation }) => {
         if (isNaN(members) || isNaN(value)) return 'default';
         return 'members_value_other';
     };
-
     const getDisplayCards = () => {
         const now = new Date();
         const newGroups = cardsData.filter(card => new Date(card.start_date) > now);
@@ -208,7 +217,6 @@ const Enrollment = ({ route, navigation }) => {
             return startDate <= now && endDate > now;
         });
         const endedGroups = cardsData.filter(card => new Date(card.end_date) <= now);
-
         if (selectedGroup === "AllGroups") {
             return {
                 new: newGroups,
@@ -222,7 +230,6 @@ const Enrollment = ({ route, navigation }) => {
         }
         return { new: [], ongoing: [], ended: [] };
     };
-
     const handleEnrollment = (card) => {
         if (!isConnected || !isInternetReachable) {
             setModalMessage("You are offline. Please connect to the internet to enroll.");
@@ -237,17 +244,14 @@ const Enrollment = ({ route, navigation }) => {
             setEnrollmentModalVisible(true);
         }
     };
-
-    const NoGroupsIllustration = require('../../assets/Nogroup.png'); // Path to your illustration
-
+    const NoGroupsIllustration = require('../../assets/Nogroup.png');
     const CardContent = ({ card, colors, isSelected }) => {
         const formatDate = (dateString) => {
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
             return new Date(dateString).toLocaleDateString('en-GB', options);
         };
-
         const groupType = getGroupType(card);
-
+        const vacantSeats = card.vacantSeats || 0; // Get vacant seats from card data
         return (
             <>
                 <View style={styles.cardHeader}>
@@ -282,6 +286,7 @@ const Enrollment = ({ route, navigation }) => {
                         </View>
                     )}
                 </View>
+                {/* Start and End Dates */}
                 <View style={styles.cardDetailsRow}>
                     <View style={styles.detailItem}>
                         <Text style={[styles.detailLabel, { color: colors.darkText }]}>Starts Date</Text>
@@ -289,16 +294,25 @@ const Enrollment = ({ route, navigation }) => {
                             {formatDate(card.start_date)}
                         </Text>
                     </View>
-                    <View style={styles.detailItem}>
+                    <View style={styles.detailItemRight}>
                         <Text style={[styles.detailLabel, { color: colors.darkText }]}>Ends Date</Text>
                         <Text style={[styles.detailValue, { color: isSelected ? colors.text : colors.darkText }]}>
                             {formatDate(card.end_date)}
                         </Text>
                     </View>
+                </View>
+                {/* Members and Vacant Seats */}
+                <View style={styles.cardDetailsRow}>
                     <View style={styles.detailItem}>
                         <Text style={[styles.detailLabel, { color: colors.darkText }]}>Members</Text>
                         <Text style={[styles.detailValue, { color: isSelected ? colors.text : colors.darkText }]}>
                             {card.group_members}
+                        </Text>
+                    </View>
+                    <View style={styles.detailItemRight}>
+                        <Text style={[styles.detailLabel, { color: colors.darkText }]}>Vacant Seats</Text>
+                        <Text style={[styles.detailValue, styles.highlightedVacantSeats,]}>
+                            {vacantSeats}
                         </Text>
                     </View>
                 </View>
@@ -316,7 +330,6 @@ const Enrollment = ({ route, navigation }) => {
             </>
         );
     };
-
     if (isLoading) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -328,7 +341,6 @@ const Enrollment = ({ route, navigation }) => {
             </SafeAreaView>
         );
     }
-
     if (error) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -344,12 +356,10 @@ const Enrollment = ({ route, navigation }) => {
             </SafeAreaView>
         );
     }
-
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" backgroundColor="#053B90" />
             <Header userId={userId} navigation={navigation} />
-
             <View style={styles.mainContentWrapper}>
                 <View style={styles.innerContentArea}>
                     <View style={styles.filterContainer}>
@@ -409,20 +419,17 @@ const Enrollment = ({ route, navigation }) => {
                     >
                         {(() => {
                             const { new: newGroups, ongoing: ongoingGroups, ended: endedGroups } = getDisplayCards();
-
                             const renderGroupSection = (data) => (
                                 data.length > 0 && (
                                     <View style={styles.groupSection}>
                                         {data.map((card) => {
                                             const primaryGroupType = getGroupType(card);
                                             const customColorKey = getCustomCardColorKey(card);
-
                                             const colors = {
                                                 key: customColorKey,
                                                 ...(groupColors[customColorKey] || groupColors[primaryGroupType] || groupColors.default)
                                             };
                                             const isSelected = selectedCardIndex === card._id;
-
                                             const CardWrapper = ({ children }) => (
                                                 <View
                                                     style={[
@@ -438,11 +445,10 @@ const Enrollment = ({ route, navigation }) => {
                                                     {children}
                                                 </View>
                                             );
-
                                             return (
                                                 <TouchableOpacity
-                                                    key={card._id} // Use card._id as key
-                                                    onPress={() => setSelectedCardIndex(card._id)} // Set selected card to its _id
+                                                    key={card._id}
+                                                    onPress={() => setSelectedCardIndex(card._id)}
                                                     activeOpacity={0.8}
                                                     disabled={!isConnected || !isInternetReachable}
                                                 >
@@ -459,7 +465,6 @@ const Enrollment = ({ route, navigation }) => {
                                     </View>
                                 )
                             );
-
                             if (selectedGroup === "AllGroups") {
                                 const allCardsPresent = newGroups.length > 0 || ongoingGroups.length > 0 || endedGroups.length > 0;
                                 if (!allCardsPresent) {
@@ -538,7 +543,6 @@ const Enrollment = ({ route, navigation }) => {
         </SafeAreaView>
     );
 };
-
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -548,11 +552,11 @@ const styles = StyleSheet.create({
     retryButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     mainContentWrapper: { flex: 1, alignItems: 'center', paddingVertical: 1, backgroundColor: '#053B90', paddingHorizontal: 15 },
     innerContentArea: { flex: 1, backgroundColor: '#F5F5F5', marginHorizontal: 0, borderRadius: 15, paddingVertical: 15, paddingBottom: 25, width: '104%' },
-    filterContainer: {paddingHorizontal: 15,paddingBottom: 10,},
+    filterContainer: { paddingHorizontal: 15, paddingBottom: 10, },
     chipsScrollContainer: { paddingRight: 30 },
     chipsContainer: { flexDirection: 'row', gap: 10, alignItems: 'center' },
     chip: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 22, borderRadius: 5, backgroundColor: '#E0EFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, minWidth: 100, justifyContent: 'center' },
-    selectedChip: { backgroundColor: '#053B90', borderColor: '#053B90', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 }, // Enhanced shadow
+    selectedChip: { backgroundColor: '#053B90', borderColor: '#053B90', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 },
     chipIcon: { marginRight: 2 },
     chipText: { fontSize: 12, fontWeight: '600', color: '#4A4A4A' },
     selectedChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
@@ -568,47 +572,45 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 6,
         elevation: 8,
-        width: '105%', // Adjusted width for better fit
+        width: '105%',
         borderWidth: 0.5,
         alignSelf: 'center'
-
-    }, // Enhanced shadow
+    },
     offlineCardOverlay: { opacity: 0.6 },
     cardHeader: {
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
         marginBottom: 16,
-        position: 'relative', // Added to position the badges
+        position: 'relative',
     },
     groupValueContainer: {
-        flexDirection: 'row', // Arrange items in a row
-        alignItems: 'baseline', // Changed from 'center' to 'baseline' for better text alignment
+        flexDirection: 'row',
+        alignItems: 'baseline',
         marginBottom: 0,
-        justifyContent: 'flex-start', // Align to the start, adjust as needed
+        justifyContent: 'flex-start',
         width: '100%',
-        height: 50, // May need adjustment based on how 'baseline' affects it
+        height: 50,
     },
     groupName: {
-        fontSize: 20, // Slightly increased for prominence
+        fontSize: 20,
         fontWeight: 'bold',
         alignSelf: 'flex-start',
         marginBottom: 1,
     },
-    groupNameLabel: { // New style for "Group Name:" text
+    groupNameLabel: {
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#666', // A bit darker than dateLabel
+        color: '#666',
         marginRight: 4,
     },
     groupValue: {
-        fontSize: 28, // Larger font size
+        fontSize: 28,
         fontWeight: 'bold',
-        // color will be set dynamically via prop
         marginRight: 8,
     },
     chitValueText: {
-        fontSize: 16, // Changed to match groupValue
+        fontSize: 16,
         fontWeight: '600',
     },
     headerSeparator: {
@@ -620,33 +622,41 @@ const styles = StyleSheet.create({
     cardDetailsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start', // Align items to the start of the cross axis
-        marginTop: -1,
-        marginBottom: 5,
-        width: '100%',
+        marginBottom: 10,
+    },
+    detailItemRight: {
+        flex: 1,
+        alignItems: 'flex-end',
+        paddingHorizontal: 5,
     },
     detailItem: {
-        flex: 1, // Each item takes equal space
-        alignItems: 'flex-start', // Align text to the left within each item
+        flex: 1,
+        alignItems: 'flex-start',
         paddingHorizontal: 5,
     },
     detailLabel: {
-        fontSize: 12,
+        fontSize: 10,
         fontWeight: '500',
-        color: '#777', // Lighter color for labels
-        marginBottom: 4, // Space between label and value
+        color: '#777',
+        marginBottom: 2,
     },
     detailValue: {
-        fontSize: 14,
-        fontWeight: '600',
-        // color will be set dynamically via prop
+        fontSize: 12,
+        fontWeight: '700',
     },
-
-    // New styles for View More button
+    highlightedVacantSeats: {
+      backgroundColor: '#1de94cff',
+        color: '#060806ff',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        fontWeight: 'bold',
+        overflow: 'hidden',
+    },
     viewMoreContainer: {
         width: '100%',
-        alignItems: 'center', // Center the button horizontally
-        marginTop: 15, // Space above the button to push it to a new line
+        alignItems: 'center',
+        marginTop: 15,
     },
     viewMoreButton: {
         flexDirection: 'row',
@@ -654,18 +664,13 @@ const styles = StyleSheet.create({
         paddingVertical: 1,
         paddingHorizontal: 10,
         borderRadius: 5,
-        // No background or shadow for a link-like appearance
     },
     viewMoreButtonText: {
         fontSize: 16,
         fontWeight: '900',
         marginRight: 5,
-        // Color set dynamically via prop
     },
-    viewMoreIcon: {
-        // Color set dynamically via prop
-    },
-
+    viewMoreIcon: {},
     emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
     noGroupsImage: {
         width: 250,
@@ -680,17 +685,16 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     radioButtonContainer: {
-        paddingRight: 20, 
-              marginRight: 15,
+        paddingRight: 20,
+        marginRight: 15,
     },
     noGroupsText: { fontSize: 16, color: '#777', textAlign: 'center', marginTop: 15, lineHeight: 22 },
     modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
     modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 25, alignItems: 'center', marginHorizontal: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 5, elevation: 7 },
-    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#333' }, // Larger title
+    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#333' },
     modalCloseButton: { backgroundColor: '#053B90', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginTop: 10 },
     modalCloseButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
-    // New styles for the badges
     newLeadBadgeContainer: {
         position: 'absolute',
         top: -13,
@@ -720,6 +724,24 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 10,
         fontWeight: 'bold',
+    },
+    vacantSeatsContainer: {
+        marginTop: 20,
+        padding: 15,
+        backgroundColor: '#e6f7ff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#b3e0ff',
+    },
+    vacantSeatsText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#005a87',
+    },
+    vacantSeatItem: {
+        fontSize: 14,
+        color: '#333',
+        marginTop: 5,
     },
 });
 

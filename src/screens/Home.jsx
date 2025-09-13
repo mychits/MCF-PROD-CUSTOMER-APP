@@ -530,7 +530,7 @@ const Home = ({ route, navigation }) => {
         { navigateTo: 'ProfileScreen', icon: 'event-note', title: 'My Profile', bgColor: '#E0F7FA', iconBg: '#006064', disabled: false },
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
         { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Introduce New Customers', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
-        { navigateTo: 'NewGroupsEnrolls', screen: 'EnrollScreenMain', icon: 'how-to-reg', title: 'New Groups Enrolls', bgColor: '#EDE7F6', iconBg: '#5E35B1', filter: 'New Groups', disabled: false },
+        { navigateTo: 'MyLoan', screen: 'MyLoan', icon: 'account-balance-wallet', title: 'My Loan', bgColor: '#EDE7F6', iconBg: '#5E35B1', filter: 'My Loan', disabled: false },
         { navigateTo: 'PayYourDues', icon: 'currency-rupee', title: 'Pay Your Dues', bgColor: '#FFEBEE', iconBg: '#B71C1C', disabled: false },
     ];
 

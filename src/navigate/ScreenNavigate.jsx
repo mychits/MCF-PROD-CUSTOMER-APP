@@ -27,9 +27,10 @@ import FeatureComingSoon from "../screens/FeatureComingSoon";
 import PayYourDues from "../screens/PayYourDues";
 import AuctionList from "../screens/AuctionList";
 import Enrollment from "../screens/Enrollment";
-import NewGroupsEnrolls from "../screens/NewGroupsEnrolls.jsx";
-import OffersScreen from "../screens/OffersScreen.jsx";``
+import MyLoan from "../screens/MyLoan.jsx";
+import OffersScreen from "../screens/OffersScreen.jsx"; ``
 import RewardsScreen from "../screens/RewardsScreen.jsx";
+
 
 import About from "../screens/About";
 import Privacy from "../screens/Privacy";
@@ -73,6 +74,7 @@ const EnrollStackNavigator = ({ route }) => {
         component={AuctionsRecord}
         options={{ headerShown: false }}
       />
+    
       <EnrollStack.Screen
         name="ViewMore"
         component={ViewMore}
@@ -178,12 +180,12 @@ export default function ScreenNavigate() {
             component={FlashScreen}
             options={{ headerShown: false }}
           />
-            <Stack.Screen
+          <Stack.Screen
             name="OffersScreen"
             component={OffersScreen}
             options={{ headerShown: false }}
           />
-            <Stack.Screen
+          <Stack.Screen
             name="RewardsScreen"
             component={RewardsScreen}
             options={{ headerShown: false }}
@@ -243,18 +245,18 @@ export default function ScreenNavigate() {
             component={Help}
             options={{ headerShown: false }}
           />
-            <Stack.Screen
+          <Stack.Screen
             name="RegisterOtpVerify"
             component={RegisterOtpVerify}
             options={{ headerShown: false }}
           />
 
-              <Stack.Screen
-            name="NewGroupsEnrolls"
-            component={NewGroupsEnrolls}
+          <Stack.Screen
+            name="MyLoan"
+            component={MyLoan}
             options={{ headerShown: false }}
           />
-       
+
 
           <Stack.Screen
             name="Fq"
@@ -283,11 +285,11 @@ export default function ScreenNavigate() {
             options={{ headerShown: false }}
           />
 
-            <Stack.Screen
+          <Stack.Screen
             name="Enrollment"
             component={Enrollment}
             options={{ headerShown: false }}
-          /> 
+          />
           <Stack.Screen
             name="Becomeanagent"
             component={Becomeanagent}
@@ -308,7 +310,7 @@ export default function ScreenNavigate() {
             component={EligibilityScreen}
             options={{ headerShown: false }}
           />
-        
+
 
           <Stack.Screen
             name="EnrollForm"
@@ -335,18 +337,18 @@ export default function ScreenNavigate() {
             component={MoreInformation}
             options={{ headerShown: false }}
           />
-            <Stack.Screen
+          <Stack.Screen
             name="EnrollGroup"
             component={EnrollGroup}
             options={{ headerShown: false }}
           />
 
-            <Stack.Screen
+          <Stack.Screen
             name="PayYourDues"
             component={PayYourDues}
             options={{ headerShown: false }}
           />
-            <Stack.Screen
+          <Stack.Screen
             name="AuctionList"
             component={AuctionList}
             options={{ headerShown: false }}
@@ -371,3 +373,21 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
