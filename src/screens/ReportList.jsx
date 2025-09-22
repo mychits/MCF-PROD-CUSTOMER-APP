@@ -3,112 +3,68 @@ import {
   View,
   Text,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
   StatusBar,
   Image,
-  Platform,
-  Vibration,
+  StyleSheet,
 } from "react-native";
+import url from "../data/url";
 import axios from "axios";
-import { LinearGradient } from "expo-linear-gradient";
+import Header from "../components/layouts/Header";
+import { MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  MaterialIcons,
-  FontAwesome5,
-  Ionicons,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
-
-import url from "../data/url";
-import Header from "../components/layouts/Header";
+import { LinearGradient } from "expo-linear-gradient";
 import NoGroupImage from "../../assets/Nogroup.png";
 import { ContextProvider } from "../context/UserProvider";
 
-// Helper function to format numbers in Indian style
-const formatNumberIndianStyle = (num) => {
-  if (num === null || num === undefined) {
-    return "0";
-  }
-  const parts = num.toString().split(".");
-  let integerPart = parts[0];
-  const decimalPart = parts.length > 1 ? "." + parts[1] : "";
-  const isNegative = integerPart.startsWith("-");
-  if (isNegative) {
-    integerPart = integerPart.substring(1);
-  }
-
-  const lastThree = integerPart.substring(integerPart.length - 3);
-  const otherNumbers = integerPart.substring(0, integerPart.length - 3);
-
-  if (otherNumbers !== "") {
-    integerPart =
-      otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree;
-  } else {
-    integerPart = lastThree;
-  }
-
-  return isNegative ? "-" + integerPart + decimalPart : integerPart + decimalPart;
-};
-
-// Centralized color palette
 const Colors = {
   primaryBlue: "#053B90",
-  lightBackground: "#F0F5F9",
-  cardBackground: "#FFFFFF",
+  secondaryBlue: "#0C53B3",
+  lightBackground: "#E8F0F7",
   darkText: "#2C3E50",
   mediumText: "#7F8C8D",
-  lightText: "#BDC3C7",
-  accentGreen: "#2ECC71",
-  accentBlue: "#3499DB",
-  buttonPrimary: "#00BCD4",
-  buttonText: "#FFFFFF",
-  shadowColor: "rgba(0,0,0,0.1)",
-  gradientStartLight: "#F8FBFF",
-  gradientEndLight: "#FFFFFF",
-  actionBoxBackground: "#F8F8F8",
-  borderColor: "#E0E0E0",
-  amountHighlight: "#E74C3C",
-  darkInvestment: "#0A2647",
-  darkProfit: "#196F3D",
-  accentGold: "#FFD700",
-  lightGray: "#F5F5F5",
-  darkGray: "#A9A9A9",
-  iconBorderHighlight: "#FFFFFF",
-  lightDivider: "#EBEBEB",
+  accentColor: "#3498DB",
+  removedText: "#E74C3C",
+  completedText: "#27AE60",
 };
 
-const ReportList = ({ navigation }) => {
+const formatNumberIndianStyle = (num) => {
+  if (num === null || num === undefined) return "0";
+  const parts = num.toString().split(".");
+  let integerPart = parts[0];
+  let decimalPart = parts.length > 1 ? "." + parts[1] : "";
+  let isNegative = false;
+  if (integerPart.startsWith("-")) {
+    isNegative = true;
+    integerPart = integerPart.substring(1);
+  }
+  const lastThree = integerPart.slice(-3);
+  const otherNumbers = integerPart.slice(0, -3);
+  const formattedOther = otherNumbers
+    ? otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + ","
+    : "";
+  return (isNegative ? "-" : "") + formattedOther + lastThree + decimalPart;
+};
+
+const Mygroups = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appUser] = useContext(ContextProvider);
-  const { userId } = appUser || {};
-
+  const userId = appUser.userId || {};
   const [cardsData, setCardsData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [TotalToBepaid, setTotalToBePaid] = useState(0);
   const [Totalpaid, setTotalPaid] = useState(0);
   const [Totalprofit, setTotalProfit] = useState(0);
-  const [allOverviewData, setAllOverviewData] = useState([]);
-  const [expandedCards, setExpandedCards] = useState({});
+  const [individualGroupReports, setIndividualGroupReports] = useState({});
 
-  const toggleExpand = (cardId) => {
-    Vibration.vibrate(50);
-    setExpandedCards((prev) => ({
-      ...prev,
-      [cardId]: !prev[cardId],
-    }));
-  };
-
-  const fetchUserTickets = useCallback(async () => {
+  const fetchTickets = useCallback(async () => {
     if (!userId) {
       setLoading(false);
       return;
     }
     try {
-      setLoading(true);
-      const response = await axios.post(`${url}/enroll/get-user-tickets/${userId}`);
+      const response = await axios.get(`${url}/enroll/users/${userId}`);
       setCardsData(response.data || []);
     } catch (error) {
       console.error("Error fetching tickets:", error);
@@ -118,255 +74,212 @@ const ReportList = ({ navigation }) => {
     }
   }, [userId]);
 
-  const fetchUserOverview = useCallback(async () => {
-    if (!userId) {
-      return;
-    }
+  const fetchAllOverview = useCallback(async () => {
+    if (!userId) return;
     try {
-      const response = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`);
-      const data = Array.isArray(response.data) ? response.data : [];
-      setAllOverviewData(data);
-
-      const totalToBePaidAmount = data.reduce(
-        (sum, group) =>
-          sum +
-          (group?.payable?.totalPayable +
-            (parseInt(group?.enrollment?.group?.group_install) || 0) || 0),
-        0
+      const response = await axios.post(
+        `${url}/enroll/get-user-tickets-report/${userId}`
       );
-      setTotalToBePaid(totalToBePaidAmount);
-
-      const totalPaidAmount = data.reduce(
-        (sum, group) => sum + (group?.payments?.totalPaidAmount || 0),
-        0
+      const data = response.data;
+      setTotalPaid(
+        data.reduce((sum, g) => sum + (g?.payments?.totalPaidAmount || 0), 0)
       );
-      setTotalPaid(totalPaidAmount);
-
-      const totalProfitAmount = data.reduce(
-        (sum, group) => sum + (group?.profit?.totalProfit || 0),
-        0
+      setTotalProfit(
+        data.reduce((sum, g) => sum + (g?.profit?.totalProfit || 0), 0)
       );
-      setTotalProfit(totalProfitAmount);
+
+      const reportsMap = {};
+      data.forEach((groupReport) => {
+        if (
+          groupReport.enrollment &&
+          groupReport.enrollment.group &&
+          groupReport.enrollment.tickets !== undefined
+        ) {
+          const key = `${groupReport.enrollment.group._id || groupReport.enrollment.group
+            }-${groupReport.enrollment.tickets}`;
+          reportsMap[key] = {
+            totalPaid: groupReport.payments?.totalPaidAmount || 0,
+            totalProfit: groupReport.profit?.totalProfit || 0,
+          };
+        }
+      });
+      setIndividualGroupReports(reportsMap);
     } catch (error) {
-      console.error("Error fetching overview:", error);
+      if (error.response?.status === 404) {
+        setTotalPaid(0);
+        setTotalProfit(0);
+        setIndividualGroupReports({});
+      } else {
+        console.error(error);
+      }
     }
   }, [userId]);
 
   useEffect(() => {
     if (userId) {
-      fetchUserTickets();
-      fetchUserOverview();
+      fetchTickets();
+      fetchAllOverview();
     }
-  }, [userId, fetchUserTickets, fetchUserOverview]);
+  }, [userId, fetchTickets, fetchAllOverview]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchUserTickets();
-      fetchUserOverview();
-    }, [fetchUserTickets, fetchUserOverview])
+      fetchTickets();
+      fetchAllOverview();
+    }, [fetchTickets, fetchAllOverview])
   );
 
   const filteredCards = cardsData.filter((card) => card.group_id !== null);
-  const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit;
-
-  const renderGroupCards = () => {
-    return filteredCards.map((card, index) => {
-      const correspondingOverview = allOverviewData.find(
-        (overviewItem) => overviewItem.enrollment?.tickets === card.tickets
-      );
-      const individualPaidAmount = correspondingOverview?.payments?.totalPaidAmount || 0;
-      const totalGroupValue = card.group_id?.group_value || 0;
-      const progressPercentage = (individualPaidAmount / totalGroupValue) * 100;
-      const groupInstallment = parseInt(card.group_id?.group_install) || 0;
-      const remainingDue = groupInstallment - individualPaidAmount;
-
-      return (
-        <View key={card._id || index} style={styles.dashboardCard}>
-          {/* Top Section */}
-          <View style={styles.topSection}>
-            <Text style={styles.sectionTitleIcelandic}>
-              {card.group_id.group_name}
-            </Text>
-            <View style={styles.amountRow}>
-              <Text style={styles.mainAmount}>
-                ₹ {formatNumberIndianStyle(individualPaidAmount)}
-              </Text>
-              <Text style={styles.subAmount}>
-                ₹ {formatNumberIndianStyle(totalGroupValue)}
-              </Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressBarFill, { width: `${progressPercentage > 100 ? 100 : progressPercentage}%` }]} />
-            </View>
-          </View>
-
-          <View style={styles.cardDivider} />
-
-          <View style={styles.cardDivider} />
-
-          {/* Action Buttons Section */}
-          <View style={styles.actionButtonsRow}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => {
-                Vibration.vibrate(50);
-                navigation.navigate("EnrollTab", {
-                  screen: "EnrollGroup",
-                  params: {
-                    userId: userId,
-                    groupId: card.group_id?._id,
-                    ticket: card.tickets,
-                  },
-                });
-              }}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="payments" size={30} color={Colors.primaryBlue} />
-              <Text style={styles.actionButtonLabel}>View Payments</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => {
-                Vibration.vibrate(50);
-                navigation.navigate("EnrollTab", {
-                  screen: "EnrollGroup",
-                  params: {
-                    userId: userId,
-                    groupId: card.group_id?._id,
-                    ticket: card.tickets,
-                  },
-                });
-              }}
-              activeOpacity={0.8}
-            >
-              <MaterialCommunityIcons name="currency-inr" size={30} color={Colors.primaryBlue} />
-              <Text style={styles.actionButtonLabel}>Pay Now</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => {
-                Vibration.vibrate(50);
-                navigation.navigate("EnrollTab", {
-                  screen: "EnrollGroup",
-                  params: {
-                    userId: userId,
-                    groupId: card.group_id?._id,
-                    ticket: card.tickets,
-                  },
-                });
-              }}
-              activeOpacity={0.8}
-            >
-              <FontAwesome5 name="chart-line" size={30} color={Colors.primaryBlue} />
-              <Text style={styles.actionButtonLabel}>View Profit</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.cardDivider} />
-
-          {/* Transaction Summary Button */}
-          <TouchableOpacity
-            style={styles.transactionSummaryRow}
-            onPress={() => {
-              Vibration.vibrate(50);
-              navigation.navigate("EnrollTab", {
-                screen: "EnrollGroup",
-                params: {
-                  userId: userId,
-                  groupId: card.group_id?._id,
-                  ticket: card.tickets,
-                },
-              });
-            }}
-            activeOpacity={0.8}
-          >
-            <MaterialIcons name="list-alt" size={24} color={Colors.primaryBlue} />
-            <Text style={styles.transactionSummaryText}>
-              Ticket Number: {card.tickets}
-            </Text>
-            <MaterialIcons name="keyboard-arrow-right" size={24} color={Colors.mediumText} />
-          </TouchableOpacity>
-        </View>
-      );
+  const handleCardPress = (groupId, ticket) => {
+    navigation.navigate("BottomTab", {
+      screen: "EnrollTab",
+      params: { screen: "EnrollGroup", params: { userId, groupId, ticket } },
     });
   };
-
-  const renderNoGroups = () => (
-    <View style={styles.noGroupsContainer}>
-      <Image
-        source={NoGroupImage}
-        style={styles.noGroupImage}
-        resizeMode="contain"
-      />
-      <Text style={styles.noGroupsText}>No Groups Yet!</Text>
-      <Text style={styles.noGroupsSubText}>
-        Start your investment journey by exploring and enrolling in a new group.
-      </Text>
-      <TouchableOpacity
-        style={styles.joinGroupButton}
-        onPress={() => navigation.navigate("GroupsTab")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add-circle" size={24} color={Colors.buttonText} />
-        <Text style={styles.joinGroupButtonText}>Explore Groups</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit;
+  const calculatePaidPercentage = (group_value, paid_amount) => {
+    if (!group_value || !paid_amount) return 0;
+    return Math.min(100, Math.round((paid_amount / group_value) * 100));
+  };
 
   return (
-    <View style={[styles.screenContainer, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.primaryBlue} />
       <Header userId={userId} navigation={navigation} />
 
-      <View style={styles.outerBoxContainer}>
-        <View style={styles.mainContentWrapper}>
-          <Text style={styles.sectionTitle}>My Groups Report</Text>
+      <View style={styles.mainWrapper}>
+        <View style={styles.innerWrapper}>
+          <Text style={styles.title}>My Groups Reports</Text>
 
-          <View style={styles.summaryCardsRow}>
-            <View style={[styles.summaryCard, styles.investmentCardBackground]}>
-              <FontAwesome5
-                name="wallet"
-                size={20}
-                color={Colors.buttonText}
-                style={styles.summaryIcon}
-              />
-              <Text style={styles.summaryAmount}>
-                ₹ {formatNumberIndianStyle(Totalpaid || 0)}
-              </Text>
-              <Text style={styles.summaryLabel}>Total Investment</Text>
-            </View>
-
-            <View style={[styles.summaryCard, styles.profitCardBackground]}>
-              <FontAwesome5
-                name="chart-line"
-                size={20}
-                color={Colors.buttonText}
-                style={styles.summaryIcon}
-              />
-              <Text style={styles.summaryAmount}>
-                ₹ {formatNumberIndianStyle(displayTotalProfit || 0)}
-              </Text>
-              <Text style={styles.summaryLabel}>Total Dividend / Profit </Text>
-            </View>
+          {/* Summary Cards */}
+          <View style={styles.summaryCards}>
+            <LinearGradient
+              colors={["#0A2647", "#0C53B3"]}
+              style={styles.summaryCardLeft}
+            >
+              <FontAwesome5 name="wallet" size={20} color="#fff" />
+              <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(Totalpaid)}</Text>
+              <Text style={styles.summaryText}>Total Investment</Text>
+            </LinearGradient>
+            <LinearGradient
+              colors={["#196F3D", "#27AE60"]}
+              style={styles.summaryCardRight}
+            >
+              <FontAwesome5 name="chart-line" size={20} color="#fff" />
+              <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(displayTotalProfit)}</Text>
+              <Text style={styles.summaryText}>Total Dividend / Profit</Text>
+            </LinearGradient>
           </View>
 
           {loading ? (
-            <ActivityIndicator
-              size="large"
-              color={Colors.primaryBlue}
-              style={styles.loader}
-            />
-          ) : filteredCards.length > 0 ? (
-            <ScrollView
-              contentContainerStyle={styles.groupListContentContainer}
-              showsVerticalScrollIndicator={false}
-            >
-              {renderGroupCards()}
-            </ScrollView>
+            <ActivityIndicator size="large" color={Colors.primaryBlue} style={{ marginTop: 50 }} />
+          ) : filteredCards.length === 0 ? (
+            <View style={styles.noGroupWrapper}>
+              <Image
+                source={NoGroupImage}
+                style={styles.noGroupImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.noGroupText}>
+                No groups found for this user.
+              </Text>
+            </View>
           ) : (
-            renderNoGroups()
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+              {filteredCards.map((card, index) => {
+                const groupIdFromCard = card.group_id?._id || card.group_id;
+                const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
+                const individualPaidAmount = individualGroupReports[groupReportKey]?.totalPaid || 0;
+                const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
+
+                const isDeleted = card.deleted;
+                const isCompleted = card.completed;
+
+                const gradientColors = isDeleted
+                  ? ["#F5F5F5", "#E0E0E0"]
+                  : isCompleted
+                    ? ["#E8F6F3", "#27AE60"]
+                    : ["#E0F0FF", "#0C53B3"];
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleCardPress(card.group_id._id, card.tickets)}
+                    disabled={isDeleted}
+                    style={styles.cardTouchable}
+                  >
+                    <LinearGradient colors={gradientColors} style={styles.cardGradient}>
+                      <View style={[styles.cardInner, { backgroundColor: isDeleted ? "#F0F0F0" : "#fff" }]}>
+                        {/* Card Header */}
+                        <View style={styles.cardHeader}>
+                          <View
+                            style={[
+                              styles.iconCircle,
+                              {
+                                backgroundColor: isDeleted
+                                  ? "#BDC3C7"
+                                  : isCompleted
+                                    ? Colors.completedText
+                                    : Colors.secondaryBlue,
+                              },
+                            ]}
+                          >
+                            <MaterialCommunityIcons name="currency-inr" size={28} color="#fff" />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[
+                              styles.cardTitle,
+                              { color: isDeleted ? Colors.removedText : isCompleted ? Colors.completedText : Colors.darkText }
+                            ]}>
+                              {card.group_id.group_name}
+                            </Text>
+                            <Text style={styles.ticketText}>Ticket: {card.tickets}</Text>
+                            {isDeleted && (
+                              <Text style={styles.removalReason}>
+                                Reason: {card.removal_reason?.toUpperCase() !== "OTHERS" ? card.removal_reason : "Unknown"}
+                              </Text>
+                            )}
+                            {isCompleted && (
+                              <Text style={styles.completedText}>
+                                Completed
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+
+                        {/* Card Body */}
+                        <View>
+                          <View style={styles.progressHeader}>
+                            <Text style={styles.progressText}>Paid</Text>
+                            <Text style={styles.progressTextBold}>{paidPercentage}%</Text>
+                          </View>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={{
+                                width: `${paidPercentage}%`,
+                                height: 8,
+                                borderRadius: 10,
+                                backgroundColor: Colors.accentColor,
+                              }}
+                            />
+                          </View>
+                          <View style={styles.amountRow}>
+                            <View style={styles.amountColumn}>
+                              <Text style={styles.amountLabel}>Total Value</Text>
+                              <Text style={styles.amountValue}>₹ {formatNumberIndianStyle(card.group_id.group_value)}</Text>
+                            </View>
+                            <View style={styles.amountColumn}>
+                              <Text style={styles.amountLabel}>Paid</Text>
+                              <Text style={[styles.amountValue, { color: Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           )}
         </View>
       </View>
@@ -375,321 +288,157 @@ const ReportList = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  screenContainer: {
+  container: {
     flex: 1,
     backgroundColor: Colors.primaryBlue,
   },
-  outerBoxContainer: {
+  mainWrapper: {
     flex: 1,
     backgroundColor: Colors.lightBackground,
-    marginHorizontal: 10,
-    marginBottom: 10,
+    margin: 10,
     borderRadius: 20,
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.shadowColor,
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 10,
-      },
-    }),
   },
-  mainContentWrapper: {
+  innerWrapper: {
     flex: 1,
-    backgroundColor: Colors.cardBackground,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 15,
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 20,
   },
-  sectionTitle: {
-    fontWeight: "bold",
+  title: {
     fontSize: 24,
-    color: Colors.darkText,
+    fontWeight: "bold",
     textAlign: "center",
     marginBottom: 15,
   },
-  summaryCardsRow: {
+  summaryCards: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 20,
-    gap: 15,
   },
-  summaryCard: {
+  summaryCardLeft: {
     flex: 1,
-    padding: 18,
+    marginRight: 5,
     borderRadius: 15,
+    padding: 18,
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: 110,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.shadowColor,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.18,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
   },
-  investmentCardBackground: {
-    backgroundColor: Colors.darkInvestment,
-  },
-  profitCardBackground: {
-    backgroundColor: Colors.darkProfit,
-  },
-  summaryIcon: {
-    marginBottom: 10,
+  summaryCardRight: {
+    flex: 1,
+    marginLeft: 5,
+    borderRadius: 15,
+    padding: 18,
+    alignItems: "center",
   },
   summaryAmount: {
+    color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
-    color: Colors.buttonText,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: Colors.buttonText,
     marginTop: 5,
+  },
+  summaryText: {
+    color: "#fff",
+    fontSize: 12,
     textAlign: "center",
-    fontWeight: "600",
+    marginTop: 3,
   },
-  groupListContentContainer: {
-    paddingBottom: 20,
+  noGroupWrapper: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 30,
   },
-
-  // NEW STYLES FOR THE DASHBOARD-LIKE CARDS
-  dashboardCard: {
-    backgroundColor: Colors.cardBackground,
-    marginVertical: 10,
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    padding: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.shadowColor,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  topSection: {
+  noGroupImage: {
+    width: 180,
+    height: 180,
     marginBottom: 20,
   },
-  sectionTitleIcelandic: {
-    fontSize: 16,
-    color: Colors.mediumText,
-    marginBottom: 5,
+  noGroupText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.darkText,
+    textAlign: "center",
   },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  cardTouchable: {
+    marginVertical: 10,
+  },
+  cardGradient: {
+    borderRadius: 20,
+    padding: 2,
+  },
+  cardInner: {
+    borderRadius: 18,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  iconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  ticketText: {
+    fontSize: 14,
+    color: Colors.mediumText,
+  },
+  removalReason: {
+    fontSize: 12,
+    color: Colors.removedText,
+    marginTop: 2,
+  },
+  completedText: {
+    fontSize: 12,
+    color: Colors.completedText,
+    fontWeight: "bold",
+    marginTop: 2,
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 10,
   },
-  mainAmount: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.darkText,
-  },
-  subAmount: {
-    fontSize: 18,
+  progressText: {
+    fontSize: 14,
     color: Colors.mediumText,
+  },
+  progressTextBold: {
+    fontSize: 14,
+    fontWeight: "bold",
   },
   progressBar: {
     height: 8,
-    backgroundColor: Colors.lightGray,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: Colors.accentBlue,
-    borderRadius: 4,
-  },
-  monthlyBillsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  billsTitle: {
-    fontSize: 16,
-    color: Colors.mediumText,
-    marginBottom: 5,
-  },
-  billsAmount: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.darkText,
-  },
-  countdownCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 5,
-    borderColor: Colors.accentBlue,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  countdownText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.darkText,
-  },
-  countdownLabel: {
-    fontSize: 10,
-    color: Colors.mediumText,
-    textAlign: 'center',
-  },
-  actionButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 10,
-    gap: 10,
-  },
-  actionButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 15,
-    borderRadius: 15,
-    backgroundColor: Colors.lightGray,
-  },
-  actionButtonLabel: {
-    marginTop: 8,
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.darkText,
-    textAlign: 'center',
-  },
-  transactionSummaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-  },
-  transactionSummaryText: {
-    fontSize: 16,
-    color: Colors.darkText,
-    flex: 1,
-    marginLeft: 10,
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: Colors.lightDivider,
-  },
-
-  // EXISTING STYLES (kept for the rest of the file)
-  loader: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: 200,
-  },
-  noGroupsContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 60,
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 20,
-    marginHorizontal: 20,
-    marginVertical: 20,
-    borderWidth: 0,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.primaryBlue,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 15,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
-  },
-  noGroupImage: {
-    width: 200,
-    height: 200,
-    marginBottom: 25,
-  },
-  noGroupsText: {
-    textAlign: "center",
-    color: Colors.primaryBlue,
-    fontSize: 22,
-    fontWeight: "800",
+    backgroundColor: "#E0E0E0",
+    borderRadius: 10,
     marginBottom: 10,
   },
-  noGroupsSubText: {
-    textAlign: "center",
-    color: Colors.darkText,
-    fontSize: 16,
-    lineHeight: 25,
-    maxWidth: "80%",
-    marginBottom: 30,
-  },
-  joinGroupButton: {
-    backgroundColor: Colors.primaryBlue,
-    paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 30,
+  amountRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  amountColumn: {
     alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.primaryBlue,
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
   },
-  joinGroupButtonText: {
-    color: Colors.buttonText,
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 10,
+  amountLabel: {
+    fontSize: 12,
+    color: Colors.mediumText,
   },
-  expandButton: {
-    padding: 5,
-  },
-  viewButton: {
-    backgroundColor: Colors.accentBlue,
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginLeft: 'auto',
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.accentBlue,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
-  viewButtonText: {
-    color: Colors.buttonText,
+  amountValue: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 
-export default ReportList;
+export default Mygroups;

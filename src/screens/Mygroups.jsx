@@ -3,382 +3,442 @@ import {
   View,
   Text,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
   StatusBar,
   Image,
-  Platform,
-  Vibration,
+  StyleSheet,
 } from "react-native";
+import url from "../data/url";
 import axios from "axios";
+import Header from "../components/layouts/Header";
+import { MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  MaterialIcons,
-  FontAwesome5,
-  Ionicons,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
-
-import url from "../data/url";
-import Header from "../components/layouts/Header";
+import { LinearGradient } from "expo-linear-gradient";
 import NoGroupImage from "../../assets/Nogroup.png";
 import { ContextProvider } from "../context/UserProvider";
 
-// Indian-style number formatter
+const Colors = {
+  primaryBlue: "#053B90",
+  secondaryBlue: "#0C53B3",
+  lightBackground: "#E8F0F7",
+  darkText: "#2C3E50",
+  mediumText: "#7F8C8D",
+  accentColor: "#3498DB",
+  removedText: "#E74C3C",
+  completedText: "#27AE60",
+};
+
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) return "0";
   const parts = num.toString().split(".");
   let integerPart = parts[0];
-  const decimalPart = parts.length > 1 ? "." + parts[1] : "";
-  const isNegative = integerPart.startsWith("-");
-  if (isNegative) integerPart = integerPart.substring(1);
-
-  const lastThree = integerPart.substring(integerPart.length - 3);
-  const otherNumbers = integerPart.substring(0, integerPart.length - 3);
-
-  if (otherNumbers !== "") {
-    integerPart =
-      otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree;
-  } else {
-    integerPart = lastThree;
+  let decimalPart = parts.length > 1 ? "." + parts[1] : "";
+  let isNegative = false;
+  if (integerPart.startsWith("-")) {
+    isNegative = true;
+    integerPart = integerPart.substring(1);
   }
-
-  return (isNegative ? "-" : "") + integerPart + decimalPart;
+  const lastThree = integerPart.slice(-3);
+  const otherNumbers = integerPart.slice(0, -3);
+  const formattedOther = otherNumbers
+    ? otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + ","
+    : "";
+  return (isNegative ? "-" : "") + formattedOther + lastThree + decimalPart;
 };
 
-const Colors = {
-  primaryBlue: "#053B90",
-  lightBackground: "#F0F5F9",
-  cardBackground: "#FFFFFF",
-  darkText: "#2C3E50",
-  mediumText: "#7F8C8D",
-  lightText: "#BDC3C7",
-  accentGreen: "#2ECC71",
-  accentBlue: "#3499DB",
-  buttonPrimary: "#00BCD4",
-  buttonText: "#FFFFFF",
-  shadowColor: "rgba(0,0,0,0.1)",
-  lightDivider: "#EBEBEB",
-  lightGray: "#F5F5F5",
-  darkInvestment: "#0A2647",
-  darkProfit: "#196F3D",
-};
-
-export default function Mygroups({ navigation }) {
+const Mygroups = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appUser] = useContext(ContextProvider);
-  const { userId } = appUser || {};
-
+  const userId = appUser.userId || {};
   const [cardsData, setCardsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [Totalpaid, setTotalPaid] = useState(0);
   const [Totalprofit, setTotalProfit] = useState(0);
+  const [individualGroupReports, setIndividualGroupReports] = useState({});
 
-  const fetchUserTickets = useCallback(async () => {
+  const fetchTickets = useCallback(async () => {
     if (!userId) {
       setLoading(false);
       return;
     }
     try {
-      setLoading(true);
       const response = await axios.get(`${url}/enroll/users/${userId}`);
-      const data = response.data || [];
-      setCardsData(data);
-
-      const paid = data.reduce(
-        (sum, g) => sum + (g.payments?.totalPaidAmount || 0),
-        0
-      );
-      const profit = data.reduce(
-        (sum, g) => sum + (g.profit?.totalProfit || 0),
-        0
-      );
-      setTotalPaid(paid);
-      setTotalProfit(profit);
-    } catch (err) {
-      console.error("Error fetching tickets:", err);
+      setCardsData(response.data || []);
+    } catch (error) {
+      console.error("Error fetching tickets:", error);
       setCardsData([]);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
+  const fetchAllOverview = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const response = await axios.post(
+        `${url}/enroll/get-user-tickets-report/${userId}`
+      );
+      const data = response.data;
+      setTotalPaid(
+        data.reduce((sum, g) => sum + (g?.payments?.totalPaidAmount || 0), 0)
+      );
+      setTotalProfit(
+        data.reduce((sum, g) => sum + (g?.profit?.totalProfit || 0), 0)
+      );
+
+      const reportsMap = {};
+      data.forEach((groupReport) => {
+        if (
+          groupReport.enrollment &&
+          groupReport.enrollment.group &&
+          groupReport.enrollment.tickets !== undefined
+        ) {
+          const key = `${groupReport.enrollment.group._id || groupReport.enrollment.group
+            }-${groupReport.enrollment.tickets}`;
+          reportsMap[key] = {
+            totalPaid: groupReport.payments?.totalPaidAmount || 0,
+            totalProfit: groupReport.profit?.totalProfit || 0,
+          };
+        }
+      });
+      setIndividualGroupReports(reportsMap);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setTotalPaid(0);
+        setTotalProfit(0);
+        setIndividualGroupReports({});
+      } else {
+        console.error(error);
+      }
+    }
+  }, [userId]);
+
   useEffect(() => {
-    fetchUserTickets();
-  }, [fetchUserTickets]);
+    if (userId) {
+      fetchTickets();
+      fetchAllOverview();
+    }
+  }, [userId, fetchTickets, fetchAllOverview]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchUserTickets();
-    }, [fetchUserTickets])
+      fetchTickets();
+      fetchAllOverview();
+    }, [fetchTickets, fetchAllOverview])
   );
 
-  const filteredCards = cardsData.filter((c) => c.group_id);
-  const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit;
-
-  const renderGroupCards = () =>
-    filteredCards.map((card, index) => {
-      const individualPaidAmount = card.payments?.totalPaidAmount || 0;
-      const totalGroupValue = card.group_id?.group_value || 0;
-      const progressPercentage =
-        (individualPaidAmount / totalGroupValue) * 100 || 0;
-
-      const isDeleted = card.is_removed;
-      const removalReason = card.removal_reason;
-
-      return (
-        <View key={card._id || index} style={[styles.dashboardCard, isDeleted && styles.deletedCard]}>
-          <View style={styles.topSection}>
-            <Text style={styles.groupTitle}>{card.group_id.group_name}</Text>
-            {isDeleted && removalReason && (
-              <View style={styles.removalReasonContainer}>
-                <MaterialIcons name="cancel" size={20} color="red" />
-                <Text style={styles.removalReasonText}>
-                  Reason: {removalReason}
-                </Text>
-              </View>
-            )}
-            <View style={styles.amountRow}>
-              <Text style={styles.mainAmount}>
-                ₹ {formatNumberIndianStyle(individualPaidAmount)}
-              </Text>
-              <Text style={styles.subAmount}>
-                ₹ {formatNumberIndianStyle(totalGroupValue)}
-              </Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    width: `${
-                      progressPercentage > 100 ? 100 : progressPercentage
-                    }%`,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-
-          <View style={styles.cardDivider} />
-
-          <View style={styles.actionButtonsRow}>
-            {["View Payments", "Pay Now", "View Profit"].map((label, i) => (
-              <TouchableOpacity
-                key={i}
-                style={styles.actionButton}
-                onPress={() => {
-                  Vibration.vibrate(50);
-                  navigation.navigate("EnrollTab", {
-                    screen: "EnrollGroup",
-                    params: {
-                      userId,
-                      groupId: card.group_id?._id,
-                      ticket: card.tickets,
-                    },
-                  });
-                }}
-                activeOpacity={0.8}
-              >
-                {i === 0 && (
-                  <MaterialIcons
-                    name="payments"
-                    size={30}
-                    color={Colors.primaryBlue}
-                  />
-                )}
-                {i === 1 && (
-                  <MaterialCommunityIcons
-                    name="currency-inr"
-                    size={30}
-                    color={Colors.primaryBlue}
-                  />
-                )}
-                {i === 2 && (
-                  <FontAwesome5
-                    name="chart-line"
-                    size={30}
-                    color={Colors.primaryBlue}
-                  />
-                )}
-                <Text style={styles.actionButtonLabel}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={styles.cardDivider} />
-
-          <TouchableOpacity
-            style={styles.transactionSummaryRow}
-            onPress={() => {
-              Vibration.vibrate(50);
-              navigation.navigate("EnrollTab", {
-                screen: "EnrollGroup",
-                params: {
-                  userId,
-                  groupId: card.group_id?._id,
-                  ticket: card.tickets,
-                },
-              });
-            }}
-            activeOpacity={0.8}
-          >
-            <MaterialIcons name="list-alt" size={24} color={Colors.primaryBlue} />
-            <Text style={styles.transactionSummaryText}>
-              Ticket Number: {card.tickets}
-            </Text>
-            <MaterialIcons
-              name="keyboard-arrow-right"
-              size={24}
-              color={Colors.mediumText}
-            />
-          </TouchableOpacity>
-        </View>
-      );
+  const filteredCards = cardsData.filter((card) => card.group_id !== null);
+  const handleCardPress = (groupId, ticket) => {
+    navigation.navigate("BottomTab", {
+      screen: "EnrollTab",
+      params: { screen: "EnrollGroup", params: { userId, groupId, ticket } },
     });
-
-  const renderNoGroups = () => (
-    <View style={styles.noGroupsContainer}>
-      <Image source={NoGroupImage} style={styles.noGroupImage} resizeMode="contain" />
-      <Text style={styles.noGroupsText}>No Groups Yet!</Text>
-      <Text style={styles.noGroupsSubText}>
-        Start your investment journey by exploring and enrolling in a new group.
-      </Text>
-      <TouchableOpacity
-        style={styles.joinGroupButton}
-        onPress={() => navigation.navigate("GroupsTab")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add-circle" size={24} color={Colors.buttonText} />
-        <Text style={styles.joinGroupButtonText}>Explore Groups</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  };
+  const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit;
+  const calculatePaidPercentage = (group_value, paid_amount) => {
+    if (!group_value || !paid_amount) return 0;
+    return Math.min(100, Math.round((paid_amount / group_value) * 100));
+  };
 
   return (
-    <View style={[styles.screenContainer, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.primaryBlue} />
       <Header userId={userId} navigation={navigation} />
 
-      <View style={styles.outerBoxContainer}>
-        <View style={styles.mainContentWrapper}>
-          <Text style={styles.sectionTitle}>My Groups</Text>
+      <View style={styles.mainWrapper}>
+        <View style={styles.innerWrapper}>
+          <Text style={styles.title}>My Groups</Text>
 
-          <View style={styles.summaryCardsRow}>
-            <View style={[styles.summaryCard, { backgroundColor: Colors.darkInvestment }]}>
-              <FontAwesome5 name="wallet" size={20} color={Colors.buttonText} />
-              <Text style={styles.summaryAmount}>
-                ₹ {formatNumberIndianStyle(Totalpaid || 0)}
-              </Text>
-              <Text style={styles.summaryLabel}>Total Investment</Text>
-            </View>
-
-            <View style={[styles.summaryCard, { backgroundColor: Colors.darkProfit }]}>
-              <FontAwesome5 name="chart-line" size={20} color={Colors.buttonText} />
-              <Text style={styles.summaryAmount}>
-                ₹ {formatNumberIndianStyle(displayTotalProfit || 0)}
-              </Text>
-              <Text style={styles.summaryLabel}>Total Dividend / Profit</Text>
-            </View>
+          {/* Summary Cards */}
+          <View style={styles.summaryCards}>
+            <LinearGradient
+              colors={["#0A2647", "#0C53B3"]}
+              style={styles.summaryCardLeft}
+            >
+              <FontAwesome5 name="wallet" size={20} color="#fff" />
+              <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(Totalpaid)}</Text>
+              <Text style={styles.summaryText}>Total Investment</Text>
+            </LinearGradient>
+            <LinearGradient
+              colors={["#196F3D", "#27AE60"]}
+              style={styles.summaryCardRight}
+            >
+              <FontAwesome5 name="chart-line" size={20} color="#fff" />
+              <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(displayTotalProfit)}</Text>
+              <Text style={styles.summaryText}>Total Dividend / Profit</Text>
+            </LinearGradient>
           </View>
 
           {loading ? (
-            <ActivityIndicator size="large" color={Colors.primaryBlue} style={styles.loader} />
-          ) : filteredCards.length > 0 ? (
-            <ScrollView
-              contentContainerStyle={styles.groupListContentContainer}
-              showsVerticalScrollIndicator={false}
-            >
-              {renderGroupCards()}
-            </ScrollView>
+            <ActivityIndicator size="large" color={Colors.primaryBlue} style={{ marginTop: 50 }} />
+          ) : filteredCards.length === 0 ? (
+            <View style={styles.noGroupWrapper}>
+              <Image
+                source={NoGroupImage}
+                style={styles.noGroupImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.noGroupText}>
+                No groups found for this user.
+              </Text>
+            </View>
           ) : (
-            renderNoGroups()
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+              {filteredCards.map((card, index) => {
+                const groupIdFromCard = card.group_id?._id || card.group_id;
+                const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
+                const individualPaidAmount = individualGroupReports[groupReportKey]?.totalPaid || 0;
+                const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
+
+                const isDeleted = card.deleted;
+                const isCompleted = card.completed;
+
+                const gradientColors = isDeleted
+                  ? ["#F5F5F5", "#E0E0E0"]
+                  : isCompleted
+                    ? ["#E8F6F3", "#27AE60"]
+                    : ["#E0F0FF", "#0C53B3"];
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleCardPress(card.group_id._id, card.tickets)}
+                    disabled={isDeleted}
+                    style={styles.cardTouchable}
+                  >
+                    <LinearGradient colors={gradientColors} style={styles.cardGradient}>
+                      <View style={[styles.cardInner, { backgroundColor: isDeleted ? "#F0F0F0" : "#fff" }]}>
+                        {/* Card Header */}
+                        <View style={styles.cardHeader}>
+                          <View
+                            style={[
+                              styles.iconCircle,
+                              {
+                                backgroundColor: isDeleted
+                                  ? "#BDC3C7"
+                                  : isCompleted
+                                    ? Colors.completedText
+                                    : Colors.secondaryBlue,
+                              },
+                            ]}
+                          >
+                            <MaterialCommunityIcons name="currency-inr" size={28} color="#fff" />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[
+                              styles.cardTitle,
+                              { color: isDeleted ? Colors.removedText : isCompleted ? Colors.completedText : Colors.darkText }
+                            ]}>
+                              {card.group_id.group_name}
+                            </Text>
+                            <Text style={styles.ticketText}>Ticket: {card.tickets}</Text>
+                            {isDeleted && (
+                              <Text style={styles.removalReason}>
+                                Reason: {card.removal_reason?.toUpperCase() !== "OTHERS" ? card.removal_reason : "Unknown"}
+                              </Text>
+                            )}
+                            {isCompleted && (
+                              <Text style={styles.completedText}>
+                                Completed
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+
+                        {/* Card Body */}
+                        <View>
+                          <View style={styles.progressHeader}>
+                            <Text style={styles.progressText}>Paid</Text>
+                            <Text style={styles.progressTextBold}>{paidPercentage}%</Text>
+                          </View>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={{
+                                width: `${paidPercentage}%`,
+                                height: 8,
+                                borderRadius: 10,
+                                backgroundColor: Colors.accentColor,
+                              }}
+                            />
+                          </View>
+                          <View style={styles.amountRow}>
+                            <View style={styles.amountColumn}>
+                              <Text style={styles.amountLabel}>Total Value</Text>
+                              <Text style={styles.amountValue}>₹ {formatNumberIndianStyle(card.group_id.group_value)}</Text>
+                            </View>
+                            <View style={styles.amountColumn}>
+                              <Text style={styles.amountLabel}>Paid</Text>
+                              <Text style={[styles.amountValue, { color: Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           )}
         </View>
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  screenContainer: { flex: 1, backgroundColor: Colors.primaryBlue },
-  outerBoxContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: Colors.primaryBlue,
+  },
+  mainWrapper: {
     flex: 1,
     backgroundColor: Colors.lightBackground,
     margin: 10,
     borderRadius: 20,
-    ...Platform.select({
-      ios: { shadowColor: Colors.shadowColor, shadowOpacity: 0.2, shadowRadius: 10 },
-      android: { elevation: 10 },
-    }),
   },
-  mainContentWrapper: { flex: 1, backgroundColor: Colors.cardBackground, padding: 20 },
-  sectionTitle: { fontWeight: "bold", fontSize: 24, color: Colors.darkText, textAlign: "center", marginBottom: 15 },
-  summaryCardsRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20, gap: 15 },
-  summaryCard: {
+  innerWrapper: {
     flex: 1,
-    padding: 18,
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  summaryCards: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  summaryCardLeft: {
+    flex: 1,
+    marginRight: 5,
     borderRadius: 15,
+    padding: 18,
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: 110,
-    ...Platform.select({ ios: { shadowColor: Colors.shadowColor, shadowOpacity: 0.18, shadowRadius: 8 }, android: { elevation: 8 } }),
   },
-  summaryAmount: { fontSize: 20, fontWeight: "bold", color: Colors.buttonText },
-  summaryLabel: { fontSize: 12, color: Colors.buttonText, marginTop: 5, textAlign: "center", fontWeight: "600" },
-  groupListContentContainer: { paddingBottom: 20 },
-  dashboardCard: {
-    backgroundColor: Colors.cardBackground,
-    marginVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    padding: 20,
-    ...Platform.select({ ios: { shadowColor: Colors.shadowColor, shadowOpacity: 0.2, shadowRadius: 12 }, android: { elevation: 8 } }),
+  summaryCardRight: {
+    flex: 1,
+    marginLeft: 5,
+    borderRadius: 15,
+    padding: 18,
+    alignItems: "center",
   },
-  deletedCard: {
-    borderColor: 'red',
-    backgroundColor: '#ffe6e6',
+  summaryAmount: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 5,
   },
-  topSection: { marginBottom: 20 },
-  groupTitle: { fontSize: 16, color: Colors.mediumText, marginBottom: 5 },
-  amountRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  mainAmount: { fontSize: 32, fontWeight: "bold", color: Colors.darkText },
-  subAmount: { fontSize: 18, color: Colors.mediumText },
-  progressBar: { height: 8, backgroundColor: Colors.lightGray, borderRadius: 4, overflow: "hidden" },
-  progressBarFill: { height: "100%", backgroundColor: Colors.accentBlue },
-  actionButtonsRow: { flexDirection: "row", justifyContent: "space-between", marginVertical: 10, gap: 10 },
-  actionButton: { flex: 1, alignItems: "center", paddingVertical: 15, borderRadius: 15, backgroundColor: Colors.lightGray },
-  actionButtonLabel: { marginTop: 8, fontSize: 12, fontWeight: "600", color: Colors.darkText, textAlign: "center" },
-  transactionSummaryRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 15 },
-  transactionSummaryText: { fontSize: 16, color: Colors.darkText, flex: 1, marginLeft: 10 },
-  cardDivider: { height: 1, backgroundColor: Colors.lightDivider },
-  removalReasonContainer: { flexDirection: "row", alignItems: "center", backgroundColor: "#FDE7E7", padding: 8, borderRadius: 10, marginBottom: 10 },
-  removalReasonText: { color: "red", fontStyle: "italic", marginLeft: 5, fontSize: 12 },
-  loader: { flex: 1, justifyContent: "center", alignItems: "center", minHeight: 200 },
-  noGroupsContainer: {
+  summaryText: {
+    color: "#fff",
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 3,
+  },
+  noGroupWrapper: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 20,
-    margin: 20,
-    ...Platform.select({ ios: { shadowColor: Colors.primaryBlue, shadowOpacity: 0.15, shadowRadius: 15 }, android: { elevation: 12 } }),
+    padding: 30,
   },
-  noGroupImage: { width: 200, height: 200, marginBottom: 25 },
-  noGroupsText: { textAlign: "center", color: Colors.primaryBlue, fontSize: 22, fontWeight: "800", marginBottom: 10 },
-  noGroupsSubText: { textAlign: "center", color: Colors.darkText, fontSize: 16, lineHeight: 25, maxWidth: "80%", marginBottom: 30 },
-  joinGroupButton: {
-    backgroundColor: Colors.primaryBlue,
-    paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 30,
+  noGroupImage: {
+    width: 180,
+    height: 180,
+    marginBottom: 20,
+  },
+  noGroupText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.darkText,
+    textAlign: "center",
+  },
+  cardTouchable: {
+    marginVertical: 10,
+  },
+  cardGradient: {
+    borderRadius: 20,
+    padding: 2,
+  },
+  cardInner: {
+    borderRadius: 18,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    ...Platform.select({ ios: { shadowColor: Colors.primaryBlue, shadowOpacity: 0.3, shadowRadius: 10 }, android: { elevation: 8 } }),
+    marginBottom: 15,
   },
-  joinGroupButtonText: { color: Colors.buttonText, fontSize: 18, fontWeight: "bold", marginLeft: 10 },
+  iconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  ticketText: {
+    fontSize: 14,
+    color: Colors.mediumText,
+  },
+  removalReason: {
+    fontSize: 12,
+    color: Colors.removedText,
+    marginTop: 2,
+  },
+  completedText: {
+    fontSize: 12,
+    color: Colors.completedText,
+    fontWeight: "bold",
+    marginTop: 2,
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  progressText: {
+    fontSize: 14,
+    color: Colors.mediumText,
+  },
+  progressTextBold: {
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  amountRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  amountColumn: {
+    alignItems: "center",
+  },
+  amountLabel: {
+    fontSize: 12,
+    color: Colors.mediumText,
+  },
+  amountValue: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });
+
+export default Mygroups;
