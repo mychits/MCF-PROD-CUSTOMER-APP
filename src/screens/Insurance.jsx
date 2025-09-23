@@ -13,34 +13,33 @@ import {
   ScrollView,
   Easing,
   Vibration,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-
+import axios from "axios";
+import url from "../data/url";
 import bikeImage from "../../assets/bike.png";
 import carImage from "../../assets/car.png";
 import healthImage from "../../assets/health.png";
-import homeImage from "../../assets/home_image.png";
-import travelImage from "../../assets/travel.png";
-import goldImage from "../../assets/gold.png";
 import termLifeImage from "../../assets/Termlife.png";
-import savingsImage from "../../assets/Savings.png"; // Added import for Savings.png
 
 import Header from "../components/layouts/Header";
 import { ContextProvider } from "../context/UserProvider";
 
 const { width } = Dimensions.get("window");
 
-// Updated card background colors to match EnrollGroup's style
 const cardBackgroundColors = [
-  "#004775", // Dark Blue for Health (matches EnrollGroup's investmentCardBackground)
-  "#357500", // Dark Green for Car (matches EnrollGroup's profitCardBackground)
-  "#800080", // Purple for Bike (matches EnrollGroup's totalPaid color)
-  "#E74C3C", // Red for Home (matches EnrollGroup's balance color)
-  "#FF6347", // Tomato for Travel (matches EnrollGroup's toBePaid color)
-  "#2ECC71", // Emerald Green for Gold (matches EnrollGroup's balanceExcess color)
+  "#004775",
+  "#357500",
+  "#800080",
+  "#E74C3C",
+  "#FF6347",
+  "#2ECC71",
 ];
 
+// -------------------- InsuranceCard ---------------------
 const InsuranceCard = ({
   title,
   imageSource,
@@ -55,116 +54,17 @@ const InsuranceCard = ({
   const shadowOpacityAnim = useRef(new Animated.Value(0.1)).current;
   const elevationAnim = useRef(new Animated.Value(6)).current;
 
-  const arrowTranslateX = useRef(new Animated.Value(20)).current;
-  const arrowOpacity = useRef(new Animated.Value(0)).current;
-  const arrowScale = useRef(new Animated.Value(1)).current;
-
   useEffect(() => {
     Animated.sequence([
       Animated.delay(animationDelay || 0),
       Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 6,
-          tension: 100,
-          useNativeDriver: false,
-        }),
-        Animated.timing(translateYAnim, {
-          toValue: 0,
-          duration: 500,
-          easing: Easing.out(Easing.bezier(0.25, 0.1, 0.25, 1)),
-          useNativeDriver: false,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: false,
-        }),
-        Animated.timing(rotateXAnim, {
-          toValue: 0,
-          duration: 600,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 6, tension: 100, useNativeDriver: false }),
+        Animated.timing(translateYAnim, { toValue: 0, duration: 500, useNativeDriver: false }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: false }),
+        Animated.timing(rotateXAnim, { toValue: 0, duration: 600, useNativeDriver: false }),
       ]),
-    ]).start(() => {
-      Animated.parallel([
-        Animated.timing(arrowTranslateX, {
-          toValue: 0,
-          duration: 300,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(arrowOpacity, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
-  }, [
-    fadeAnim,
-    animationDelay,
-    arrowTranslateX,
-    arrowOpacity,
-    scaleAnim,
-    translateYAnim,
-    rotateXAnim,
-  ]);
-
-  const handlePressIn = () => {
-    Vibration.vibrate(50);
-    Animated.parallel([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: false,
-      }),
-      Animated.timing(shadowOpacityAnim, {
-        toValue: 0.25,
-        duration: 100,
-        useNativeDriver: false,
-      }),
-      Animated.timing(elevationAnim, {
-        toValue: 10,
-        duration: 100,
-        useNativeDriver: false,
-      }),
-      Animated.spring(arrowScale, {
-        toValue: 1.1,
-        friction: 4,
-        tension: 80,
-        useNativeDriver: true,
-      }),
     ]).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 4,
-        tension: 60,
-        useNativeDriver: false,
-      }),
-      Animated.timing(shadowOpacityAnim, {
-        toValue: 0.1,
-        duration: 150,
-        useNativeDriver: false,
-      }),
-      Animated.timing(elevationAnim, {
-        toValue: 6,
-        duration: 150,
-        useNativeDriver: false,
-      }),
-      Animated.spring(arrowScale, {
-        toValue: 1,
-        friction: 4,
-        tension: 80,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
+  }, [animationDelay]);
 
   const cardRotationX = rotateXAnim.interpolate({
     inputRange: [0, 10],
@@ -185,188 +85,126 @@ const InsuranceCard = ({
   };
 
   return (
-    <Animated.View style={[styles.insuranceCard, animatedCardStyle]}>
-      <TouchableOpacity
-        style={styles.touchableCardContent}
-        onPress={onPress}
-        activeOpacity={1}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-      >
-        <View style={styles.cardContentWrapper}>
-          <View style={styles.cardTitleContainer}>
-            <Text style={styles.cardTitle}>{title}</Text>
-            {title === "Health"}
-            <Animated.View
-              style={{
-                transform: [
-                  { translateX: arrowTranslateX },
-                  { scale: arrowScale },
-                ],
-                opacity: arrowOpacity,
-              }}
-            >
-              <MaterialIcons name="arrow-forward" size={22} color="#E0E0E0" />
-            </Animated.View>
+    <View style={{ width: "48%", marginBottom: 25 }}>
+      {/* Card content */}
+      <Animated.View style={[styles.insuranceCard, animatedCardStyle]}>
+        <TouchableOpacity
+          style={styles.touchableCardContent}
+          onPress={onPress}
+          activeOpacity={0.9}
+        >
+          <View style={styles.cardContentWrapper}>
+            <View style={styles.cardTitleContainer}>
+              <Text style={styles.cardTitle}>{title}</Text>
+            </View>
+            {imageSource && (
+              <Image
+                source={typeof imageSource === "string" ? { uri: imageSource } : imageSource}
+                style={styles.cardImage}
+                resizeMode="contain"
+              />
+            )}
           </View>
-          {imageSource && (
-            <Image
-              source={
-                typeof imageSource === "string"
-                  ? { uri: imageSource }
-                  : imageSource
-              }
-              style={styles.cardImage}
-              resizeMode="contain"
-            />
-          )}
-        </View>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* 🚨 Button now BELOW the card */}
+      <TouchableOpacity style={styles.enquireButtonBelow} onPress={onPress}>
+        <Text style={styles.enquireButtonText}>Enquire Now</Text>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 };
 
-const Insurance = ({ navigation, route }) => {
+// -------------------- Main Screen -----------------------
+const Insurance = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const [appUser] = useContext(ContextProvider);
+  const userId = appUser?.userId || "default_user_id";
 
-  const [appUser, setAppUser] = useContext(ContextProvider);
-  const userId = appUser?.userId || {};
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const headerTranslateY = useRef(new Animated.Value(-100)).current;
   const mainTitleTranslateY = useRef(new Animated.Value(-50)).current;
   const mainTitleOpacity = useRef(new Animated.Value(0)).current;
   const mainTitleScale = useRef(new Animated.Value(0.9)).current;
-
   const subTitleTranslateY = useRef(new Animated.Value(-30)).current;
   const subTitleOpacity = useRef(new Animated.Value(0)).current;
-
   const contentScale = useRef(new Animated.Value(0.95)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentTranslateY = useRef(new Animated.Value(50)).current;
 
-  const exploreTranslateY = useRef(new Animated.Value(50)).current;
-  const exploreOpacity = useRef(new Animated.Value(0)).current;
-
-  const vehicleInsuranceTranslateY = useRef(new Animated.Value(50)).current;
-  const vehicleInsuranceOpacity = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     Animated.sequence([
-      Animated.timing(headerTranslateY, {
-        toValue: 0,
-        duration: 400,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: false,
-      }),
+      Animated.timing(headerTranslateY, { toValue: 0, duration: 400, useNativeDriver: false }),
       Animated.parallel([
-        Animated.spring(mainTitleTranslateY, {
-          toValue: 0,
-          friction: 8,
-          tension: 120,
-          useNativeDriver: false,
-        }),
-        Animated.spring(mainTitleScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 120,
-          useNativeDriver: false,
-        }),
-        Animated.timing(mainTitleOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: false,
-        }),
+        Animated.spring(mainTitleTranslateY, { toValue: 0, friction: 8, tension: 120, useNativeDriver: false }),
+        Animated.spring(mainTitleScale, { toValue: 1, friction: 8, tension: 120, useNativeDriver: false }),
+        Animated.timing(mainTitleOpacity, { toValue: 1, duration: 300, useNativeDriver: false }),
       ]),
       Animated.parallel([
-        Animated.timing(subTitleTranslateY, {
-          toValue: 0,
-          duration: 350,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(subTitleOpacity, {
-          toValue: 1,
-          duration: 350,
-          useNativeDriver: false,
-        }),
+        Animated.timing(subTitleTranslateY, { toValue: 0, duration: 350, useNativeDriver: false }),
+        Animated.timing(subTitleOpacity, { toValue: 1, duration: 350, useNativeDriver: false }),
       ]),
       Animated.parallel([
-        Animated.spring(contentScale, {
-          toValue: 1,
-          friction: 7,
-          tension: 90,
-          useNativeDriver: false,
-        }),
-        Animated.timing(contentOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-        Animated.timing(contentTranslateY, {
-          toValue: 0,
-          duration: 600,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(exploreTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(exploreOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: false,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(vehicleInsuranceTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(vehicleInsuranceOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: false,
-        }),
+        Animated.spring(contentScale, { toValue: 1, friction: 7, tension: 90, useNativeDriver: false }),
+        Animated.timing(contentOpacity, { toValue: 1, duration: 500, useNativeDriver: false }),
+        Animated.timing(contentTranslateY, { toValue: 0, duration: 600, useNativeDriver: false }),
       ]),
     ]).start();
   }, []);
 
   const handleInsuranceOptionPress = (optionType) => {
-    console.log(`Navigating to ${optionType} insurance details`);
+    Alert.alert(
+      "Confirm Enquiry",
+      `Are you sure you want to enquire about ${optionType} insurance?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Okay", onPress: () => submitEnquiry(optionType) },
+      ]
+    );
+  };
+
+  const submitEnquiry = async (optionType) => {
+    setMessage(null);
+    setLoading(true);
+
+    try {
+      const postData = {
+        customer_id: userId,
+        insurance_type: [optionType.toLowerCase()],
+      };
+      const response = await axios.post(`${url}/insurance`, postData, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (response.data.message === "updated enquiry") {
+        setMessage(`Success! Your interest in ${optionType} has been recorded.`);
+        Alert.alert("Success", `Your interest in ${optionType} has been recorded.`);
+      } else {
+        setMessage(`Request for ${optionType} succeeded, but server response was unexpected.`);
+      }
+    } catch (error) {
+      setMessage(`Failed to record your interest in ${optionType}. Please try again.`);
+      Alert.alert("Error", `Failed to record your interest in ${optionType}.`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const insuranceOptions = [
     { title: "Bike", image: bikeImage, color: cardBackgroundColors[2] },
     { title: "Car", image: carImage, color: cardBackgroundColors[1] },
-    { title: "Term life", image: termLifeImage, color: "#053B90" }, // Use EnrollGroup's primary color
+    { title: "Term", image: termLifeImage, color: "#053B90" },
     { title: "Health", image: healthImage, color: cardBackgroundColors[0] },
-    { title: "Savings", image: savingsImage, color: "#004775" }, // Updated 'image' to savingsImage
-    { title: "Travel", image: travelImage, color: cardBackgroundColors[4] },
-  ];
-
-  const exploreOptions = [
-    { title: "Pension", icon: "face" },
-    { title: "Cyber Insurance", icon: "security" },
-    { title: "Shop", icon: "store" },
-    { title: "Hospital cash", icon: "local-hospital" },
-    { title: "Home Insurance", icon: "home" },
   ];
 
   return (
     <SafeAreaView
       style={[
         styles.safeArea,
-        {
-          paddingTop:
-            Platform.OS === "android" ? StatusBar.currentHeight : insets.top,
-        },
+        { paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : insets.top },
       ]}
     >
       <StatusBar barStyle="light-content" backgroundColor="#053B90" />
@@ -378,10 +216,7 @@ const Insurance = ({ navigation, route }) => {
         style={[
           styles.mainContentArea,
           {
-            transform: [
-              { scale: contentScale },
-              { translateY: contentTranslateY },
-            ],
+            transform: [{ scale: contentScale }, { translateY: contentTranslateY }],
             opacity: contentOpacity,
           },
         ]}
@@ -391,10 +226,7 @@ const Insurance = ({ navigation, route }) => {
             style={[
               styles.mainTitleContainer,
               {
-                transform: [
-                  { translateY: mainTitleTranslateY },
-                  { scale: mainTitleScale },
-                ],
+                transform: [{ translateY: mainTitleTranslateY }, { scale: mainTitleScale }],
                 opacity: mainTitleOpacity,
               },
             ]}
@@ -403,10 +235,7 @@ const Insurance = ({ navigation, route }) => {
             <Animated.Text
               style={[
                 styles.mainTitleNormal,
-                {
-                  transform: [{ translateY: subTitleTranslateY }],
-                  opacity: subTitleOpacity,
-                },
+                { transform: [{ translateY: subTitleTranslateY }], opacity: subTitleOpacity },
               ]}
             >
               Secure what you love
@@ -416,6 +245,30 @@ const Insurance = ({ navigation, route }) => {
               <Text style={styles.myPoliciesText}>My Policies</Text>
             </TouchableOpacity>
           </Animated.View>
+
+          {loading && (
+            <View style={styles.statusContainer}>
+              <ActivityIndicator size="small" color="#053B90" />
+              <Text style={styles.statusText}>Processing request...</Text>
+            </View>
+          )}
+          {message && !loading && (
+            <View
+              style={[
+                styles.statusContainer,
+                message.includes("Success") && styles.statusContainerSuccess,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusText,
+                  message.includes("Success") && styles.statusTextSuccess,
+                ]}
+              >
+                {message}
+              </Text>
+            </View>
+          )}
 
           <ScrollView
             contentContainerStyle={styles.cardsScrollViewContent}
@@ -433,41 +286,6 @@ const Insurance = ({ navigation, route }) => {
                 />
               ))}
             </View>
-
-            <Animated.View
-              style={[
-                styles.exploreOtherContainer,
-                {
-                  transform: [{ translateY: exploreTranslateY }],
-                  opacity: exploreOpacity,
-                },
-              ]}
-            >
-              <Text style={styles.exploreOtherTitle}>Explore other insurances</Text>
-              <View style={styles.exploreGrid}>
-                {exploreOptions.map((option, index) => (
-                  <TouchableOpacity key={index} style={styles.exploreItem}>
-                    <View style={styles.exploreIconCircle}>
-                      <MaterialIcons name={option.icon} size={30} color="#053B90" />
-                    </View>
-                    <Text style={styles.exploreItemText}>{option.title}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Animated.View>
-
-            <Animated.View
-              style={[
-                styles.insureVehicleContainer,
-                {
-                  transform: [{ translateY: vehicleInsuranceTranslateY }],
-                  opacity: vehicleInsuranceOpacity,
-                },
-              ]}
-            >
-              {/* This section was empty in your provided code, adding a placeholder */}
-              
-            </Animated.View>
           </ScrollView>
         </View>
       </Animated.View>
@@ -475,39 +293,27 @@ const Insurance = ({ navigation, route }) => {
   );
 };
 
+// -------------------- Styles ----------------------------
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#053B90", // Changed to EnrollGroup's primary background
-  },
-  darkHeader: {
-    backgroundColor: "#053B90", // Changed to EnrollGroup's primary background
-  },
+  safeArea: { flex: 1, backgroundColor: "#053B90" },
+  darkHeader: { backgroundColor: "#053B90" },
   mainContentArea: {
     flex: 1,
-    backgroundColor: "#fff", // Changed to white to match EnrollGroup's content card
-    marginHorizontal: 10, // Added margin to match EnrollGroup's content card
-    marginBottom: 50, // Adjusted margin to match EnrollGroup's content card
-    borderRadius: 12, // Added borderRadius to match EnrollGroup's content card
-    paddingBottom: 0,
+    backgroundColor: "#fff",
+    marginHorizontal: 10,
+    marginBottom: 50,
+    borderRadius: 12,
     overflow: "hidden",
     ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 }, // Adjusted shadow to match EnrollGroup
-        shadowOpacity: 0.1, // Adjusted shadow to match EnrollGroup
-        shadowRadius: 10, // Adjusted shadow to match EnrollGroup
-      },
-      android: {
-        elevation: 8, // Adjusted elevation to match EnrollGroup
-      },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 10 },
+      android: { elevation: 8 },
     }),
   },
   bottomSection: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#fff", // Changed to white
-    padding: 15, // Adjusted padding to match EnrollGroup's content card
+    backgroundColor: "#fff",
+    padding: 15,
     alignItems: "center",
   },
   mainTitleContainer: {
@@ -518,216 +324,99 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     position: "relative",
   },
-  mainTitleBold: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#333", // Changed to dark grey
-    textAlign: "left",
-  },
-  mainTitleNormal: {
-    fontSize: 18,
-    color: "#666", // Changed to softer grey
-    marginTop: 0,
-    textAlign: "left",
-  },
-  // --- My Policies Button Styles ---
+  mainTitleBold: { fontSize: 26, fontWeight: "bold", color: "#333", textAlign: "left" },
+  mainTitleNormal: { fontSize: 18, color: "#666", textAlign: "left" },
   myPoliciesButton: {
     position: "absolute",
     right: 0,
     top: 0,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E8F0FE", // A very light blue, subtle background
+    backgroundColor: "#E8F0FE",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
-    borderWidth: 1, // Added a subtle border
-    borderColor: "#A7D3FE", // A slightly darker light blue for the border
-    shadowColor: "#000", // Subtle shadow for depth
+    borderWidth: 1,
+    borderColor: "#A7D3FE",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 3, // Android shadow
+    elevation: 3,
   },
-  myPoliciesText: {
-    color: "#053B90", // EnrollGroup's primary blue for text
-    fontSize: 14,
-    marginLeft: 5,
-    fontWeight: "700", // Slightly bolder for emphasis
-  },
-  // --- End My Policies Button Styles ---
-  cardsScrollViewContent: {
-    flexGrow: 1,
-    paddingBottom: 5,
-  },
+  myPoliciesText: { color: "#053B90", fontSize: 14, marginLeft: 5, fontWeight: "700" },
+  cardsScrollViewContent: { flexGrow: 1, paddingBottom: 5 },
   cardsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    paddingHorizontal: 0,
     width: "100%",
   },
   insuranceCard: {
-    width: "48%",
-    borderRadius: 12, // Increased border radius
+    borderRadius: 12,
     paddingVertical: 15,
     paddingHorizontal: 15,
-    marginBottom: 15,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 }, // Adjusted shadow
-    shadowOpacity: 0.1, // Adjusted shadow
-    shadowRadius: 6, // Adjusted shadow
-    elevation: 6, // Adjusted elevation
-    borderColor: "#E0E0E0", // Changed to a lighter border color
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
+    borderColor: "#E0E0E0",
     borderWidth: 1,
     alignItems: "flex-start",
     height: 160,
     justifyContent: "space-between",
   },
-  touchableCardContent: {
-    flex: 1,
-    width: "100%",
-    justifyContent: "space-between",
-  },
-  cardContentWrapper: {
-    width: "100%",
-    alignItems: "flex-start",
-    flex: 1,
-  },
-  cardTitleContainer: {
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    width: "100%",
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFF",
-    flexShrink: 1,
-    marginRight: 8,
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    color: "#CCC",
-    marginTop: 2,
-  },
-  badge: {
-    backgroundColor: "#800080", // Changed to purple
-    borderRadius: 5,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    marginTop: 5,
-  },
-  badgeText: {
-    color: "#FFF",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  cardImage: {
-    width: "110%",
-    height: 85,
-    alignSelf: "flex-end",
-    resizeMode: "contain",
-  },
-  exploreOtherContainer: {
-    width: "100%",
-    marginTop: 20,
-    alignItems: "flex-start",
-    paddingHorizontal: 5,
-  },
-  exploreOtherTitle: {
-    fontSize: 18,
-    fontWeight: "800", // Bolder font weight
-    color: "#333", // Changed to dark grey
-    marginBottom: 15,
-  },
-  exploreGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "flex-start",
-    width: "100%",
-  },
-  exploreItem: {
+  touchableCardContent: { flex: 1, width: "100%", justifyContent: "space-between" },
+  cardContentWrapper: { width: "100%", alignItems: "flex-start", flex: 1, justifyContent: "space-between" },
+  cardTitleContainer: { width: "100%", marginBottom: 8 },
+  cardTitle: { fontSize: 18, fontWeight: "bold", color: "#FFF" },
+  cardImage: { width: "110%", height: 85, alignSelf: "flex-end", resizeMode: "contain" },
+  statusContainer: {
+    width: "90%",
+    padding: 10,
+    borderRadius: 8,
     alignItems: "center",
-    width: "25%",
-    marginBottom: 20,
-  },
-  // --- Explore Icon Circle Styles ---
-  exploreIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#F2F7FF", // A very light, subtle blue for the background
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-    borderWidth: 1, // Added a thin border
-    borderColor: "#D0E0FF", // A slightly darker blue for the border
-    shadowColor: "#000", // Subtle shadow for depth
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1, // Android shadow
+    marginBottom: 10,
   },
-  exploreItemText: {
-    color: "#053B90", // EnrollGroup's primary blue for text
-    fontSize: 12,
+  statusText: {
+    fontSize: 14,
+    color: "#053B90",
     textAlign: "center",
-    fontWeight: "600", // Slightly bolder
   },
-  // --- End Explore Icon Circle Styles ---
-  insureVehicleContainer: {
-    width: "100%",
-    marginTop: 20,
-    paddingHorizontal: 5,
+  // Added styling for success message container
+  statusContainerSuccess: {
+    backgroundColor: '#E8F6F3', // Light green background
+    borderColor: '#4CAF50', // Green border
+    borderWidth: 1,
+    borderRadius:14,
   },
-  insureVehicleButton: {
-    flexDirection: "row",
-    backgroundColor: "#F0F8FF", // A very light, almost white blue
-    borderRadius: 12, // Increased border radius
-    padding: 15,
+  // Added styling for success message text
+  statusTextSuccess: {
+    color: '#4CAF50', // Green text
+    fontWeight: 'bold',
+  },
+  enquireButtonBelow: {
+    backgroundColor: "#fff",
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#053B90",
+    alignSelf: "stretch",
     alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1, // Added a border
-    borderColor: "#E0EFFF", // A very light blue for the border
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+    marginTop: 8,
   },
-  insureVehicleTextContent: {
-    flex: 1,
-  },
-  insureVehicleTitle: {
-    fontSize: 16,
+  enquireButtonText: {
+    color: "#053B90",
     fontWeight: "bold",
-    color: "#053B90", // Changed to primary blue
-    marginBottom: 5,
-  },
-  insureVehicleSubtitle: {
-    fontSize: 13,
-    color: "#4A90E2", // A medium blue for contrast
-  },
-  insureVehicleImageContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  insureVehicleImage: {
-    width: 70,
-    height: 70,
-    marginRight: 10,
-  },
-  insureVehicleArrow: {
-    color: "#053B90", // Primary blue for the arrow
+    fontSize: 14,
   },
 });
 
