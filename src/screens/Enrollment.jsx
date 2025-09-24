@@ -1,4 +1,4 @@
-// NewGroupsEnrolls.jsx
+// Enrollment.jsx
 
 import React, { useState, useEffect, useContext } from "react";
 import {
@@ -22,6 +22,7 @@ import Header from "../components/layouts/Header";
 import { NetworkContext } from '../context/NetworkProvider';
 import Toast from 'react-native-toast-message';
 import { ContextProvider } from "../context/UserProvider"
+
 const formatNumberIndianStyle = (num) => {
     if (num === null || num === undefined) {
         return "0";
@@ -50,13 +51,16 @@ const Enrollment = ({ route, navigation }) => {
     const userId = appUser.userId || {};
     const [selectedCardIndex, setSelectedCardIndex] = useState(null);
     const [cardsData, setCardsData] = useState([]);
-    const initialGroupFilter = groupFilter === "New Groups" ? "NewGroups" : (groupFilter === "Ongoing Groups" ? "OngoingGroups" : "AllGroups");
+
+    // Set the initial filter to "NewGroups" by default.
+    const initialGroupFilter = "NewGroups";
     const [selectedGroup, setSelectedGroup] = useState(initialGroupFilter);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [enrollmentModalVisible, setEnrollmentModalVisible] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
     const { isConnected, isInternetReachable } = useContext(NetworkContext);
+    const [moreFiltersModalVisible, setMoreFiltersModalVisible] = useState(false);
 
     // Provided function for fetching vacant seats for a specific group
     const fetchVacantSeats = async (groupId) => {
@@ -75,6 +79,7 @@ const Enrollment = ({ route, navigation }) => {
             return 0;
         }
     };
+
     const groupColors = {
         new: { primary: '#E0F7FA', secondary: '#00BCD4', text: '#00BCD4', darkText: '#263238', buttonBackground: '#00BCD4', selectedBorder: '#00BCD4', iconColor: '#00BCD4' },
         ongoing: { primary: '#E8F5E9', secondary: '#4CAF50', text: '#4CAF50', darkText: '#263232', buttonBackground: '#4CAF50', selectedBorder: '#4CAF50', iconColor: '#4CAF50' },
@@ -138,7 +143,13 @@ const Enrollment = ({ route, navigation }) => {
                         return { ...group, vacantSeats };
                     })
                 );
-                setCardsData(groupsWithVacantSeats);
+                // Filter for vacant groups if the filter is selected
+                if (selectedGroup === "VacantGroups") {
+                    const vacantGroups = groupsWithVacantSeats.filter(group => group.vacantSeats > 0);
+                    setCardsData(vacantGroups);
+                } else {
+                    setCardsData(groupsWithVacantSeats);
+                }
                 setIsLoading(false);
             } else {
                 const errorData = await response.json();
@@ -157,9 +168,11 @@ const Enrollment = ({ route, navigation }) => {
             });
         }
     };
+
     useEffect(() => {
         fetchGroups();
     }, [selectedGroup, isConnected, isInternetReachable]);
+
     useEffect(() => {
         if (groupFilter) {
             const normalizedGroupFilter = groupFilter === "New Groups" ? "NewGroups" : (groupFilter === "Ongoing Groups" ? "OngoingGroups" : groupFilter);
@@ -168,6 +181,7 @@ const Enrollment = ({ route, navigation }) => {
             }
         }
     }, [groupFilter]);
+
     const getGroupType = (card) => {
         const now = new Date();
         const startDate = new Date(card.start_date);
@@ -181,6 +195,7 @@ const Enrollment = ({ route, navigation }) => {
         }
         return 'default';
     };
+
     const getCustomCardColorKey = (card) => {
         const members = typeof card.group_members === 'number' ? card.group_members : parseInt(card.group_members);
         const value = typeof card.group_value === 'number' ? card.group_value : parseFloat(card.group_value);
@@ -208,6 +223,7 @@ const Enrollment = ({ route, navigation }) => {
         if (isNaN(members) || isNaN(value)) return 'default';
         return 'members_value_other';
     };
+
     const getDisplayCards = () => {
         const now = new Date();
         const newGroups = cardsData.filter(card => new Date(card.start_date) > now);
@@ -217,19 +233,25 @@ const Enrollment = ({ route, navigation }) => {
             return startDate <= now && endDate > now;
         });
         const endedGroups = cardsData.filter(card => new Date(card.end_date) <= now);
+        const vacantGroups = cardsData.filter(card => card.vacantSeats > 0);
+        
         if (selectedGroup === "AllGroups") {
             return {
                 new: newGroups,
                 ongoing: ongoingGroups,
-                ended: endedGroups
+                ended: endedGroups,
+                vacant: []
             };
         } else if (selectedGroup === "NewGroups") {
-            return { new: cardsData, ongoing: [], ended: [] };
+            return { new: cardsData, ongoing: [], ended: [], vacant: [] };
         } else if (selectedGroup === "OngoingGroups") {
-            return { new: [], ongoing: cardsData, ended: [] };
+            return { new: [], ongoing: cardsData, ended: [], vacant: [] };
+        } else if (selectedGroup === "VacantGroups") {
+            return { new: [], ongoing: [], ended: [], vacant: cardsData };
         }
-        return { new: [], ongoing: [], ended: [] };
+        return { new: [], ongoing: [], ended: [], vacant: [] };
     };
+
     const handleEnrollment = (card) => {
         if (!isConnected || !isInternetReachable) {
             setModalMessage("You are offline. Please connect to the internet to enroll.");
@@ -244,6 +266,7 @@ const Enrollment = ({ route, navigation }) => {
             setEnrollmentModalVisible(true);
         }
     };
+
     const NoGroupsIllustration = require('../../assets/Nogroup.png');
     const CardContent = ({ card, colors, isSelected }) => {
         const formatDate = (dateString) => {
@@ -251,7 +274,7 @@ const Enrollment = ({ route, navigation }) => {
             return new Date(dateString).toLocaleDateString('en-GB', options);
         };
         const groupType = getGroupType(card);
-        const vacantSeats = card.vacantSeats || 0; // Get vacant seats from card data
+        const vacantSeats = card.vacantSeats || 0;
         return (
             <>
                 <View style={styles.cardHeader}>
@@ -330,6 +353,7 @@ const Enrollment = ({ route, navigation }) => {
             </>
         );
     };
+
     if (isLoading) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -341,6 +365,7 @@ const Enrollment = ({ route, navigation }) => {
             </SafeAreaView>
         );
     }
+
     if (error) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -356,6 +381,7 @@ const Enrollment = ({ route, navigation }) => {
             </SafeAreaView>
         );
     }
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" backgroundColor="#053B90" />
@@ -365,21 +391,6 @@ const Enrollment = ({ route, navigation }) => {
                     <View style={styles.filterContainer}>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScrollContainer}>
                             <View style={styles.chipsContainer}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.chip,
-                                        selectedGroup === "AllGroups" && styles.selectedChip,
-                                    ]}
-                                    onPress={() => setSelectedGroup("AllGroups")}
-                                >
-                                    <Ionicons
-                                        name="grid"
-                                        size={16}
-                                        color={selectedGroup === "AllGroups" ? '#fff' : '#666'}
-                                        style={styles.chipIcon}
-                                    />
-                                    <Text style={[styles.chipText, selectedGroup === "AllGroups" && styles.selectedChipText]}>All Groups</Text>
-                                </TouchableOpacity>
                                 <TouchableOpacity
                                     style={[
                                         styles.chip,
@@ -410,6 +421,14 @@ const Enrollment = ({ route, navigation }) => {
                                     />
                                     <Text style={[styles.chipText, selectedGroup === "OngoingGroups" && styles.selectedChipText]}>Ongoing Groups</Text>
                                 </TouchableOpacity>
+
+                                {/* More Options Button */}
+                                <TouchableOpacity
+                                    style={styles.moreOptionsButton}
+                                    onPress={() => setMoreFiltersModalVisible(true)}
+                                >
+                                    <Ionicons name="filter" size={20} color="#053B90" />
+                                </TouchableOpacity>
                             </View>
                         </ScrollView>
                     </View>
@@ -418,7 +437,7 @@ const Enrollment = ({ route, navigation }) => {
                         showsVerticalScrollIndicator={false}
                     >
                         {(() => {
-                            const { new: newGroups, ongoing: ongoingGroups, ended: endedGroups } = getDisplayCards();
+                            const { new: newGroups, ongoing: ongoingGroups, ended: endedGroups, vacant: vacantGroups } = getDisplayCards();
                             const renderGroupSection = (data) => (
                                 data.length > 0 && (
                                     <View style={styles.groupSection}>
@@ -465,58 +484,49 @@ const Enrollment = ({ route, navigation }) => {
                                     </View>
                                 )
                             );
-                            if (selectedGroup === "AllGroups") {
-                                const allCardsPresent = newGroups.length > 0 || ongoingGroups.length > 0 || endedGroups.length > 0;
-                                if (!allCardsPresent) {
-                                    return (
-                                        <View style={styles.emptyStateContainer}>
-                                            <Image source={NoGroupsIllustration} style={styles.noGroupsImage} resizeMode="contain" />
-                                            <Text style={styles.noGroupsTitle}>No Groups Available</Text>
-                                            <Text style={styles.noGroupsText}>
-                                                It looks like there are no groups that match your current filter.
-                                                Try changing the filter or check back later for new additions!
-                                            </Text>
-                                        </View>
-                                    );
-                                }
-                                return (
-                                    <>
-                                        {renderGroupSection(newGroups)}
-                                        {renderGroupSection(ongoingGroups)}
-                                        {renderGroupSection(endedGroups)}
-                                    </>
-                                );
-                            } else if (selectedGroup === "NewGroups") {
-                                if (newGroups.length === 0) {
-                                    return (
-                                        <View style={styles.emptyStateContainer}>
-                                            <Image source={NoGroupsIllustration} style={styles.noGroupsImage} resizeMode="contain" />
-                                            <Text style={styles.noGroupsTitle}>No New Groups</Text>
-                                            <Text style={styles.noGroupsText}>
-                                                No new groups found. Check back later for exciting additions!
-                                            </Text>
-                                        </View>
-                                    );
-                                }
-                                return renderGroupSection(newGroups);
+
+                            let groupsToDisplay = [];
+                            let noGroupsMessage = "";
+                            let noGroupsTitle = "";
+
+                            if (selectedGroup === "NewGroups") {
+                                groupsToDisplay = newGroups;
+                                noGroupsTitle = "No New Groups";
+                                noGroupsMessage = "No new groups found. Check back later for exciting additions!";
                             } else if (selectedGroup === "OngoingGroups") {
-                                if (ongoingGroups.length === 0) {
-                                    return (
-                                        <View style={styles.emptyStateContainer}>
-                                            <Image source={NoGroupsIllustration} style={styles.noGroupsImage} resizeMode="contain" />
-                                            <Text style={styles.noGroupsTitle}>No Ongoing Groups</Text>
-                                            <Text style={styles.noGroupsText}>
-                                                No ongoing groups found. Check back later!
-                                            </Text>
-                                        </View>
-                                    );
-                                }
-                                return renderGroupSection(ongoingGroups);
+                                groupsToDisplay = ongoingGroups;
+                                noGroupsTitle = "No Ongoing Groups";
+                                noGroupsMessage = "No ongoing groups found. Check back later!";
+                            } else if (selectedGroup === "VacantGroups") {
+                                groupsToDisplay = vacantGroups;
+                                noGroupsTitle = "No Vacant Groups";
+                                noGroupsMessage = "There are no groups with vacant seats at the moment. Please check back later.";
+                            } else if (selectedGroup === "AllGroups") {
+                                // For "All Groups", we combine all types
+                                groupsToDisplay = [...newGroups, ...ongoingGroups, ...endedGroups];
+                                noGroupsTitle = "No Groups Available";
+                                noGroupsMessage = "It looks like there are no groups that match your current filter. Try changing the filter or check back later for new additions!";
                             }
+                            
+                            if (groupsToDisplay.length === 0) {
+                                return (
+                                    <View style={styles.emptyStateContainer}>
+                                        <Image source={NoGroupsIllustration} style={styles.noGroupsImage} resizeMode="contain" />
+                                        <Text style={styles.noGroupsTitle}>{noGroupsTitle}</Text>
+                                        <Text style={styles.noGroupsText}>
+                                            {noGroupsMessage}
+                                        </Text>
+                                    </View>
+                                );
+                            }
+
+                            return renderGroupSection(groupsToDisplay);
                         })()}
                     </ScrollView>
                 </View>
             </View>
+
+            {/* General Modal for offline or error messages */}
             <Modal
                 visible={enrollmentModalVisible}
                 transparent={true}
@@ -539,12 +549,70 @@ const Enrollment = ({ route, navigation }) => {
                     </View>
                 </View>
             </Modal>
+
+            {/* More Filters Modal */}
+            <Modal
+                visible={moreFiltersModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setMoreFiltersModalVisible(false)}
+            >
+                <View style={styles.moreFiltersModalOverlay}>
+                    <View style={styles.moreFiltersModalContent}>
+                        <Text style={styles.moreFiltersTitle}>Select a Filter</Text>
+                        <TouchableOpacity
+                            style={styles.moreFiltersOption}
+                            onPress={() => {
+                                setSelectedGroup("AllGroups");
+                                setMoreFiltersModalVisible(false);
+                            }}
+                        >
+                            <Text style={styles.moreFiltersOptionText}>All Groups</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.moreFiltersOption}
+                            onPress={() => {
+                                setSelectedGroup("NewGroups");
+                                setMoreFiltersModalVisible(false);
+                            }}
+                        >
+                            <Text style={styles.moreFiltersOptionText}>New Groups</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.moreFiltersOption}
+                            onPress={() => {
+                                setSelectedGroup("OngoingGroups");
+                                setMoreFiltersModalVisible(false);
+                            }}
+                        >
+                            <Text style={styles.moreFiltersOptionText}>Ongoing Groups</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.moreFiltersOption}
+                            onPress={() => {
+                                setSelectedGroup("VacantGroups");
+                                setMoreFiltersModalVisible(false);
+                            }}
+                        >
+                            <Text style={styles.moreFiltersOptionText}>Vacant Groups</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.closeMoreFiltersButton}
+                            onPress={() => setMoreFiltersModalVisible(false)}
+                        >
+                            <Text style={styles.closeMoreFiltersButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             <Toast />
         </SafeAreaView>
     );
 };
+
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+    safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, },
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
     errorText: { fontSize: 15, color: '#DC143C', textAlign: 'center', marginTop: 10, fontWeight: 'bold' },
@@ -742,6 +810,61 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#333',
         marginTop: 5,
+    },
+    // Styles for the new "More Options" button and modal
+    moreOptionsButton: {
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        backgroundColor: '#E0EFFF',
+        borderRadius: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    moreFiltersModalOverlay: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    moreFiltersModalContent: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        paddingBottom: 40,
+    },
+    moreFiltersTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+        color: '#333',
+    },
+    moreFiltersOption: {
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    moreFiltersOptionText: {
+        fontSize: 16,
+        color: '#053B90',
+        textAlign: 'center',
+    },
+    closeMoreFiltersButton: {
+        marginTop: 20,
+        padding: 15,
+        backgroundColor: '#eee',
+        borderRadius: 10,
+    },
+    closeMoreFiltersButtonText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#666',
+        textAlign: 'center',
     },
 });
 

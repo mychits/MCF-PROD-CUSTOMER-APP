@@ -18,6 +18,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import NoGroupImage from "../../assets/Nogroup.png";
 import { ContextProvider } from "../context/UserProvider";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+
 
 const Colors = {
   primaryBlue: "#053B90",
@@ -57,6 +63,40 @@ const Mygroups = ({ navigation }) => {
   const [Totalpaid, setTotalPaid] = useState(0);
   const [Totalprofit, setTotalProfit] = useState(0);
   const [individualGroupReports, setIndividualGroupReports] = useState({});
+
+  // Animation logic for buttons
+  const auctionScale = useSharedValue(1);
+  const insuranceScale = useSharedValue(1);
+
+  const auctionAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: withSpring(auctionScale.value) }],
+    };
+  });
+
+  const insuranceAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: withSpring(insuranceScale.value) }],
+    };
+  });
+
+  const handleAuctionPressIn = () => {
+    auctionScale.value = 0.95;
+  };
+
+  const handleAuctionPressOut = () => {
+    auctionScale.value = 1;
+    navigation.navigate("AuctionList");
+  };
+
+  const handleInsurancePressIn = () => {
+    insuranceScale.value = 0.95;
+  };
+
+  const handleInsurancePressOut = () => {
+    insuranceScale.value = 1;
+    navigation.navigate("Insurance");
+  };
 
   const fetchTickets = useCallback(async () => {
     if (!userId) {
@@ -169,6 +209,38 @@ const Mygroups = ({ navigation }) => {
               <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(displayTotalProfit)}</Text>
               <Text style={styles.summaryText}>Total Dividend / Profit</Text>
             </LinearGradient>
+          </View>
+
+          {/* New Buttons for Navigation (now placed after summary cards) */}
+          <View style={styles.navigationButtonsContainer}>
+            <TouchableOpacity
+              style={styles.navButton}
+              onPressIn={handleAuctionPressIn}
+              onPressOut={handleAuctionPressOut}
+            >
+              <Animated.View style={[styles.navButtonGradient, auctionAnimatedStyle]}>
+                <LinearGradient
+                  colors={['#0C53B3', '#053B90']}
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <Text style={styles.navButtonText}>View </Text>
+                <Text style={styles.navButtonText}>Auction</Text>
+              </Animated.View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navButton}
+              onPressIn={handleInsurancePressIn}
+              onPressOut={handleInsurancePressOut}
+            >
+              <Animated.View style={[styles.navButtonGradient, insuranceAnimatedStyle]}>
+                <LinearGradient
+                  colors={['#27AE60', '#196F3D']}
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <Text style={styles.navButtonText}>View </Text>
+                <Text style={styles.navButtonText}> Insurance</Text>
+              </Animated.View>
+            </TouchableOpacity>
           </View>
 
           {loading ? (
@@ -309,6 +381,33 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 15,
+  },
+  navigationButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 25,
+  },
+  navButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    borderRadius: 15,
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  navButtonGradient: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
   summaryCards: {
     flexDirection: "row",

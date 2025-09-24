@@ -1263,7 +1263,7 @@ const styles = StyleSheet.create({
     },
     sideMenuHeader: {
         width: '100%',
-        backgroundColor: '#F7C641',
+        backgroundColor: '#7cc4eeff',
         borderTopRightRadius: 30,
         paddingHorizontal: 25,
         justifyContent: 'center',
@@ -1317,8 +1317,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         borderRadius: 15,
         marginBottom: 4,
-        borderWidth: 1,
-        borderColor: '#FFD54F',
+        
         alignSelf: 'center',
         width: '100%',
     },

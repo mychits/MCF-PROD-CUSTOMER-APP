@@ -180,18 +180,7 @@ const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
           />
           <Text style={styles.actionButtonLabel}>Auction Details</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onSelect(_id, group_id?._id, tickets)}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons
-            name="account-group"
-            size={24}
-            color={Colors.primary}
-          />
-          <Text style={styles.actionButtonLabel}>Group Members</Text>
-        </TouchableOpacity>
+       
       </View>
     </View>
   );
