@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  Alert,
+  Alert, // Keeping Alert imported just in case, but removing usage
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
@@ -19,6 +19,7 @@ import Header from "../components/layouts/Header";
 import { NetworkContext } from "../context/NetworkProvider";
 import Toast from "react-native-toast-message";
 import { ContextProvider } from "../context/UserProvider";
+
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) {
     return "0";
@@ -146,6 +147,92 @@ const EnrollForm = ({ navigation, route }) => {
     fetchData();
   }, [fetchData]);
 
+  // New function for the core enrollment logic (can be called by a custom modal's confirm button)
+  const performEnrollment = useCallback(async (ticketsCountInt) => {
+      setIsSubmitting(true);
+
+      if (!isConnected || !isInternetReachable) {
+        Toast.show({
+          type: "error",
+          text1: "No Internet Connection",
+          text2: "Please check your network and try again.",
+          position: "bottom",
+          visibilityTime: 3000,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const payload = {
+        group_id: groupId,
+        user_id: userId,
+        no_of_tickets: ticketsCountInt,
+       // tickets: availableTickets[0], // NOTE: Commented out original line
+        chit_asking_month: Number(cardsData?.group_duration) || 0,
+      };
+
+      console.log("Payload being sent:", payload);
+
+      try {
+        await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        Toast.show({
+          type: "success",
+          text1: "Enrollment Successful!",
+          text2: `You are enrolled for ${cardsData?.group_name || "the group"
+            } with ${ticketsCountInt} ticket(s).`,
+          position: "bottom",
+          visibilityTime: 3000,
+        });
+        navigation.navigate("EnrollConfirm", {
+          group_name: cardsData?.group_name,
+         // tickets: ticketsCountInt, // NOTE: Commented out original line
+          userId: userId,
+        });
+      } catch (err) {
+        console.error("Error enrolling user:", err);
+        let errorMessage =
+          "An error occurred during enrollment. Please try again.";
+
+        if (err.response) {
+          console.error("Error response data:", err.response.data);
+          // Check if the specific error message structure exists
+          errorMessage =
+            err.response.data.data?.message ||
+            err.response.data.message || // Fallback to a general message field
+            `Server error: ${err.response.status}`;
+        } else if (err.request) {
+          console.error("Error request:", err.request);
+          errorMessage =
+            "Network error: No response from server. Please check the URL or server status.";
+        } else {
+          console.error("Error message:", err.message);
+          errorMessage = `An unexpected error occurred: ${err.message}`;
+        }
+
+        Toast.show({
+          type: "error",
+          text1: "Enrollment Failed",
+          text2: errorMessage,
+          position: "bottom",
+          visibilityTime: 3000,
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    }, [
+    isConnected,
+    isInternetReachable,
+    groupId,
+    userId,
+    cardsData,
+    navigation,
+  ]);
+  
   const handleEnroll = useCallback(async () => {
     if (!termsAccepted) {
       Toast.show({
@@ -180,112 +267,29 @@ const EnrollForm = ({ navigation, route }) => {
       return;
     }
 
-    Alert.alert(
-      "Confirm Enrollment",
-      `You are about to enroll for "${cardsData?.group_name || "this group"
-      }" with ${ticketCount} ticket(s). Do you want to proceed?`,
-      [
-        {
-          text: "Cancel",
-          onPress: () => {
-            console.log("Enrollment cancelled by user.");
-            setIsSubmitting(false);
-          },
-          style: "cancel",
-        },
-        {
-          text: "Confirm",
-          onPress: async () => {
-            setIsSubmitting(true);
+    const ticketsCountInt = parseInt(ticketCount, 10);
+    
+    // NOTE: Replacing the unstyled native Alert.alert with direct enrollment
+    // If a stylish confirmation is needed, you must implement a custom React Native Modal here.
+    
+    // Since you removed the alert, we will just proceed with a successful toast
+    // confirming the action *before* the API call for a better user experience.
+    Toast.show({
+        type: "info",
+        text1: "Proceeding to Enroll",
+        text2: `Attempting enrollment for ${cardsData?.group_name || "the group"} with ${ticketsCountInt} ticket(s).`,
+        position: "bottom",
+        visibilityTime: 1500, // Short visibility before main API call
+    });
 
-            if (!isConnected || !isInternetReachable) {
-              Toast.show({
-                type: "error",
-                text1: "No Internet Connection",
-                text2: "Please check your network and try again.",
-                position: "bottom",
-                visibilityTime: 3000,
-              });
-              setIsSubmitting(false);
-              return;
-            }
+    await performEnrollment(ticketsCountInt);
 
-            const ticketsCountInt = parseInt(ticketCount, 10);
-
-            const payload = {
-              group_id: groupId,
-              user_id: userId,
-              no_of_tickets: ticketsCountInt,
-             // tickets: availableTickets[0],
-              chit_asking_month: Number(cardsData?.group_duration) || 0,
-            };
-
-            console.log("Payload being sent:", payload);
-
-            try {
-              await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              });
-
-              Toast.show({
-                type: "success",
-                text1: "Enrollment Successful!",
-                text2: `You are enrolled for ${cardsData?.group_name || "the group"
-                  } with ${ticketsCountInt} ticket(s).`,
-                position: "bottom",
-                visibilityTime: 3000,
-              });
-              navigation.navigate("EnrollConfirm", {
-                group_name: cardsData?.group_name,
-               // tickets: ticketsCountInt,
-                userId: userId,
-              });
-            } catch (err) {
-              console.error("Error enrolling user:", err);
-              let errorMessage =
-                "An error occurred during enrollment. Please try again.";
-
-              if (err.response) {
-                console.error("Error response data:", err.response.data);
-                errorMessage =
-                  err.response.data.data.message ||
-                  `Server error: ${err.response.status}`;
-              } else if (err.request) {
-                console.error("Error request:", err.request);
-                errorMessage =
-                  "Network error: No response from server. Please check the URL or server status.";
-              } else {
-                console.error("Error message:", err.message);
-                errorMessage = `An unexpected error occurred: ${err.message}`;
-              }
-
-              Toast.show({
-                type: "error",
-                text1: "Enrollment Failed",
-                text2: errorMessage,
-                position: "bottom",
-                visibilityTime: 3000,
-              });
-            } finally {
-              setIsSubmitting(false);
-            }
-          },
-        },
-      ],
-      { cancelable: false }
-    );
   }, [
     ticketCount,
     termsAccepted,
-    isConnected,
-    isInternetReachable,
     availableTickets,
-    groupId,
-    userId,
     cardsData,
-    navigation,
+    performEnrollment, // Dependency on the new function
   ]);
 
   const handleIncrementTicket = () => {
@@ -309,6 +313,8 @@ const EnrollForm = ({ navigation, route }) => {
   };
 
   if (loading) {
+    // NOTE: Added Colors object temporarily to avoid ReferenceError in loading state
+    const Colors = { primary: "#053B90" }; 
     return (
       <SafeAreaView style={styles.centeredFlexContainer}>
         <View style={styles.loaderContainer}>
@@ -318,6 +324,31 @@ const EnrollForm = ({ navigation, route }) => {
     );
   }
 
+  // NOTE: Defined Colors object here so it's available for error/offline states
+  const Colors = {
+    primary: "#053B90",
+    primaryDark: "#053B90",
+    secondary: "#28A745",
+    danger: "#DC3545",
+    warning: "#FFC107",
+    lightGray: "#F8F9FA",
+    mediumGray: "#E9ECEF",
+    darkGray: "#6C757D",
+    white: "#FFFFFF",
+    black: "#212529",
+    primaryBackground: "#E0F2F7",
+    contentCardBackground: "#FFFFFF",
+    groupCardGradient: ["#007BFF", "#0056b3"],
+    whiteAccent: "#F0F8FF",
+    textGray: "#495057",
+    disabledGray: "#A0A0A0",
+    successGreen: "#28A745",
+    errorRed: "#DC3545",
+    linkBlue: "#007BFF",
+    warningOrange: "#FF9800",
+    primaryText: "#343A40",
+  };
+  
   if (!isConnected || !isInternetReachable) {
     return (
       <SafeAreaView style={styles.centeredFlexContainer}>
@@ -516,57 +547,60 @@ const EnrollForm = ({ navigation, route }) => {
             </LinearGradient>
 
             <View style={styles.ticketSelectionBox}>
-              <Text style={styles.ticketSelectionBoxTitle}>Ticket Details</Text>
+              <Text style={styles.ticketSelectionBoxTitle}>Select Tickets</Text>
 
-              <View style={styles.ticketControlOnlyRow}>
-                <View style={styles.quantityControlsWrapper}>
-                  <Text style={styles.quantityLabel}>Selected:</Text>
+             
+              <View style={styles.unifiedTicketControlRow}>
+                <Text style={styles.quantityLabel}>Number of Tickets:</Text>
+                <View style={styles.stepperContainer}>
+                 
                   <TouchableOpacity
                     style={[
-                      styles.ticketButton,
+                      styles.stepperButton,
                       ticketCount <= 1 || availableTickets.length === 0
-                        ? styles.ticketButtonDisabled
+                        ? styles.stepperButtonDisabled
                         : {},
                     ]}
                     onPress={handleDecrementTicket}
                     disabled={ticketCount <= 1 || availableTickets.length === 0}
                   >
-                    <AntDesign name="minus" size={24} color={Colors.white} />
+                    <AntDesign name="minus" size={20} color={ticketCount <= 1 || availableTickets.length === 0 ? Colors.primary : Colors.primary} />
                   </TouchableOpacity>
+                  
+                  {/* Ticket Count Display */}
                   <View style={styles.ticketCountDisplay}>
                     <Text style={styles.ticketCountText}>{ticketCount}</Text>
                   </View>
+                  
+                  {/* Increment Button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.stepperButton,
+                      ticketCount === availableTickets.length || availableTickets.length === 0
+                        ? styles.stepperButtonDisabled
+                        : {},
+                    ]}
+                    onPress={handleIncrementTicket}
+                    disabled={
+                      ticketCount === availableTickets.length || availableTickets.length === 0
+                    }
+                  >
+                    <AntDesign name="plus" size={20} color={ticketCount === availableTickets.length || availableTickets.length === 0 ? Colors.primary : Colors.primary} />
+                  </TouchableOpacity>
                 </View>
               </View>
 
-              <View style={styles.addMoreButtonRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.addMoreButton,
-                    ticketCount === availableTickets.length ||
-                      availableTickets.length === 0
-                      ? styles.ticketButtonDisabled
-                      : {},
-                  ]}
-                  onPress={handleIncrementTicket}
-                  disabled={
-                    ticketCount === availableTickets.length ||
-                    availableTickets.length === 0
-                  }
-                >
-                  <AntDesign name="plus" size={10} color={Colors.white} />
-                  <Text style={styles.addMoreButtonText}>Add More</Text>
-                </TouchableOpacity>
-              </View>
+              {/* NEW: Combined Summary Row - Stacked Card Style */}
+              <View style={styles.combinedTicketSummaryRowStacked}>
+                  {/* Selected Tickets Box (Primary) */}
+                  <View style={styles.summaryBoxPrimary}>
+                      <Text style={styles.summaryBoxLabel}>Selected Tickets</Text>
+                      <Text style={styles.summaryBoxCountPrimary}>{ticketCount}</Text>
+                  </View>
 
-              <View style={styles.totalAvailableTicketsContainer}>
-                <Text style={styles.totalAvailableTicketsLabel}>
-                  Tickets Remaining:
-                </Text>
-                <Text style={styles.totalAvailableTicketsCount}>
-                  {Math.max(0, availableTickets.length - ticketCount)}
-                </Text>
+                 
               </View>
+              {/* END: Combined Summary Row */}
             </View>
 
             <View style={styles.checkboxSection}>
@@ -683,16 +717,16 @@ const styles = StyleSheet.create({
   mainContentWrapper: {
     flex: 1,
     justifyContent: "space-between",
-    paddingHorizontal: 9,
-    paddingBottom: 10,
+    paddingHorizontal: 5, // Reduced from 9
+    paddingBottom: 5, // Reduced from 10
   },
   contentCard: {
     flex: 1,
-    backgroundColor: Colors.primaryBackground, // Changed to primaryBackground to align with main outer blue
+    backgroundColor: Colors.primaryBackground, 
     borderRadius: 15,
-    marginTop: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 10,
+    marginTop: 5, // Reduced from 10
+    paddingVertical: 10, // Reduced from 15
+    paddingHorizontal: 8, // Reduced from 10
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -700,26 +734,26 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   scrollContentContainer: {
-    paddingHorizontal: 5,
-    paddingBottom: 20,
+    paddingHorizontal: 3, // Reduced from 5
+    paddingBottom: 15, // Reduced from 20
   },
   groupInfoTitle: {
-    fontSize: 20,
+    fontSize: 18, // Reduced from 20
     fontWeight: "bold",
     color: Colors.primaryText,
-    marginBottom: 20,
+    marginBottom: 15, // Reduced from 20
     textAlign: "center",
   },
   groupDetailCard: {
     borderRadius: 15,
-    padding: 20,
-    marginBottom: 25,
+    padding: 15, // Reduced from 20
+    marginBottom: 20, // Reduced from 25
     alignItems: "flex-start",
   },
 
   valueDisplayContainer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15, // Reduced from 20
     width: "100%",
   },
   valueLabelLarge: {
@@ -732,19 +766,19 @@ const styles = StyleSheet.create({
   },
   valueGradientBackground: {
     borderRadius: 15,
-    paddingVertical: 12,
-    paddingHorizontal: 25,
+    paddingVertical: 10, // Reduced from 12
+    paddingHorizontal: 20, // Reduced from 25
     minWidth: "70%",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#2196F3", // A blue shade for shadow
+    shadowColor: "#2196F3",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 15,
   },
   groupValueTextEnhanced: {
-    fontSize: 34,
+    fontSize: 20, // Reduced from 34
     fontWeight: "bold",
     color: Colors.white,
     textShadowColor: "rgba(0, 0, 0, 0.3)",
@@ -753,20 +787,20 @@ const styles = StyleSheet.create({
   },
 
   highlightedGroupName: {
-    fontSize: 20,
+    fontSize: 15, // Reduced from 20
     fontWeight: "bold",
     color: Colors.white,
-    marginBottom: 15,
+    marginBottom: 10, // Reduced from 15
     textAlign: "center",
     width: "100%",
   },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8, // Reduced from 10
   },
   infoItemIcon: {
-    marginRight: 10,
+    marginRight: 8, // Reduced from 10
   },
   infoItemText: {
     fontSize: 12,
@@ -780,8 +814,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginTop: 15,
-    paddingTop: 10,
+    marginTop: 10, // Reduced from 15
+    paddingTop: 8, // Reduced from 10
     borderTopWidth: 0.5,
     borderTopColor: "rgba(255,255,255,0.3)",
   },
@@ -795,136 +829,130 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   ticketSelectionBox: {
-    backgroundColor: Colors.primaryBackground, // Changed to primaryBackground to align with main outer blue
-    borderRadius: 12, // Decreased from 15
-    padding: 15, // Decreased from 20
-    marginHorizontal: 8, // Decreased from 10
-    marginBottom: 20, // Decreased from 25
+    backgroundColor: Colors.primaryBackground,
+    borderRadius: 12,
+    padding: 12, // Reduced from 15
+    marginHorizontal: 5, // Reduced from 8
+    marginBottom: 5, // Reduced from 20
     shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 }, // Decreased shadow offset
-    shadowOpacity: 0.08, // Decreased shadow opacity
-    shadowRadius: 3, // Decreased shadow radius
-    elevation: 3, // Decreased elevation
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 3,
     borderWidth: 0,
   },
   ticketSelectionBoxTitle: {
-    fontSize: 18, // Decreased from 20
+    fontSize: 18,
     fontWeight: "bold",
     color: Colors.primaryText,
-    marginBottom: 10, // Decreased from 15
+    marginBottom: 10, 
     textAlign: "center",
   },
-  ticketControlOnlyRow: {
+  
+  // START: TICKET SELECTION STYLES
+
+  unifiedTicketControlRow: {
     flexDirection: "row",
-    justifyContent: "flex-start",
+    justifyContent: "space-between", // Distribute space between label and stepper
     alignItems: "center",
-    marginBottom: 10, // Decreased from 15
-    paddingHorizontal: 2, // Decreased from 5
+    marginBottom: 15,
+    paddingHorizontal: 0,
   },
-  addMoreButtonRow: {
-    alignItems: "center",
-    marginBottom: 15, // Decreased from 20
-  },
-  quantityControlsWrapper: {
+  stepperContainer: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: Colors.white, // White background for clarity
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.mediumGray,
+    overflow: "hidden", // To make sure borders/shadows look clean
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  quantityLabel: {
-    fontSize: 16,
-    color: Colors.textGray,
-    marginRight: 10,
-    fontWeight: "500",
-  },
-  ticketButton: {
-    backgroundColor: Colors.primary,
+  stepperButton: {
+    backgroundColor: Colors.lightGray, // Light background for buttons
     padding: 10,
-    borderRadius: 25,
     width: 45,
     height: 45,
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 8,
-    shadowColor: Colors.primaryDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
   },
-  ticketButtonDisabled: {
-    backgroundColor: Colors.disabledGray,
-    shadowColor: Colors.disabledGray,
-    opacity: 0.7,
-    elevation: 2,
+  stepperButtonDisabled: {
+    backgroundColor: Colors.mediumGray,
+    opacity: 0.6,
   },
   ticketCountDisplay: {
-    backgroundColor: Colors.mediumGray,
-    borderWidth: 0,
-    borderRadius: 8,
-    paddingVertical: 8,
+    backgroundColor: Colors.white,
+    paddingVertical: 6,
     paddingHorizontal: 15,
-    minWidth: 60,
+    minWidth: 50,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: Colors.mediumGray,
   },
   ticketCountText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
     color: Colors.primaryText,
   },
-  addMoreButton: {
-    flexDirection: "row",
-    backgroundColor: Colors.secondary,
-    borderRadius: 25,
-    paddingVertical: 7,
-    paddingHorizontal: 5,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: Colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-    minWidth: 70,
-  },
-  addMoreButtonText: {
-    color: Colors.white,
-    fontSize: 10,
-    fontWeight: "bold",
-    marginLeft: 2,
-  },
-  totalAvailableTicketsContainer: {
-    backgroundColor: Colors.lightGray,
-    borderRadius: 10,
-    padding: 10,
-    borderWidth: 0,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  totalAvailableTicketsLabel: {
+  quantityLabel: {
     fontSize: 16,
     color: Colors.textGray,
-    marginRight: 8,
     fontWeight: "500",
   },
-  totalAvailableTicketsCount: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: Colors.primary,
+
+  // NEW: COMBINED SUMMARY ROW - STACKED CARD STYLE
+  combinedTicketSummaryRowStacked: {
+    flexDirection: "column", // Stack vertically
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 0, // Removed vertical padding
+    marginBottom: 10, // Slightly reduced margin for compactness
+    width: '100%',
   },
+  summaryBoxPrimary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryDark, 
+    width: '90%', // Occupy most of the width
+    borderRadius: 10, 
+    paddingHorizontal: 15,
+    paddingVertical: 10, // Reduced vertical padding
+    // Removed marginBottom: 2
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  summaryBoxLabel: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: Colors.whiteAccent,
+  },
+  summaryBoxCountPrimary: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: Colors.white,
+  },
+  
+  // NOTE: Removed unused summaryBoxSecondary styles for compactness
+
+  // END: COMBINED SUMMARY ROW STYLES
+
   boldText: {
     fontWeight: "bold",
     color: Colors.primaryDark,
   },
   checkboxSection: {
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 5, // Reduced from 10
+    marginBottom: 15, // Reduced from 20
     paddingHorizontal: 10,
   },
   readTermsPrompt: {
@@ -946,13 +974,13 @@ const styles = StyleSheet.create({
   linkText: {
     color: Colors.linkBlue,
     fontWeight: "bold",
-      fontSize: 12,
+    fontSize: 12,
     textDecorationLine: "underline",
   },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 10, // Reduced from 15
   },
   checkboxLabel: {
     marginLeft: 8,
@@ -962,7 +990,7 @@ const styles = StyleSheet.create({
   },
   enrollButton: {
     backgroundColor: Colors.secondary,
-    paddingVertical: 12,
+    paddingVertical: 10, // Reduced from 12
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
@@ -972,7 +1000,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 10,
     marginHorizontal: 10,
-    marginTop: -15,
+    marginTop: -10, // Reduced from -15
   },
   enrollButtonDisabled: {
     backgroundColor: Colors.disabledGray,
@@ -982,7 +1010,7 @@ const styles = StyleSheet.create({
   },
   enrollButtonText: {
     color: Colors.white,
-    fontSize: 18,
+    fontSize: 16, // Reduced from 18
     fontWeight: "bold",
     letterSpacing: 0,
   },

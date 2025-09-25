@@ -188,6 +188,9 @@ const Home = ({ route, navigation }) => {
         { title: "Chat with MyChit", icon: "chatbubbles-outline", onPress: handleWhatsAppPress },
         { title: "Get Help", icon: "help-circle-outline", link: "Help" },
         { title: "Earn Rewards", icon: "gift-outline", link: "FeatureComingSoon", featureTitle: "Rewards" },
+        // START OF MODIFICATION: Added My Profile to Side Menu
+        { title: "My Profile", icon: "person-outline", link: "ProfileScreen" },
+        // END OF MODIFICATION
     ];
 
     const handleNeedHelp = () => {
@@ -465,14 +468,14 @@ const Home = ({ route, navigation }) => {
                 });
 
                 const groupManagers = Array.from(uniqueGroups.values());
-                console.log('Unique RMs to be displayed:', groupManagers);
+               
                 setRelationshipManagers(groupManagers);
             } else {
                 console.warn("No user tickets found for this userId.");
                 setRelationshipManagers([]);
             }
         } catch (error) {
-            console.error('Error fetching relationship manager details:', error.response ? error.response.status : error.message);
+            
             Toast.show({
                 type: 'error',
                 text1: 'RM Data Error',
@@ -527,7 +530,9 @@ const Home = ({ route, navigation }) => {
         { navigateTo: 'EnrollTab', screen: 'EnrollScreenMain', icon: 'group-add', title: 'New Groups', bgColor: '#E3F2FD', iconBg: '#053B90', filter: 'New Groups', disabled: false },
         { navigateTo: 'PaymentScreen', icon: 'payment', title: 'My Payments', bgColor: '#FFF3E0', iconBg: '#EF6C00', disabled: false },
         { navigateTo: 'ReportScreen', icon: 'bar-chart', title: 'Reports', bgColor: '#F3E5F5', iconBg: '#6A1B9A', disabled: false },
-        { navigateTo: 'ProfileScreen', icon: 'event-note', title: 'My Profile', bgColor: '#E0F7FA', iconBg: '#006064', disabled: false },
+        // START OF MODIFICATION: Swapped My Profile with My Passbook for the main grid
+        { navigateTo: 'MyPassbook', icon: 'book', title: 'My Passbook', bgColor: '#E0F7FA', iconBg: '#006064', disabled: false },
+        // END OF MODIFICATION
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
         { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Introduce New Customers', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
         { navigateTo: 'MyLoan', screen: 'MyLoan', icon: 'account-balance-wallet', title: 'My Loan', bgColor: '#EDE7F6', iconBg: '#5E35B1', filter: 'My Loan', disabled: false },
@@ -876,15 +881,18 @@ const Home = ({ route, navigation }) => {
                         </TouchableOpacity>
                     </View>
                     <View style={styles.bottomContainer}>
+                        {/* START OF MODIFICATION: Swapped My Passbook with My Profile for the bottom grid */}
                         <TouchableOpacity
                             style={styles.bottomGridItem}
-                            onPress={() => navigation.navigate('MyPassbook', { userId: userId })}
+                            onPress={() => navigation.navigate('ProfileScreen', { userId: userId })}
                         >
                             <View style={styles.bottomIcon}>
-                                <MaterialIcons name="book" size={34} color="#053B90" />
+                                <MaterialIcons name="event-note" size={34} color="#053B90" />
                             </View>
-                            <Text style={styles.bottomServiceTitle}> My Passbook</Text>
+                            <Text style={styles.bottomServiceTitle}> My </Text>
+                             <Text style={styles.bottomServiceTitle}>  Profile</Text>
                         </TouchableOpacity>
+                        {/* END OF MODIFICATION */}
                         <TouchableOpacity
                             style={styles.bottomGridItem}
                             onPress={() => navigation.navigate('MoreInformation', { userId: userId, featureTitle: 'More Information' })}
@@ -1138,7 +1146,9 @@ const Home = ({ route, navigation }) => {
                                                     featureTitle: item.featureTitle,
                                                 });
                                             } else {
-                                                navigation.navigate(item.link);
+                                                navigation.navigate(item.link, {
+                                                    userId: userId
+                                                });
                                             }
                                         }
                                     }}

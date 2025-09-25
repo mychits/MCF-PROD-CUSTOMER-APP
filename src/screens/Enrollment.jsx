@@ -62,6 +62,11 @@ const Enrollment = ({ route, navigation }) => {
     const { isConnected, isInternetReachable } = useContext(NetworkContext);
     const [moreFiltersModalVisible, setMoreFiltersModalVisible] = useState(false);
 
+    // New states for direct joining - START OF MODIFICATION
+    const [isJoining, setIsJoining] = useState(false);
+    const [joinGroupId, setJoinGroupId] = useState(null);
+    // New states for direct joining - END OF MODIFICATION
+
     // Provided function for fetching vacant seats for a specific group
     const fetchVacantSeats = async (groupId) => {
         try {
@@ -252,9 +257,10 @@ const Enrollment = ({ route, navigation }) => {
         return { new: [], ongoing: [], ended: [], vacant: [] };
     };
 
+    // This remains the original behavior (View More/Details)
     const handleEnrollment = (card) => {
         if (!isConnected || !isInternetReachable) {
-            setModalMessage("You are offline. Please connect to the internet to enroll.");
+            setModalMessage("You are offline. Please connect to the internet to view details.");
             setEnrollmentModalVisible(true);
             return;
         }
@@ -266,6 +272,114 @@ const Enrollment = ({ route, navigation }) => {
             setEnrollmentModalVisible(true);
         }
     };
+    
+    // Function to handle direct enrollment (joining)
+    const handleJoinNow = async (card) => { 
+        if (!isConnected || !isInternetReachable) {
+            Toast.show({
+                type: "error",
+                text1: "No Internet Connection",
+                text2: "Please check your network and try again.",
+                position: "bottom",
+                visibilityTime: 3000,
+            });
+            return;
+        }
+
+        const selectedGroupId = card._id;
+        
+        if (!selectedGroupId) {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Could not retrieve group ID for enrollment.",
+                position: "bottom",
+                visibilityTime: 3000,
+            });
+            return;
+        }
+
+        if (card.vacantSeats === 0) {
+             Toast.show({
+                type: "info",
+                text1: "No Seats Available",
+                text2: "This group currently has no vacant seats.",
+                position: "bottom",
+                visibilityTime: 3000,
+            });
+            return;
+        }
+        
+        // 1. Set loading state for the specific card
+        setJoinGroupId(selectedGroupId);
+        setIsJoining(true);
+
+        // Assumption: Direct join is for 1 ticket, and chit_asking_month is derived from group_duration
+        const ticketsCountInt = 1; 
+        const chitAskingMonth = Number(card?.group_duration) || 0; 
+
+        const payload = {
+            group_id: selectedGroupId,
+            user_id: userId,
+            no_of_tickets: ticketsCountInt,
+            chit_asking_month: chitAskingMonth,
+        };
+
+        try {
+            await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            // 2. Success Feedback
+            Toast.show({
+                type: "success",
+                text1: "Enrollment Successful!",
+                text2: `You are enrolled for ${card.group_name} with 1 ticket.`,
+                position: "bottom",
+                visibilityTime: 3000,
+            });
+            
+            // 3. Navigate to confirmation page
+            navigation.navigate("EnrollConfirm", {
+                group_name: card.group_name,
+                userId: userId,
+            });
+
+        } catch (err) {
+            console.error("Error enrolling user directly:", err);
+            let errorMessage = "An error occurred during enrollment. Please try again.";
+
+            if (err.response) {
+                // Check for specific backend error messages
+                errorMessage =
+                    err.response.data?.data?.message ||
+                    err.response.data?.message || 
+                    `Server error: ${err.response.status}`;
+            } else if (err.request) {
+                errorMessage = "Network error: No response from server. Please check your connection.";
+            } else {
+                errorMessage = `An unexpected error occurred: ${err.message}`;
+            }
+
+            // 4. Error Feedback
+            Toast.show({
+                type: "error",
+                text1: "Enrollment Failed",
+                text2: errorMessage,
+                position: "bottom",
+                visibilityTime: 5000,
+            });
+        } finally {
+            // 5. Reset loading state
+            setIsJoining(false);
+            setJoinGroupId(null);
+            // Re-fetch groups to update the vacant seat count
+            fetchGroups(); 
+        }
+    };
+
 
     const NoGroupsIllustration = require('../../assets/Nogroup.png');
     const CardContent = ({ card, colors, isSelected }) => {
@@ -275,6 +389,10 @@ const Enrollment = ({ route, navigation }) => {
         };
         const groupType = getGroupType(card);
         const vacantSeats = card.vacantSeats || 0;
+        
+        // Determine if the current card is in the joining state
+        const isCurrentCardJoining = isJoining && joinGroupId === card._id; 
+
         return (
             <>
                 <View style={styles.cardHeader}>
@@ -339,17 +457,48 @@ const Enrollment = ({ route, navigation }) => {
                         </Text>
                     </View>
                 </View>
+                {/* MODIFICATION START: Redesigned button container and styles */}
                 <View style={styles.viewMoreContainer}>
+                    {/* View Details Button (Secondary Action - Outline Style) */}
                     <TouchableOpacity
-                        style={styles.viewMoreButton}
+                        style={[
+                            styles.viewMoreButton,
+                            // Set the outline color based on the card's theme color
+                            { 
+                                borderColor: colors.secondary, 
+                            }, 
+                            (!isConnected || !isInternetReachable || isCurrentCardJoining) && { opacity: 0.5, borderColor: '#aaa' }
+                        ]}
                         onPress={() => handleEnrollment(card)}
                         activeOpacity={0.7}
-                        disabled={!isConnected || !isInternetReachable}
+                        disabled={!isConnected || !isInternetReachable || isCurrentCardJoining}
                     >
-                        <Text style={[styles.viewMoreButtonText, { color: isSelected ? colors.secondary : '#FF8C00' }]}>View More</Text>
-                        <Ionicons name="arrow-forward" size={16} color={isSelected ? colors.secondary : '#FF8C00'} style={styles.viewMoreIcon} />
+                        <Text style={[styles.viewMoreButtonText, { color: colors.secondary }]}>View Details</Text>
+                        <Ionicons name="information-circle-outline" size={18} color={colors.secondary} style={styles.viewMoreIcon} />
+                    </TouchableOpacity>
+
+                    {/* Join Now Button (Primary Action - Solid Background) */}
+                    <TouchableOpacity
+                        style={[
+                            styles.joinNowButton, 
+                            // Use the primary background color for the main CTA
+                            { backgroundColor: colors.secondary }, 
+                            ((!isConnected || !isInternetReachable || isCurrentCardJoining) || vacantSeats === 0) && { opacity: 0.5 } // Apply disabled style, including for 0 vacant seats
+                        ]}
+                        onPress={() => handleJoinNow(card)}
+                        activeOpacity={0.7}
+                        disabled={!isConnected || !isInternetReachable || isCurrentCardJoining || vacantSeats === 0} 
+                    >
+                        {isCurrentCardJoining ? (
+                            <ActivityIndicator size="small" color="#fff" /> // Show spinner while joining
+                        ) : (
+                            <Text style={styles.joinNowButtonText}>
+                                {vacantSeats === 0 ? 'No Seats' : 'Join Now'} 
+                            </Text> 
+                        )}
                     </TouchableOpacity>
                 </View>
+                {/* MODIFICATION END */}
             </>
         );
     };
@@ -621,14 +770,28 @@ const styles = StyleSheet.create({
     mainContentWrapper: { flex: 1, alignItems: 'center', paddingVertical: 1, backgroundColor: '#053B90', paddingHorizontal: 15 },
     innerContentArea: { flex: 1, backgroundColor: '#F5F5F5', marginHorizontal: 0, borderRadius: 15, paddingVertical: 15, paddingBottom: 25, width: '104%' },
     filterContainer: { paddingHorizontal: 15, paddingBottom: 10, },
-    chipsScrollContainer: { paddingRight: 30 },
+    chipsScrollContainer: { paddingRight: 30, paddingLeft: 5 }, // Added paddingLeft
     chipsContainer: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-    chip: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 22, borderRadius: 5, backgroundColor: '#E0EFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, minWidth: 100, justifyContent: 'center' },
+    chip: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingVertical: 8, // Reduced for smaller size
+        paddingHorizontal: 15, // Reduced for smaller size
+        borderRadius: 5, 
+        backgroundColor: '#E0EFFF', 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 1 }, 
+        shadowOpacity: 0.15, 
+        shadowRadius: 2, 
+        elevation: 1, 
+        // minWidth: 100, // Removed minWidth for smaller size
+        justifyContent: 'center' 
+    },
     selectedChip: { backgroundColor: '#053B90', borderColor: '#053B90', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 },
     chipIcon: { marginRight: 2 },
     chipText: { fontSize: 12, fontWeight: '600', color: '#4A4A4A' },
     selectedChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
-    scrollContentContainer: { paddingVertical: 10, paddingHorizontal: 0 },
+    scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
     card: {
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -721,24 +884,61 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         overflow: 'hidden',
     },
+    // --- STYLIST MODIFICATIONS START ---
     viewMoreContainer: {
         width: '100%',
         alignItems: 'center',
         marginTop: 15,
+        flexDirection: 'row', 
+        justifyContent: 'flex-end', 
+        paddingHorizontal: 5,
+        gap: 10, // Space between buttons
+        borderTopWidth: 1, 
+        borderTopColor: '#E0E0E0',
+        paddingTop: 10,
     },
+    // View Details Button (Secondary Action - Outline Style)
     viewMoreButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 1,
-        paddingHorizontal: 10,
-        borderRadius: 5,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        borderWidth: 2, // Outline style
+        backgroundColor: 'transparent',
+        minWidth: 120,
+        justifyContent: 'center',
+        flex: 1,
     },
     viewMoreButtonText: {
-        fontSize: 16,
-        fontWeight: '900',
+        fontSize: 14,
+        fontWeight: '700',
         marginRight: 5,
     },
-    viewMoreIcon: {},
+    viewMoreIcon: {
+        marginLeft: 2
+    },
+    // Join Now Button (Primary Action - Solid Background)
+    joinNowButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 4,
+        minWidth: 120,
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    },
+    joinNowButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    // --- STYLIST MODIFICATIONS END ---
     emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
     noGroupsImage: {
         width: 250,

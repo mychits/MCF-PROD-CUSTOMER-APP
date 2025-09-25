@@ -24,7 +24,7 @@ import url from "../data/url";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
 import Header from "../components/layouts/Header";
-import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NoGroupImage from "../../assets/Nogroup.png";
@@ -43,22 +43,26 @@ const { width } = Dimensions.get("window");
 
 // A consolidated and more organized color palette
 const Colors = {
-  primary: "#053B90",
+  primary: "#053B90", // Dark Blue
   primaryLight: "#1F55A4",
   backgroundLight: "#F0F5F9",
   card: "#FFFFFF",
-  textDark: "#2C3E50",
-  textMedium: "#7F8C8D",
-  accentOrange: "#E67E22",
-  accentBlue: "#3499DB",
-  accentGreen: "#2ECC71",
-  gold: "#FFD700",
+  textDark: "#212121", // Darker text for more contrast
+  textMedium: "#757575",
+  accentOrange: "#F48024", // Vibrant Orange for Free Auction
+  accentBlue: "#3F51B5", // Soft Indigo for Dates
+  accentGreen: "#4CAF50", // Standard Green
+  successGreen: "#388E3C", // Deeper Green for metrics background
+  gold: "#FFC300",
   error: "#E74C3C",
-  border: "#E0E6EB",
+  border: "#E0E0E0",
   shadow: "rgba(0,0,0,0.1)",
   selectedBorder: "#F39C12",
   selectedBackground: "#FFF8E1",
-  lightDivider: "#EBEBEB",
+  lightDivider: "#EEEEEE",
+  // New unique colors
+  dataPanelBg: "#F5F5F5", // Light grey background for segmented details
+  metricPanelBg: "#E8F5E9", // Light green for financial metric
 };
 
 // Helper function to format numbers in Indian style
@@ -100,7 +104,9 @@ const formatDate = (dateString) => {
     const date = new Date(dateString);
     if (!isNaN(date.getTime())) {
       const options = { year: "numeric", month: "short", day: "numeric" };
-      return date.toLocaleDateString(undefined, options);
+      // Format: e.g., "10 Jun 2025"
+      const parts = date.toLocaleDateString('en-US', options).split(' ');
+      return `${parts[1].replace(',', '')} ${parts[0]} ${parts[2]}`;
     }
   } catch (error) {
     console.error("Error parsing date:", dateString, error);
@@ -108,7 +114,7 @@ const formatDate = (dateString) => {
   return "";
 };
 
-// Extracted sub-component for a single group card
+// Extracted sub-component for a single group card (remains the same)
 const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
   const { group_id, tickets, _id } = card;
   const { group_name, group_value, amount_due, auction_type } = group_id || {};
@@ -187,7 +193,7 @@ const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
 };
 
 
-// Extracted sub-component for displaying auction records
+// Extracted sub-component for displaying auction records - NEW SLEEK DESIGN
 const AuctionRecordsView = ({
   records,
   onBack,
@@ -237,37 +243,77 @@ const AuctionRecordsView = ({
       <ScrollView contentContainerStyle={styles.auctionRecordsScrollContent} showsVerticalScrollIndicator={false}>
         {records.map((record, index) => {
           const isFreeAuctionRecord = record.auction_type?.toLowerCase() === "free";
+          const formattedAuctionType = record.auction_type
+            ? record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1)
+            : "Normal"; 
+          
+          const recordNumber = records.length - index;
+            
           return (
             <View key={record._id || `auction-${index}`} style={styles.auctionRecordCard}>
-              <View style={styles.row}>
-                <Text style={styles.leftText}>Auction Date:</Text>
-                <Text style={styles.rightText}>{formatDate(record.auction_date)}</Text>
+              
+              {/* === 1. Sequential Number Chip (Header) === */}
+              <View style={styles.recordNumberChip}>
+                 <MaterialCommunityIcons name="gavel" size={16} color={Colors.card} />
+                 <Text style={styles.recordNumberChipText}>RECORD {recordNumber}</Text>
               </View>
-              <View style={styles.row}>
-                <Text style={styles.leftText}>Next Date:</Text>
-                <Text style={styles.rightText}>{formatDate(record.next_date)}</Text>
+              
+              {/* === 2. Segmented Date Block === */}
+              <View style={styles.dateSegmentContainer}>
+                 {/* Auction Date */}
+                 <View style={styles.dateSegment}>
+                    <MaterialCommunityIcons name="calendar-start" size={20} color={Colors.accentBlue} />
+                    <Text style={styles.dateSegmentTitle}>Auction Date</Text>
+                    <Text style={styles.dateSegmentValue}>{formatDate(record.auction_date)}</Text>
+                 </View>
+                 
+                 {/* Next Date */}
+                 <View style={[styles.dateSegment, styles.dateSegmentSeparator]}>
+                    <MaterialCommunityIcons name="calendar-end" size={20} color={Colors.accentBlue} />
+                    <Text style={styles.dateSegmentTitle}>Next Date</Text>
+                    <Text style={styles.dateSegmentValue}>{formatDate(record.next_date)}</Text>
+                 </View>
               </View>
-              <View style={styles.row}>
-                <Text style={styles.leftText}>Win Ticket:</Text>
-                <Text style={styles.rightText}>{record.ticket || ""}</Text>
+
+              {/* === 3. Secondary Info List === */}
+              <View style={styles.secondaryInfoList}>
+                 {/* Auction Type */}
+                 <View style={styles.infoRow}>
+                   
+                    <Text style={styles.infoTitle}>Auction Type</Text>
+                    <Text style={[styles.infoValue, {color: isFreeAuctionRecord ? Colors.accentOrange : Colors.textDark}]}>
+                        {formattedAuctionType}
+                    </Text>
+                 </View>
+                 <View style={styles.infoListDivider} />
+                 
+                 {/* Bid Percentage */}
+                 <View style={styles.infoRow}>
+                  
+                    <Text style={styles.infoTitle}>Bid Percentage</Text>
+                    <Text style={styles.infoValue}>
+                        {record.bid_percentage || "0"}%
+                    </Text>
+                 </View>
               </View>
-              {record.auction_type && (
-                <View style={styles.auctionTypeRecordRow}>
-                  <Text
-                    style={[
-                      styles.auctionTypeRecordText,
-                      isFreeAuctionRecord
-                        ? styles.auctionTypeOrangeText
-                        : styles.auctionTypeDefaultText,
-                    ]}
-                  >
-                    <Text style={{ fontWeight: "bold" }}>
-                      {record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1)}
-                    </Text>{" "}
-                    Auction
-                  </Text>
-                </View>
-              )}
+              
+              {/* === 4. Footer Metrics Panel === */}
+              <View style={styles.footerMetricsPanel}>
+                 
+                 {/* Win Ticket */}
+                 <View style={styles.metricItem}>
+                    <Text style={[styles.metricLabel, {color: Colors.textMedium}]}>WINNING TICKET</Text>
+                    <Text style={styles.metricTicketValue}>{record.ticket || "N/A"}</Text>
+                 </View>
+                 
+                 {/* Bid Amount (Highlighted Segment) */}
+                 <View style={[styles.metricItem, styles.metricItemSeparator]}>
+                    <Text style={[styles.metricLabel, {color: Colors.card}]}>BID AMOUNT</Text>
+                    <Text style={styles.metricAmountValue}>
+                       ₹ {formatNumberIndianStyle(record.bid_amount)}
+                    </Text>
+                 </View>
+              </View>
             </View>
           );
         })}
@@ -328,9 +374,10 @@ const AuctionList = ({ navigation }) => {
     }
     setAuctionData(prev => ({ ...prev, loading: true, error: null, records: [] }));
     try {
-      const response = await axios.get(`${url}/auction/get-group-auction/${groupId}`);
+      const response = await axios.get(`${url}/auction/group/${groupId}`);
       if (response.status === 200) {
-        setAuctionData(prev => ({ ...prev, records: response.data || [] }));
+        // Reverse the array to show the most recent auction first
+        setAuctionData(prev => ({ ...prev, records: (response.data || []).reverse() }));
       } else {
         setAuctionData(prev => ({ ...prev, error: "Failed to fetch auction records." }));
       }
@@ -509,18 +556,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.card,
     paddingHorizontal: 20,
-    paddingTop: 15, // Reduced from 30 to 15
+    paddingTop: 15, 
     paddingBottom: 20,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
   },
-
-  // Header Section
   sectionTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 5, // Reduced from 10 to 5
+    marginBottom: 5, 
   },
   sectionTitle: {
     fontWeight: "900",
@@ -537,16 +582,14 @@ const styles = StyleSheet.create({
   subSentence: {
     fontSize: 16,
     color: Colors.textMedium,
-    marginBottom: 15, // Reduced from 35 to 15
+    marginBottom: 15,
     textAlign: "center",
     paddingHorizontal: 10,
     lineHeight: 24,
   },
-
-  // Group List
   groupsWrapperBox: {
     borderRadius: 20,
-    paddingVertical: 5, // Reduced from 15 to 5
+    paddingVertical: 5,
     flex: 1,
   },
   groupListContentContainer: {
@@ -554,8 +597,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     alignItems: "center",
   },
-
-  // === NEW STYLES FOR THE DASHBOARD-LIKE CARDS ===
   newGroupCard: {
     width: "100%",
     backgroundColor: Colors.card,
@@ -583,7 +624,7 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     backgroundColor: Colors.primary,
-    paddingVertical: 15,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     alignItems: 'center',
     position: 'relative',
@@ -595,7 +636,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cardHeaderTitle: {
-    fontSize: 22,
+    fontSize: 15,
     fontWeight: 'bold',
     color: Colors.card,
     textAlign: 'center',
@@ -604,7 +645,7 @@ const styles = StyleSheet.create({
   auctionTypeTag: {
     position: 'absolute',
     right: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 15,
     backgroundColor: Colors.card,
@@ -625,31 +666,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 10,
   },
   infoColumn: {
     alignItems: 'center',
   },
   infoTitle: {
-    fontSize: 26,
+    fontSize: 16, 
     color: Colors.textMedium,
-    fontWeight: '500',
+    fontWeight: '300',
     marginBottom: 5,
   },
   infoValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 38,
+    fontWeight: '900',
     color: Colors.textDark,
-  },
-  infoDivider: {
-    width: 0,
-    height: '100%',
-    backgroundColor: 'transparent',
   },
   actionButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 15,
+    paddingVertical: 10,
     backgroundColor: Colors.backgroundLight,
     borderTopWidth: 1,
     borderBottomWidth: 1,
@@ -666,26 +702,10 @@ const styles = StyleSheet.create({
     color: Colors.textDark,
     textAlign: 'center',
   },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-  },
-  footerText: {
-    fontSize: 14,
-    color: Colors.textDark,
-    flex: 1,
-    marginLeft: 10,
-  },
   cardDivider: {
     height: 1,
     backgroundColor: Colors.lightDivider,
   },
-  // END NEW STYLES
-
-  // Old styles (kept for other components)
   loader: {
     flex: 1,
     justifyContent: "center",
@@ -780,56 +800,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     paddingHorizontal: 15,
   },
-  auctionRecordCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 15,
-    padding: 20,
-    marginVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.shadow,
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.22,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 7,
-      },
-    }),
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 6,
-    alignItems: "center",
-  },
-  leftText: {
-    flex: 1,
-    textAlign: "left",
-    fontSize: 16,
-    color: Colors.textMedium,
-    fontWeight: "500",
-  },
-  rightText: {
-    flex: 1,
-    textAlign: "right",
-    fontSize: 16,
-    color: Colors.textDark,
-    fontWeight: "600",
-  },
-  auctionTypeRecordRow: {
-    justifyContent: "flex-start",
-    width: "100%",
-    marginTop: 8,
-    marginBottom: 0,
-  },
-  auctionTypeRecordText: {
-    fontSize: 16,
-    color: Colors.textDark,
-    textAlign: "left",
-  },
   noDataContainer: {
     flex: 1,
     justifyContent: "center",
@@ -866,6 +836,142 @@ const styles = StyleSheet.create({
     marginTop: 25,
     paddingHorizontal: 15,
     lineHeight: 24,
+  },
+
+  // === UNIQUE STYLES FOR AUCTION RECORD CARDS ===
+  auctionRecordCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 15,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.shadow,
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  
+  // 1. Sequential Number Chip
+  recordNumberChip: {
+      flexDirection: 'row',
+      alignSelf: 'flex-start',
+      alignItems: 'center',
+      backgroundColor: Colors.primary,
+      paddingVertical: 4,
+      paddingHorizontal: 12,
+      borderBottomRightRadius: 15, // Creates a nice sticker effect
+      marginBottom: -1, // Pull it slightly over the border/date panel for a better effect
+  },
+  recordNumberChipText: {
+      marginLeft: 6,
+      color: Colors.card,
+      fontSize: 14,
+      fontWeight: '700',
+  },
+
+  // 2. Segmented Date Block
+  dateSegmentContainer: {
+      flexDirection: 'row',
+      backgroundColor: Colors.dataPanelBg,
+      paddingVertical: 15,
+      borderBottomWidth: 1,
+      borderColor: Colors.lightDivider,
+  },
+  dateSegment: {
+      flex: 1,
+      alignItems: 'center',
+  },
+  dateSegmentSeparator: {
+      borderLeftWidth: 1,
+      borderColor: Colors.lightDivider,
+  },
+  dateSegmentTitle: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: Colors.textMedium,
+      marginTop: 5,
+      textTransform: 'uppercase',
+  },
+  dateSegmentValue: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: Colors.textDark,
+      marginTop: 2,
+  },
+
+  // 3. Secondary Info List
+  secondaryInfoList: {
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      backgroundColor: Colors.card,
+  },
+  infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+  },
+  infoTitle: {
+      flex: 1,
+      marginLeft: 10,
+      fontSize: 15,
+      color: Colors.textDark,
+      fontWeight: '500',
+  },
+  infoValue: {
+      fontSize: 15,
+      fontWeight: '700',
+  },
+  infoListDivider: {
+      height: 1,
+      backgroundColor: Colors.lightDivider,
+      marginVertical: 0,
+  },
+
+  // 4. Footer Metrics Panel
+  footerMetricsPanel: {
+      flexDirection: 'row',
+      backgroundColor: Colors.metricPanelBg,
+      borderTopWidth: 1,
+      borderColor: Colors.lightDivider,
+      borderBottomLeftRadius: 15,
+      borderBottomRightRadius: 15,
+  },
+  metricItem: {
+      flex: 1,
+      padding: 15,
+      alignItems: 'center',
+  },
+  metricItemSeparator: {
+      borderLeftWidth: 1,
+      borderColor: Colors.lightDivider,
+      backgroundColor: Colors.successGreen, // Highlight the Bid Amount segment
+  },
+  metricLabel: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: Colors.textMedium,
+      marginBottom: 5,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+  },
+  metricTicketValue: {
+      fontSize: 24,
+      fontWeight: '900',
+      color: Colors.primary,
+  },
+  metricAmountValue: {
+      fontSize: 24,
+      fontWeight: '900',
+      color: Colors.card, // White text on dark green background
   },
 });
 
