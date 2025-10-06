@@ -90,7 +90,7 @@ const Mygroups = ({ navigation }) => {
 
     // --- NEW: Animation Refs for Auction/Insurance Buttons (Scale down on press) ---
     const auctionScaleAnim = useRef(new Animated.Value(1)).current;
-    const insuranceScaleAnim = useRef(new Animated.Value(1)).current;
+    // const insuranceScaleAnim = useRef(new Animated.Value(1)).current; // REMOVED: insuranceScaleAnim
 
     const handleAuctionPressIn = () => {
       Animated.timing(auctionScaleAnim, {
@@ -111,24 +111,7 @@ const Mygroups = ({ navigation }) => {
       });
     };
 
-    const handleInsurancePressIn = () => {
-      Animated.timing(insuranceScaleAnim, {
-        toValue: 0.95, // Scale down slightly on press in
-        duration: 100,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    const handleInsurancePressOut = () => {
-      Animated.timing(insuranceScaleAnim, {
-        toValue: 1, // Scale back up on press out
-        duration: 150,
-        useNativeDriver: true,
-      }).start(() => {
-        // Add navigation logic here if you want to navigate on press out
-        // navigation.navigate("InsuranceScreen"); // Example
-      });
-    };
+    // REMOVED: handleInsurancePressIn and handleInsurancePressOut
   
     useEffect(() => {
       const pulseAndSlide = () => {
@@ -323,9 +306,7 @@ const Mygroups = ({ navigation }) => {
     transform: [{ scale: auctionScaleAnim }],
   };
 
-  const insuranceAnimatedStyle = {
-    transform: [{ scale: insuranceScaleAnim }],
-  };
+  // REMOVED: insuranceAnimatedStyle
   
 
   return (
@@ -342,7 +323,7 @@ const Mygroups = ({ navigation }) => {
           </View>
         ) : (
           <>
-            <Text style={styles.title}>My Groups</Text>
+            <Text style={styles.title}>My Groups payments</Text>
 
             <View style={styles.fixedSummaryWrapper}>
               <LinearGradient colors={["#0A2647", "#0C53B3"]} style={styles.summaryCardLeft}>
@@ -359,9 +340,10 @@ const Mygroups = ({ navigation }) => {
             </View>
 
             {/* New Buttons for Navigation (now placed after summary cards) */}
-            <View style={[styles.navigationButtonsContainer, { paddingHorizontal: 20 }]}>
+            {/* UPDATED STYLE: justifyContent: 'center' to center the single button */}
+            <View style={[styles.navigationButtonsContainer, { paddingHorizontal: 20, justifyContent: 'center' }]}>
               <TouchableOpacity
-                style={styles.navButton}
+                style={[styles.navButton, { maxWidth: 200 }]} // FIX: Removed comment from this line
                 onPressIn={handleAuctionPressIn}
                 onPressOut={handleAuctionPressOut}
                 onPress={() => {
@@ -378,24 +360,7 @@ const Mygroups = ({ navigation }) => {
                   <Text style={styles.navButtonText}>Auction</Text>
                 </Animated.View>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.navButton}
-                onPressIn={handleInsurancePressIn}
-                onPressOut={handleInsurancePressOut}
-                onPress={() => {
-                  // Actual navigation for Insurance goes here
-                  // navigation.navigate("InsuranceScreen"); 
-                }}
-              >
-                <Animated.View style={[styles.navButtonGradient, insuranceAnimatedStyle]}>
-                  <LinearGradient
-                    colors={['#27AE60', '#196F3D']}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                  <Text style={styles.navButtonText}>View </Text>
-                  <Text style={styles.navButtonText}> Insurance</Text>
-                </Animated.View>
-              </TouchableOpacity>
+              {/* REMOVED: View Insurance Button */}
             </View>
 
             <ScrollView
@@ -574,11 +539,13 @@ const styles = StyleSheet.create({
   // --- NEW NAVIGATION BUTTON STYLES ---
   navigationButtonsContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    // NOTE: justifyContent is now set to 'center' directly in the JSX
+    // justifyContent: "space-between", 
     marginBottom: 25,
   },
   navButton: {
-    flex: 1,
+    // REMOVED: flex: 1 as there is only one button and it should not stretch full width
+    // flex: 1, 
     marginHorizontal: 5,
     borderRadius: 15,
     overflow: 'hidden',

@@ -319,7 +319,7 @@ const ReportList = ({ navigation }) => {
           </View>
         ) : (
           <>
-            <Text style={styles.title}>My Groups</Text>
+            <Text style={styles.title}>My Groups Reports</Text>
 
             <View style={styles.fixedSummaryWrapper}>
               <LinearGradient colors={["#0A2647", "#0C53B3"]} style={styles.summaryCardLeft}>

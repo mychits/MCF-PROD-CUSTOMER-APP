@@ -307,10 +307,10 @@ const PayYourDues = ({ navigation, route }) => {
       return;
     }
 
-    if (isNaN(amountToPay) || amountToPay < 100) {
+    if (isNaN(amountToPay) || amountToPay < 0.1) {
       Alert.alert(
         "Invalid Amount",
-        "Please enter a valid amount. Minimum amount is ₹100."
+        "Please enter a valid amount. Minimum amount is ₹0.1."
       );
       return;
     }

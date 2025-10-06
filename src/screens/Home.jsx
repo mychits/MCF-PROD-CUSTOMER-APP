@@ -843,18 +843,20 @@ const Home = ({ route, navigation }) => {
                         columnWrapperStyle={styles.row}
                     />
                     <View style={styles.blueContainer}>
+                        {/* MODIFICATION: Rewards onPress changed to an empty function */}
                         <TouchableOpacity
                             style={styles.blueGridItem}
-                            onPress={() => navigation.navigate('RewardsScreen', { userId: userId, featureTitle: 'Rewards' })}
+                            onPress={() => console.log('Rewards button disabled by user request.')} 
                         >
                             <View style={styles.iconCircleBlue}>
                                 <MaterialIcons name="emoji-events" size={30} color="#053B90" />
                             </View>
                             <Text style={styles.blueGridItemText}>Rewards</Text>
                         </TouchableOpacity>
+                        {/* MODIFICATION: Offers onPress changed to an empty function */}
                         <TouchableOpacity
                             style={styles.blueGridItem}
-                            onPress={() => navigation.navigate('OffersScreen', { userId: userId, featureTitle: 'Offers' })}
+                            onPress={() => console.log('Offers button disabled by user request.')}
                         >
                             <View style={styles.iconCircleBlue}>
                                 <MaterialIcons name="local-offer" size={30} color="#053B90" />
