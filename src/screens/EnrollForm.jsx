@@ -48,7 +48,7 @@ const EnrollForm = ({ navigation, route }) => {
   const userId = appUser.userId || {};
   const { groupId } = route.params || {};
   const [ticketCount, setTicketCount] = useState(1); // Default to 1 ticket
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true); // <--- MODIFIED TO TRUE
   const [cardsData, setCardsData] = useState(null);
   const [availableTickets, setAvailableTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -149,82 +149,82 @@ const EnrollForm = ({ navigation, route }) => {
 
   // New function for the core enrollment logic (can be called by a custom modal's confirm button)
   const performEnrollment = useCallback(async (ticketsCountInt) => {
-      setIsSubmitting(true);
+    setIsSubmitting(true);
 
-      if (!isConnected || !isInternetReachable) {
-        Toast.show({
-          type: "error",
-          text1: "No Internet Connection",
-          text2: "Please check your network and try again.",
-          position: "bottom",
-          visibilityTime: 3000,
-        });
-        setIsSubmitting(false);
-        return;
+    if (!isConnected || !isInternetReachable) {
+      Toast.show({
+        type: "error",
+        text1: "No Internet Connection",
+        text2: "Please check your network and try again.",
+        position: "bottom",
+        visibilityTime: 3000,
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      group_id: groupId,
+      user_id: userId,
+      no_of_tickets: ticketsCountInt,
+      // tickets: availableTickets[0], // NOTE: Commented out original line
+      chit_asking_month: Number(cardsData?.group_duration) || 0,
+    };
+
+    console.log("Payload being sent:", payload);
+
+    try {
+      await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      Toast.show({
+        type: "success",
+        text1: "Enrollment Successful!",
+        text2: `You are enrolled for ${cardsData?.group_name || "the group"
+          } with ${ticketsCountInt} ticket(s).`,
+        position: "bottom",
+        visibilityTime: 3000,
+      });
+      navigation.navigate("EnrollConfirm", {
+        group_name: cardsData?.group_name,
+        // tickets: ticketsCountInt, // NOTE: Commented out original line
+        userId: userId,
+      });
+    } catch (err) {
+      console.error("Error enrolling user:", err);
+      let errorMessage =
+        "An error occurred during enrollment. Please try again.";
+
+      if (err.response) {
+        console.error("Error response data:", err.response.data);
+        // Check if the specific error message structure exists
+        errorMessage =
+          err.response.data.data?.message ||
+          err.response.data.message || // Fallback to a general message field
+          `Server error: ${err.response.status}`;
+      } else if (err.request) {
+        console.error("Error request:", err.request);
+        errorMessage =
+          "Network error: No response from server. Please check the URL or server status.";
+      } else {
+        console.error("Error message:", err.message);
+        errorMessage = `An unexpected error occurred: ${err.message}`;
       }
 
-      const payload = {
-        group_id: groupId,
-        user_id: userId,
-        no_of_tickets: ticketsCountInt,
-       // tickets: availableTickets[0], // NOTE: Commented out original line
-        chit_asking_month: Number(cardsData?.group_duration) || 0,
-      };
-
-      console.log("Payload being sent:", payload);
-
-      try {
-        await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        Toast.show({
-          type: "success",
-          text1: "Enrollment Successful!",
-          text2: `You are enrolled for ${cardsData?.group_name || "the group"
-            } with ${ticketsCountInt} ticket(s).`,
-          position: "bottom",
-          visibilityTime: 3000,
-        });
-        navigation.navigate("EnrollConfirm", {
-          group_name: cardsData?.group_name,
-         // tickets: ticketsCountInt, // NOTE: Commented out original line
-          userId: userId,
-        });
-      } catch (err) {
-        console.error("Error enrolling user:", err);
-        let errorMessage =
-          "An error occurred during enrollment. Please try again.";
-
-        if (err.response) {
-          console.error("Error response data:", err.response.data);
-          // Check if the specific error message structure exists
-          errorMessage =
-            err.response.data.data?.message ||
-            err.response.data.message || // Fallback to a general message field
-            `Server error: ${err.response.status}`;
-        } else if (err.request) {
-          console.error("Error request:", err.request);
-          errorMessage =
-            "Network error: No response from server. Please check the URL or server status.";
-        } else {
-          console.error("Error message:", err.message);
-          errorMessage = `An unexpected error occurred: ${err.message}`;
-        }
-
-        Toast.show({
-          type: "error",
-          text1: "Enrollment Failed",
-          text2: errorMessage,
-          position: "bottom",
-          visibilityTime: 3000,
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
-    }, [
+      Toast.show({
+        type: "error",
+        text1: "Enrollment Failed",
+        text2: errorMessage,
+        position: "bottom",
+        visibilityTime: 3000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
     isConnected,
     isInternetReachable,
     groupId,
@@ -232,7 +232,7 @@ const EnrollForm = ({ navigation, route }) => {
     cardsData,
     navigation,
   ]);
-  
+
   const handleEnroll = useCallback(async () => {
     if (!termsAccepted) {
       Toast.show({
@@ -268,18 +268,18 @@ const EnrollForm = ({ navigation, route }) => {
     }
 
     const ticketsCountInt = parseInt(ticketCount, 10);
-    
+
     // NOTE: Replacing the unstyled native Alert.alert with direct enrollment
     // If a stylish confirmation is needed, you must implement a custom React Native Modal here.
-    
+
     // Since you removed the alert, we will just proceed with a successful toast
     // confirming the action *before* the API call for a better user experience.
     Toast.show({
-        type: "info",
-        text1: "Proceeding to Enroll",
-        text2: `Attempting enrollment for ${cardsData?.group_name || "the group"} with ${ticketsCountInt} ticket(s).`,
-        position: "bottom",
-        visibilityTime: 1500, // Short visibility before main API call
+      type: "info",
+      text1: "Proceeding to Enroll",
+      text2: `Attempting enrollment for ${cardsData?.group_name || "the group"} with ${ticketsCountInt} ticket(s).`,
+      position: "bottom",
+      visibilityTime: 1500, // Short visibility before main API call
     });
 
     await performEnrollment(ticketsCountInt);
@@ -314,7 +314,7 @@ const EnrollForm = ({ navigation, route }) => {
 
   if (loading) {
     // NOTE: Added Colors object temporarily to avoid ReferenceError in loading state
-    const Colors = { primary: "#053B90" }; 
+    const Colors = { primary: "#053B90" };
     return (
       <SafeAreaView style={styles.centeredFlexContainer}>
         <View style={styles.loaderContainer}>
@@ -348,7 +348,7 @@ const EnrollForm = ({ navigation, route }) => {
     warningOrange: "#FF9800",
     primaryText: "#343A40",
   };
-  
+
   if (!isConnected || !isInternetReachable) {
     return (
       <SafeAreaView style={styles.centeredFlexContainer}>
@@ -465,7 +465,7 @@ const EnrollForm = ({ navigation, route }) => {
                   style={styles.infoItemIcon}
                 />
                 <Text style={styles.infoItemText}>
-                  Installment:{" "}
+                  {" "}
                   <Text style={styles.highlightedText}>
                     ₹ {formatNumberIndianStyle(cardsData.group_install)}/Installment
                   </Text>
@@ -549,11 +549,11 @@ const EnrollForm = ({ navigation, route }) => {
             <View style={styles.ticketSelectionBox}>
               <Text style={styles.ticketSelectionBoxTitle}>Select Tickets</Text>
 
-             
+
               <View style={styles.unifiedTicketControlRow}>
                 <Text style={styles.quantityLabel}>Number of Tickets:</Text>
                 <View style={styles.stepperContainer}>
-                 
+
                   <TouchableOpacity
                     style={[
                       styles.stepperButton,
@@ -566,12 +566,12 @@ const EnrollForm = ({ navigation, route }) => {
                   >
                     <AntDesign name="minus" size={20} color={ticketCount <= 1 || availableTickets.length === 0 ? Colors.primary : Colors.primary} />
                   </TouchableOpacity>
-                  
+
                   {/* Ticket Count Display */}
                   <View style={styles.ticketCountDisplay}>
                     <Text style={styles.ticketCountText}>{ticketCount}</Text>
                   </View>
-                  
+
                   {/* Increment Button */}
                   <TouchableOpacity
                     style={[
@@ -592,13 +592,13 @@ const EnrollForm = ({ navigation, route }) => {
 
               {/* NEW: Combined Summary Row - Stacked Card Style */}
               <View style={styles.combinedTicketSummaryRowStacked}>
-                  {/* Selected Tickets Box (Primary) */}
-                  <View style={styles.summaryBoxPrimary}>
-                      <Text style={styles.summaryBoxLabel}>Selected Tickets</Text>
-                      <Text style={styles.summaryBoxCountPrimary}>{ticketCount}</Text>
-                  </View>
+                {/* Selected Tickets Box (Primary) */}
+                <View style={styles.summaryBoxPrimary}>
+                  <Text style={styles.summaryBoxLabel}>Selected Tickets</Text>
+                  <Text style={styles.summaryBoxCountPrimary}>{ticketCount}</Text>
+                </View>
 
-                 
+
               </View>
               {/* END: Combined Summary Row */}
             </View>
@@ -616,7 +616,7 @@ const EnrollForm = ({ navigation, route }) => {
                   color={termsAccepted ? Colors.primary : Colors.darkGray}
                 />
                 <Text style={styles.checkboxLabel}>
-                  By continuing, I agree that I have read and understood the{" "}
+                  I agree to the{" "}
                   <Text
                     style={styles.linkText}
                     onPress={() =>
@@ -642,9 +642,8 @@ const EnrollForm = ({ navigation, route }) => {
                   >
                     Privacy Policy
                   </Text>
-                  , and I accept to follow the rules mentioned in both documents.
+                  .
                 </Text>
-
 
               </TouchableOpacity>
             </View>
@@ -722,7 +721,7 @@ const styles = StyleSheet.create({
   },
   contentCard: {
     flex: 1,
-    backgroundColor: Colors.primaryBackground, 
+    backgroundColor: Colors.primaryBackground,
     borderRadius: 15,
     marginTop: 5, // Reduced from 10
     paddingVertical: 10, // Reduced from 15
@@ -845,10 +844,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: Colors.primaryText,
-    marginBottom: 10, 
+    marginBottom: 10,
     textAlign: "center",
   },
-  
+
   // START: TICKET SELECTION STYLES
 
   unifiedTicketControlRow: {
@@ -919,9 +918,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.primaryDark, 
+    backgroundColor: Colors.primaryDark,
     width: '90%', // Occupy most of the width
-    borderRadius: 10, 
+    borderRadius: 10,
     paddingHorizontal: 15,
     paddingVertical: 10, // Reduced vertical padding
     // Removed marginBottom: 2
@@ -932,16 +931,16 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   summaryBoxLabel: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: Colors.whiteAccent,
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.whiteAccent,
   },
   summaryBoxCountPrimary: {
-      fontSize: 20,
-      fontWeight: "bold",
-      color: Colors.white,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.white,
   },
-  
+
   // NOTE: Removed unused summaryBoxSecondary styles for compactness
 
   // END: COMBINED SUMMARY ROW STYLES

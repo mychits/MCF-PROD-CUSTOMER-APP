@@ -87,11 +87,15 @@ const EnrollConfirm = ({ navigation, route }) => {
           <Text style={styles.activationText}>
             Account will be activated soon.
           </Text>
+          {/* START: Box added around the offline indicator */}
           {!isConnected && (
-            <Text style={styles.offlineIndicator}>
-              You are currently offline.
-            </Text>
+            <View style={styles.offlineBox}>
+              <Text style={styles.offlineIndicator}>
+                You are currently offline.
+              </Text>
+            </View>
           )}
+          {/* END: Box added around the offline indicator */}
           <TouchableOpacity style={styles.button} onPress={handleGoToMyGroups}>
             <Text style={styles.buttonText}>Go to My Groups</Text>
           </TouchableOpacity>
@@ -145,11 +149,20 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 20,
   },
+  // NEW STYLE: Container for the offline message
+  offlineBox: {
+    borderWidth: 2,
+    borderColor: 'orange',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 15,
+    marginBottom: 10,
+    backgroundColor: '#FFF8E1', // Light yellow background
+  },
   offlineIndicator: {
     fontSize: 14,
     color: "orange",
-    marginTop: 10,
-    marginBottom: 10,
     textAlign: "center",
     fontWeight: "bold",
   },
@@ -167,7 +180,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    marginTop: 20, // Added margin top for spacing from text
+    marginTop: 20, 
   },
   buttonText: {
     color: "#fff",

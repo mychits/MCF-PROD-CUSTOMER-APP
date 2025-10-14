@@ -9,53 +9,74 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView, // Import SafeAreaView
+  SafeAreaView,
   StatusBar,
   Animated,
+  Image,
 } from "react-native";
 import axios from "axios";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import * as Contacts from "expo-contacts";
+import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+
+// --- Custom Imports (your existing) ---
 import { NetworkContext } from "../context/NetworkProvider";
-import { useSafeAreaInsets } from "react-native-safe-area-context"; // Import useSafeAreaInsets
-
-import url from "../data/url";
-import Header from "../components/layouts/Header";
 import { ContextProvider } from "../context/UserProvider";
+import url from "../data/url";
+import profileImage from "../../assets/profile (2).png";
 
-const CustomToast = React.forwardRef(({ duration = 2000 }, ref) => {
+// --- Colors / Theme ---
+const Colors = {
+  primaryViolet: "#0A4B9F",
+  secondaryViolet: "#0A4B9F",
+  backgroundLight: "#FFFFFF",
+  screenBackground: "#0A4B9F",
+  inputBackground: "#F3F0F9",
+  inputBorder: "#aabdd6ff",
+  textDark: "#333333",
+  headerGradientStart: "#0A4B9F",
+  headerGradientEnd: "#0A4B9F",
+  toastBg: "#EDE7F6",
+  toastText: "#0A4B9F",
+  redError: "#D32F2F",
+};
+
+// --- Custom Toast (unchanged) ---
+const CustomToast = React.forwardRef(({ duration = 3000 }, ref) => {
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState("");
   const opacity = useRef(new Animated.Value(0)).current;
 
-  React.useImperativeHandle(ref, () => ({
-    show: (msg) => {
-      setMessage(msg);
-      setVisible(true);
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }).start(() => {
-        setTimeout(() => {
-          Animated.timing(opacity, {
-            toValue: 0,
-            duration: 100,
-            useNativeDriver: true,
-          }).start(() => {
-            setVisible(false);
-            setMessage("");
-          });
-        }, duration);
-      });
-    },
-  }));
+  const show = (msg) => {
+    Animated.timing(opacity).stop();
+    setMessage(msg);
+    setVisible(true);
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => {
+          setVisible(false);
+          setMessage("");
+        });
+      }, duration);
+    });
+  };
 
-  if (!visible) {
-    return null;
-  }
+  React.useImperativeHandle(ref, () => ({ show }));
+
+  if (!visible) return null;
 
   return (
-    <Animated.View style={[toastStyles.toastContainer, { opacity }]}>
+    <Animated.View style={[toastStyles.toastContainer, { opacity }]} pointerEvents="none">
       <View style={toastStyles.toastContent}>
         <Text style={toastStyles.toastText}>{message}</Text>
       </View>
@@ -66,10 +87,10 @@ const CustomToast = React.forwardRef(({ duration = 2000 }, ref) => {
 const toastStyles = StyleSheet.create({
   toastContainer: {
     position: "absolute",
-    top: 60,
+    top: Platform.OS === "ios" ? 90 : 60,
     left: "5%",
     right: "5%",
-    backgroundColor: "rgba(238, 243, 247, 0.95)",
+    backgroundColor: Colors.toastBg,
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 28,
@@ -77,17 +98,17 @@ const toastStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 10,
   },
   toastContent: {
     flexDirection: "row",
     alignItems: "center",
   },
   toastText: {
-    color: "#053B90",
+    color: Colors.toastText,
     fontSize: 15,
     fontWeight: "600",
     flexShrink: 1,
@@ -95,16 +116,18 @@ const toastStyles = StyleSheet.create({
   },
 });
 
+// --- FloatingLabelInput (unchanged) ---
 const FloatingLabelInput = ({
   label,
   value,
   onChangeText,
-  keyboardType,
-  secureTextEntry,
-  multiline,
-  numberOfLines,
+  keyboardType = "default",
+  secureTextEntry = false,
+  multiline = false,
+  numberOfLines = 1,
   isRequired = false,
   autoCapitalize = "none",
+  maxLength = undefined,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const animatedIsFocused = useRef(new Animated.Value(value ? 1 : 0)).current;
@@ -115,35 +138,42 @@ const FloatingLabelInput = ({
       duration: 200,
       useNativeDriver: false,
     }).start();
-  }, [isFocused, value, animatedIsFocused]);
+  }, [isFocused, value]);
 
   const labelStyle = {
     position: "absolute",
     left: 15,
     top: animatedIsFocused.interpolate({
       inputRange: [0, 1],
-      outputRange: [14, -10], // Adjusted top for label when unfocused/focused
+      outputRange: [18, -10],
     }),
     fontSize: animatedIsFocused.interpolate({
       inputRange: [0, 1],
-      outputRange: [14, 10], // **Decreased font size here: Unfocused 14, Focused 10**
+      outputRange: [16, 11],
     }),
     color: animatedIsFocused.interpolate({
       inputRange: [0, 1],
-      outputRange: ["#999", "#053B90"],
+      outputRange: ["#999", Colors.primaryViolet],
     }),
-    backgroundColor: "#fff", // Ensures white background behind the label
+    backgroundColor: Colors.backgroundLight,
     paddingHorizontal: 4,
     zIndex: 1,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 5,
   };
 
   return (
     <View style={styles.inputContainer}>
       <Animated.Text style={labelStyle}>
-        {label} {isRequired && <Text style={{ color: "red" }}>*</Text>}
+        {label} {isRequired && <Text style={{ color: Colors.redError }}>*</Text>}
       </Animated.Text>
       <TextInput
-        style={styles.inputField}
+        style={[
+          styles.inputField,
+          isFocused && { borderColor: Colors.primaryViolet },
+          multiline && { minHeight: 100, paddingTop: 15, textAlignVertical: "top" },
+        ]}
         value={value}
         onChangeText={onChangeText}
         onFocus={() => setIsFocused(true)}
@@ -152,277 +182,347 @@ const FloatingLabelInput = ({
         secureTextEntry={secureTextEntry}
         multiline={multiline}
         numberOfLines={numberOfLines}
-        blurOnSubmit={true}
+        blurOnSubmit
         autoCapitalize={autoCapitalize}
-        placeholder={isFocused ? "" : ""}
-        placeholderTextColor="#ccc"
+        maxLength={maxLength}
       />
     </View>
   );
 };
 
+// --- Main Screen ---
 const IntroduceNewCustomers = () => {
   const navigation = useNavigation();
-  const route = useRoute();
+  const insets = useSafeAreaInsets();
 
-  const [appUser, setAppUser] = useContext(ContextProvider);
-  const userId = appUser.userId || {};
+  const [appUser] = useContext(ContextProvider);
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
-  const insets = useSafeAreaInsets(); // Initialize useSafeAreaInsets
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-
-  const [Zipcode, setZipcode] = useState("");
-
+  const [zipCode, setZipCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const customToastRef = useRef();
 
   const showCustomToast = (message) => {
-    if (customToastRef.current) {
-      customToastRef.current.show(message);
-    }
+    customToastRef.current?.show(message);
   };
 
   const handleCreateUser = async () => {
-    if (!fullName.trim() || !phoneNumber.trim()) {
-      showCustomToast("Full Name and Phone Number are required.");
-      return;
-    }
-
-    if (!/^\d{10}$/.test(phoneNumber.trim())) {
-      showCustomToast("Please enter a valid 10-digit phone number.");
-      return;
-    }
-
-    if (email.trim() && !/\S+@\S+\.\S+/.test(email.trim())) {
-      showCustomToast("Please enter a valid email address.");
-      return;
-    }
-
     if (!isConnected || !isInternetReachable) {
       showCustomToast("No internet connection. Please check your network.");
       return;
     }
+    if (!fullName.trim() || !phoneNumber.trim()) {
+      showCustomToast("Full Name and Phone Number are required.");
+      return;
+    }
+    if (!/^\d{10}$/.test(phoneNumber.trim())) {
+      showCustomToast("Please enter a valid 10‑digit phone number.");
+      return;
+    }
+    if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) {
+      showCustomToast("Please enter a valid email address.");
+      return;
+    }
+    if (zipCode.trim() && !/^\d{5}$/.test(zipCode.trim())) {
+      showCustomToast("Please enter a valid 5‑digit Zip Code.");
+      return;
+    }
 
     setIsLoading(true);
-
     try {
       const response = await axios.post(`${url}/user/add-user`, {
         full_name: fullName.trim(),
         email: email.trim(),
         phone_number: phoneNumber.trim(),
-
-        Zipcode: Zipcode.trim(),
+        Zipcode: zipCode.trim(),
         track_source: "mobile",
       });
-
-      console.log("API Response Status:", response.status);
-      console.log("API Response Data:", response.data);
-
       if (response.status === 201) {
-        showCustomToast(response.data.message || "User created successfully!");
-
+        showCustomToast(response.data.message || "Customer created successfully! 🎉");
         setFullName("");
         setEmail("");
         setPhoneNumber("");
-
-        setZipcode("");
-
-        setTimeout(() => {
-          navigation.goBack();
-        }, 1500);
+        setZipCode("");
+        setTimeout(() => navigation.goBack(), 1500);
       } else {
-        showCustomToast(
-          response.data.message ||
-            "Something went wrong. (Status: " + response.status + ")"
-        );
+        showCustomToast(response.data.message || "Unexpected status from server.");
       }
     } catch (error) {
-      console.error("Error creating user:", error);
-      if (error.response) {
-        showCustomToast(
-          error.response.data.message ||
-            "Failed to create user. Please try again."
-        );
-      } else if (error.request) {
-        showCustomToast(
-          "No response from server. Check your internet connection or server status."
-        );
-      } else {
-        showCustomToast(
-          "An unexpected error occurred while setting up the request."
-        );
-      }
+      const errorMessage = error.response?.data?.message || "An error occurred while creating the customer.";
+      showCustomToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // --- New: Use native contact picker ---
+  const handlePickContact = async () => {
+    // Request permissions
+    const { status } = await Contacts.requestPermissionsAsync();
+    if (status !== "granted") {
+      showCustomToast("Permission to access contacts was denied.");
+      return;
+    }
+
+    try {
+      const contact = await Contacts.presentContactPickerAsync();
+      // If user cancels, contact will be null
+      if (!contact) {
+        // user cancelled
+        return;
+      }
+
+      // Now contact is a Contact object
+      // Get name and phone
+      const name = contact.name ?? "";
+      // It might have multiple phone numbers
+      const phoneNumbers = contact.phoneNumbers;
+      let phone = "";
+      if (phoneNumbers && phoneNumbers.length > 0) {
+        phone = phoneNumbers[0].number.replace(/\D/g, ""); // strip non digits
+      }
+      if (name) setFullName(name);
+      if (phone) setPhoneNumber(phone);
+
+      showCustomToast("Contact selected & filled.");
+    } catch (err) {
+      console.error("Error picking contact:", err);
+      showCustomToast("Failed to pick contact.");
+    }
+  };
+
+  const handleProfilePress = () => {
+    navigation.navigate("BottomTab", { screen: "ProfileScreen" });
+  };
+
   return (
-    <SafeAreaView
-      style={[
-        styles.outerContainer,
-        {
-          paddingTop:
-            Platform.OS === "android" ? StatusBar.currentHeight : insets.top,
-        },
-      ]}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="#053B90" />
-      <Header userId={userId} navigation={navigation} />
+    <SafeAreaView style={styles.outerContainer}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.headerGradientStart} />
+      <LinearGradient
+        colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.headerContainer, { paddingTop: insets.top + 10 }]}
+      >
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={26} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Introduce New Customer</Text>
+          <TouchableOpacity onPress={handleProfilePress}>
+            <Image source={profileImage} style={styles.headerProfileImage} />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 50 : 0}
       >
-        <View style={styles.mainContentWrapper}>
-          <View style={styles.contentCard}>
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
+        <View style={styles.mainCard}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.cardFormTitle}>Customer Referral Details</Text>
+            <Text style={styles.cardFormSubtitle}>
+              Enter the required information to create a new customer lead.
+            </Text>
+
+            {/* Contact Picker Button */}
+            <TouchableOpacity style={styles.contactButton} onPress={handlePickContact}>
+              <View style={styles.contactButtonContent}>
+                <Ionicons name="person-circle-outline" size={22} color={Colors.primaryViolet} />
+                <Text style={styles.contactButtonText}>Pick from Contacts</Text>
+              </View>
+            </TouchableOpacity>
+
+            <FloatingLabelInput
+              label="Full Name"
+              value={fullName}
+              onChangeText={setFullName}
+              isRequired
+              autoCapitalize="words"
+            />
+            <FloatingLabelInput
+              label="Phone Number"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+              isRequired
+              maxLength={10}
+            />
+            <FloatingLabelInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <FloatingLabelInput
+              label="Zip Code"
+              value={zipCode}
+              onChangeText={setZipCode}
+              keyboardType="numeric"
+              maxLength={5}
+            />
+
+            <TouchableOpacity
+              style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+              onPress={handleCreateUser}
+              disabled={isLoading}
             >
-              <Text style={styles.sectionTitle}>Introduce New Customer</Text>
-
-              <FloatingLabelInput
-                label="Full Name"
-                value={fullName}
-                onChangeText={setFullName}
-                isRequired={true}
-                autoCapitalize="words"
-              />
-              <FloatingLabelInput
-                label="Phone Number"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
-                isRequired={true}
-              />
-              <FloatingLabelInput
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <FloatingLabelInput
-                label="Zip code"
-                value={Zipcode}
-                onChangeText={setZipcode}
-                keyboardType="numeric"
-              />
-
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  isLoading && styles.submitButtonDisabled,
-                ]}
-                onPress={handleCreateUser}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Create Customer</Text>
-                )}
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.submitButtonText}>Create Customer</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
 
-      <CustomToast ref={customToastRef} duration={3000} />
+      <CustomToast ref={customToastRef} />
     </SafeAreaView>
   );
 };
 
+// --- Styles (same + button styles) ---
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: "#053B90", // Background for the entire screen, including safe areas
+    backgroundColor: Colors.screenBackground,
   },
-
+  headerContainer: {
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    shadowColor: Colors.headerGradientStart,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    elevation: 10,
+    zIndex: 10,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  headerProfileImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
   keyboardAvoidingView: {
     flex: 1,
   },
-  mainContentWrapper: {
+  mainCard: {
     flex: 1,
-    backgroundColor: "#053B90", // Background for the main content area below the header
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-  },
-  contentCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    width: "95%",
-    borderRadius: 10,
-    padding: 15,
+    backgroundColor: Colors.backgroundLight,
+    marginHorizontal: 15,
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 25,
+    marginTop: 20,
+    marginBottom: 20,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 2,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 15,
+  },
+  cardFormTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: Colors.textDark,
+    marginBottom: 5,
+  },
+  cardFormSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 30,
+    fontWeight: "500",
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 5,
-    paddingBottom: 40, // Add some padding at the bottom of the scroll view
-  },
-  sectionTitle: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "black",
-    marginBottom: 30,
-    textAlign: "center",
+    paddingBottom: 20,
   },
   inputContainer: {
-    marginBottom: 10, // Slightly reduced margin bottom for tighter spacing
+    marginBottom: 25,
     position: "relative",
   },
   inputField: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
+    backgroundColor: Colors.inputBackground,
+    borderRadius: 12,
     paddingHorizontal: 15,
-    paddingTop: 18, // Adjusted to visually center text with smaller font
-    paddingBottom: 10, // Adjusted to visually center text with smaller font
-    fontSize: 14, // Decreased input field font size
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    color: "#333",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingTop: 20,
+    paddingBottom: 10,
+    fontSize: 16,
+    borderWidth: 2,
+    borderColor: Colors.inputBorder,
+    color: Colors.textDark,
   },
   submitButton: {
-    backgroundColor: "#053B90",
-    paddingVertical: 16,
+    backgroundColor: Colors.primaryViolet,
+    paddingVertical: 18,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 30,
-    shadowColor: "#000",
+    marginTop: 40,
+    shadowColor: Colors.primaryViolet,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 6,
   },
   submitButtonDisabled: {
-    backgroundColor: "#A0A0A0",
+    backgroundColor: Colors.secondaryViolet,
+    opacity: 0.7,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   submitButtonText: {
     color: "#fff",
-    fontSize: 19,
-    fontWeight: "bold",
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  contactButton: {
+    marginBottom: 10,
+    backgroundColor: Colors.inputBackground,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.inputBorder,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contactButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  contactButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.primaryViolet,
+    marginLeft: 8,
   },
 });
 

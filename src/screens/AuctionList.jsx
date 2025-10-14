@@ -538,6 +538,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.backgroundLight,
     marginHorizontal: 10,
     marginBottom: 10,
+    marginBottom:50,
     borderRadius: 25,
     overflow: "hidden",
     ...Platform.select({

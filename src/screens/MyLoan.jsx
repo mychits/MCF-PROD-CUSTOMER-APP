@@ -393,8 +393,8 @@ const MyLoan = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.primaryBlue, paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0 },
-  outerBoxContainer: { flex: 1, backgroundColor: Colors.lightBackground, margin: 10, borderRadius: 20 },
+  safeArea: { flex: 1, backgroundColor: Colors.primaryBlue, paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0 ,},
+  outerBoxContainer: { flex: 1, backgroundColor: Colors.lightBackground, margin: 10, borderRadius: 20, marginBottom:50, },
   loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center", minHeight: 200 },
   innerContentArea: { flexGrow: 1, backgroundColor: Colors.cardBackground, padding: 25, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   titleContainer: { marginBottom: 20, alignItems: "center", position: "relative" },

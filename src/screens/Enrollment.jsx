@@ -13,7 +13,7 @@ import {
     SafeAreaView,
     Platform,
     Image,
-    Alert,
+    Alert, // Kept, but only for legacy errors, not the main join flow
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import url from "../data/url";
@@ -52,7 +52,6 @@ const Enrollment = ({ route, navigation }) => {
     const [selectedCardIndex, setSelectedCardIndex] = useState(null);
     const [cardsData, setCardsData] = useState([]);
 
-    // Set the initial filter to "NewGroups" by default.
     const initialGroupFilter = "NewGroups";
     const [selectedGroup, setSelectedGroup] = useState(initialGroupFilter);
     const [isLoading, setIsLoading] = useState(true);
@@ -62,12 +61,12 @@ const Enrollment = ({ route, navigation }) => {
     const { isConnected, isInternetReachable } = useContext(NetworkContext);
     const [moreFiltersModalVisible, setMoreFiltersModalVisible] = useState(false);
 
-    // New states for direct joining - START OF MODIFICATION
+    // NEW STATES FOR STYLED CONFIRMATION MODAL
     const [isJoining, setIsJoining] = useState(false);
     const [joinGroupId, setJoinGroupId] = useState(null);
-    // New states for direct joining - END OF MODIFICATION
+    const [customEnrollModalVisible, setCustomEnrollModalVisible] = useState(false);
+    const [enrollmentConfirmationData, setEnrollmentConfirmationData] = useState(null); // Holds the card data for the modal
 
-    // Provided function for fetching vacant seats for a specific group
     const fetchVacantSeats = async (groupId) => {
         try {
             const ticketsResponse = await axios.post(
@@ -148,7 +147,6 @@ const Enrollment = ({ route, navigation }) => {
                         return { ...group, vacantSeats };
                     })
                 );
-                // Filter for vacant groups if the filter is selected
                 if (selectedGroup === "VacantGroups") {
                     const vacantGroups = groupsWithVacantSeats.filter(group => group.vacantSeats > 0);
                     setCardsData(vacantGroups);
@@ -257,7 +255,84 @@ const Enrollment = ({ route, navigation }) => {
         return { new: [], ongoing: [], ended: [], vacant: [] };
     };
 
-    // This remains the original behavior (View More/Details)
+    // Function to handle the actual enrollment API call AFTER confirmation
+    const handleEnrollmentConfirmation = async (card) => {
+        if (!card) return;
+
+        // Hide the confirmation modal immediately
+        setCustomEnrollModalVisible(false);
+        setEnrollmentConfirmationData(null);
+
+        // --- Enrollment Logic Starts Here ---
+        const selectedGroupId = card._id;
+        
+        // 1. Set loading state for the specific card
+        setJoinGroupId(selectedGroupId);
+        setIsJoining(true);
+
+        // Assumption: Direct join is for 1 ticket, and chit_asking_month is derived from group_duration
+        const ticketsCountInt = 1; 
+        const chitAskingMonth = Number(card?.group_duration) || 0; 
+
+        const payload = {
+            group_id: selectedGroupId,
+            user_id: userId,
+            no_of_tickets: ticketsCountInt,
+            chit_asking_month: chitAskingMonth,
+        };
+
+        try {
+            await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            // 2. Success Feedback
+            Toast.show({
+                type: "success",
+                text1: "Enrollment Successful!",
+                text2: `You are enrolled for ${card.group_name} with 1 ticket.`,
+                position: "bottom",
+                visibilityTime: 3000,
+            });
+          
+            // 3. Navigate to EnrollConfirm
+            navigation.navigate("EnrollConfirm", { groupId: selectedGroupId, userId: userId });
+
+        } catch (err) {
+            console.error("Error enrolling user directly:", err);
+            let errorMessage = "An error occurred during enrollment. Please try again.";
+
+            if (err.response) {
+                errorMessage =
+                    err.response.data?.data?.message ||
+                    err.response.data?.message || 
+                    `Server error: ${err.response.status}`;
+            } else if (err.request) {
+                errorMessage = "Network error: No response from server. Please check your connection.";
+            } else {
+                errorMessage = `An unexpected error occurred: ${err.message}`;
+            }
+
+            // 4. Error Feedback
+            Toast.show({
+                type: "error",
+                text1: "Enrollment Failed",
+                text2: errorMessage,
+                position: "bottom",
+                visibilityTime: 5000,
+            });
+        } finally {
+            // 5. Reset loading state
+            setIsJoining(false);
+            setJoinGroupId(null);
+            // Re-fetch groups to update the vacant seat count
+            fetchGroups(); 
+        }
+    };
+
+
     const handleEnrollment = (card) => {
         if (!isConnected || !isInternetReachable) {
             setModalMessage("You are offline. Please connect to the internet to view details.");
@@ -273,7 +348,7 @@ const Enrollment = ({ route, navigation }) => {
         }
     };
     
-    // Function to handle direct enrollment (joining)
+    // Function to handle direct enrollment (joining) - MODIFIED to use custom Modal
     const handleJoinNow = async (card) => { 
         if (!isConnected || !isInternetReachable) {
             Toast.show({
@@ -309,79 +384,15 @@ const Enrollment = ({ route, navigation }) => {
             });
             return;
         }
-        
-        // 1. Set loading state for the specific card
-        setJoinGroupId(selectedGroupId);
-        setIsJoining(true);
 
-        // Assumption: Direct join is for 1 ticket, and chit_asking_month is derived from group_duration
-        const ticketsCountInt = 1; 
-        const chitAskingMonth = Number(card?.group_duration) || 0; 
-
-        const payload = {
-            group_id: selectedGroupId,
-            user_id: userId,
-            no_of_tickets: ticketsCountInt,
-            chit_asking_month: chitAskingMonth,
-        };
-
-        try {
-            await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            });
-
-            // 2. Success Feedback
-            Toast.show({
-                type: "success",
-                text1: "Enrollment Successful!",
-                text2: `You are enrolled for ${card.group_name} with 1 ticket.`,
-                position: "bottom",
-                visibilityTime: 3000,
-            });
-            
-            // 3. Navigate to confirmation page
-            navigation.navigate("EnrollConfirm", {
-                group_name: card.group_name,
-                userId: userId,
-            });
-
-        } catch (err) {
-            console.error("Error enrolling user directly:", err);
-            let errorMessage = "An error occurred during enrollment. Please try again.";
-
-            if (err.response) {
-                // Check for specific backend error messages
-                errorMessage =
-                    err.response.data?.data?.message ||
-                    err.response.data?.message || 
-                    `Server error: ${err.response.status}`;
-            } else if (err.request) {
-                errorMessage = "Network error: No response from server. Please check your connection.";
-            } else {
-                errorMessage = `An unexpected error occurred: ${err.message}`;
-            }
-
-            // 4. Error Feedback
-            Toast.show({
-                type: "error",
-                text1: "Enrollment Failed",
-                text2: errorMessage,
-                position: "bottom",
-                visibilityTime: 5000,
-            });
-        } finally {
-            // 5. Reset loading state
-            setIsJoining(false);
-            setJoinGroupId(null);
-            // Re-fetch groups to update the vacant seat count
-            fetchGroups(); 
-        }
+        // Show the custom styled confirmation modal
+        setEnrollmentConfirmationData(card);
+        setCustomEnrollModalVisible(true);
     };
 
 
     const NoGroupsIllustration = require('../../assets/Nogroup.png');
+    
     const CardContent = ({ card, colors, isSelected }) => {
         const formatDate = (dateString) => {
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
@@ -390,13 +401,12 @@ const Enrollment = ({ route, navigation }) => {
         const groupType = getGroupType(card);
         const vacantSeats = card.vacantSeats || 0;
         
-        // Determine if the current card is in the joining state
         const isCurrentCardJoining = isJoining && joinGroupId === card._id; 
 
         return (
             <>
-                <View style={styles.cardHeader}>
-                    <View style={styles.groupValueContainer}>
+                <View style={styles.cardHeaderSmall}>
+                    <View style={styles.groupMainInfoRow}>
                         <TouchableOpacity
                             onPress={() => setSelectedCardIndex(card._id)}
                             style={styles.radioButtonContainer}
@@ -407,63 +417,68 @@ const Enrollment = ({ route, navigation }) => {
                                 color={isSelected ? "#053B90" : "#ccc"}
                             />
                         </TouchableOpacity>
-                        <Text style={[styles.groupValue, { color: '#FF8C00' }]}>
-                            ₹ {formatNumberIndianStyle(card.group_value)}
-                        </Text>
-                        <Text style={[styles.chitValueText, { color: colors.darkText }]}>Chit Value</Text>
+
+                        <View style={styles.groupNameAndValueBlock}>
+                            <View style={styles.groupValueContainerSmall}>
+                                <Text style={[styles.groupValueSmall, { color: '#FF8C00' }]} numberOfLines={1}>
+                                    ₹ {formatNumberIndianStyle(card.group_value)}
+                                </Text>
+                                <Text style={[styles.chitValueTextSmall, { color: colors.darkText }]}>Chit Value</Text>
+                            </View>
+                            
+                            <Text style={[styles.groupNameSmall, { color: isSelected ? colors.text : colors.darkText }]} numberOfLines={1} ellipsizeMode="tail">
+                                {card.group_name}
+                            </Text>
+                        </View>
+                        
+                        <View style={styles.statusBadgeContainer}>
+                            {groupType === 'new' && (
+                                <View style={[styles.statusBadge, { backgroundColor: colors.secondary }]}>
+                                    <Text style={styles.statusBadgeText}>New</Text>
+                                </View>
+                            )}
+                            {groupType === 'ongoing' && (
+                                <View style={[styles.statusBadge, { backgroundColor: colors.secondary }]}>
+                                    <Text style={styles.statusBadgeText}>Ongoing</Text>
+                                </View>
+                            )}
+                        </View>
                     </View>
-                    <View style={styles.headerSeparator} />
-                    <Text style={[styles.groupName, { color: isSelected ? colors.text : colors.darkText }]} numberOfLines={1} ellipsizeMode="tail">
-                        <Text style={[styles.groupNameLabel, { color: colors.darkText }]}>Group Name:</Text> {card.group_name}
-                    </Text>
-                    {groupType === 'new' && (
-                        <View style={styles.newLeadBadgeContainer}>
-                            <Text style={styles.newLeadBadgeText}>New</Text>
-                        </View>
-                    )}
-                    {groupType === 'ongoing' && (
-                        <View style={styles.ongoingBadgeContainer}>
-                            <Text style={styles.ongoingBadgeText}>Ongoing</Text>
-                        </View>
-                    )}
                 </View>
-                {/* Start and End Dates */}
-                <View style={styles.cardDetailsRow}>
-                    <View style={styles.detailItem}>
-                        <Text style={[styles.detailLabel, { color: colors.darkText }]}>Starts Date</Text>
-                        <Text style={[styles.detailValue, { color: isSelected ? colors.text : colors.darkText }]}>
+
+                <View style={styles.headerSeparatorSmall} />
+
+                <View style={styles.cardDetailsRowSmall}>
+                    <View style={styles.detailItemSmall}>
+                        <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Starts</Text>
+                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>
                             {formatDate(card.start_date)}
                         </Text>
                     </View>
-                    <View style={styles.detailItemRight}>
-                        <Text style={[styles.detailLabel, { color: colors.darkText }]}>Ends Date</Text>
-                        <Text style={[styles.detailValue, { color: isSelected ? colors.text : colors.darkText }]}>
+                    <View style={styles.detailItemSmall}>
+                        <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Ends</Text>
+                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>
                             {formatDate(card.end_date)}
                         </Text>
                     </View>
-                </View>
-                {/* Members and Vacant Seats */}
-                <View style={styles.cardDetailsRow}>
-                    <View style={styles.detailItem}>
-                        <Text style={[styles.detailLabel, { color: colors.darkText }]}>Members</Text>
-                        <Text style={[styles.detailValue, { color: isSelected ? colors.text : colors.darkText }]}>
+                    <View style={styles.detailItemSmall}>
+                        <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Members</Text>
+                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>
                             {card.group_members}
                         </Text>
                     </View>
-                    <View style={styles.detailItemRight}>
-                        <Text style={[styles.detailLabel, { color: colors.darkText }]}>Vacant Seats</Text>
-                        <Text style={[styles.detailValue, styles.highlightedVacantSeats,]}>
+                    <View style={styles.detailItemSmall}>
+                        <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Vacant</Text>
+                        <Text style={[styles.detailValueSmall, styles.highlightedVacantSeatsSmall]}>
                             {vacantSeats}
                         </Text>
                     </View>
                 </View>
-                {/* MODIFICATION START: Redesigned button container and styles */}
-                <View style={styles.viewMoreContainer}>
-                    {/* View Details Button (Secondary Action - Outline Style) */}
+
+                <View style={styles.viewMoreContainerSmall}>
                     <TouchableOpacity
                         style={[
-                            styles.viewMoreButton,
-                            // Set the outline color based on the card's theme color
+                            styles.viewMoreButtonSmall,
                             { 
                                 borderColor: colors.secondary, 
                             }, 
@@ -473,32 +488,28 @@ const Enrollment = ({ route, navigation }) => {
                         activeOpacity={0.7}
                         disabled={!isConnected || !isInternetReachable || isCurrentCardJoining}
                     >
-                        <Text style={[styles.viewMoreButtonText, { color: colors.secondary }]}>View Details</Text>
-                        <Ionicons name="information-circle-outline" size={18} color={colors.secondary} style={styles.viewMoreIcon} />
+                        <Text style={[styles.viewMoreButtonTextSmall, { color: colors.secondary }]}>Details</Text>
+                        <Ionicons name="information-circle-outline" size={16} color={colors.secondary} style={styles.viewMoreIconSmall} />
                     </TouchableOpacity>
-
-                    {/* Join Now Button (Primary Action - Solid Background) */}
                     <TouchableOpacity
                         style={[
-                            styles.joinNowButton, 
-                            // Use the primary background color for the main CTA
+                            styles.joinNowButtonSmall, 
                             { backgroundColor: colors.secondary }, 
-                            ((!isConnected || !isInternetReachable || isCurrentCardJoining) || vacantSeats === 0) && { opacity: 0.5 } // Apply disabled style, including for 0 vacant seats
+                            ((!isConnected || !isInternetReachable || isCurrentCardJoining) || vacantSeats === 0) && { opacity: 0.5 }
                         ]}
                         onPress={() => handleJoinNow(card)}
                         activeOpacity={0.7}
                         disabled={!isConnected || !isInternetReachable || isCurrentCardJoining || vacantSeats === 0} 
                     >
                         {isCurrentCardJoining ? (
-                            <ActivityIndicator size="small" color="#fff" /> // Show spinner while joining
+                            <ActivityIndicator size="small" color="#fff" />
                         ) : (
-                            <Text style={styles.joinNowButtonText}>
+                            <Text style={styles.joinNowButtonTextSmall}>
                                 {vacantSeats === 0 ? 'No Seats' : 'Join Now'} 
                             </Text> 
                         )}
                     </TouchableOpacity>
                 </View>
-                {/* MODIFICATION END */}
             </>
         );
     };
@@ -571,7 +582,6 @@ const Enrollment = ({ route, navigation }) => {
                                     <Text style={[styles.chipText, selectedGroup === "OngoingGroups" && styles.selectedChipText]}>Ongoing Groups</Text>
                                 </TouchableOpacity>
 
-                                {/* More Options Button */}
                                 <TouchableOpacity
                                     style={styles.moreOptionsButton}
                                     onPress={() => setMoreFiltersModalVisible(true)}
@@ -651,7 +661,6 @@ const Enrollment = ({ route, navigation }) => {
                                 noGroupsTitle = "No Vacant Groups";
                                 noGroupsMessage = "There are no groups with vacant seats at the moment. Please check back later.";
                             } else if (selectedGroup === "AllGroups") {
-                                // For "All Groups", we combine all types
                                 groupsToDisplay = [...newGroups, ...ongoingGroups, ...endedGroups];
                                 noGroupsTitle = "No Groups Available";
                                 noGroupsMessage = "It looks like there are no groups that match your current filter. Try changing the filter or check back later for new additions!";
@@ -697,6 +706,55 @@ const Enrollment = ({ route, navigation }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Custom Styled Enrollment Confirmation Modal */}
+            <Modal
+                visible={customEnrollModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => {
+                    setCustomEnrollModalVisible(false);
+                    setEnrollmentConfirmationData(null);
+                }}
+            >
+                {enrollmentConfirmationData && (
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.styledModalContent}>
+                            <Ionicons name="warning-outline" size={40} color="#FFD700" style={{ marginBottom: 10 }} />
+                            <Text style={styles.styledModalTitle}>
+                                Confirm Enrollment
+                            </Text>
+                            <Text style={styles.styledModalMessage}>
+                                Do you want to join the group {enrollmentConfirmationData.group_name} with 1 ticket?
+                            </Text>
+                            <Text style={styles.styledModalAgreement}>
+                                By proceeding, you agree to the group terms and conditions.
+                            </Text>
+                            <View style={styles.styledModalButtonContainer}>
+                                <TouchableOpacity
+                                    style={[styles.styledModalButton, styles.styledModalCancelButton]}
+                                    onPress={() => {
+                                        setCustomEnrollModalVisible(false);
+                                        setEnrollmentConfirmationData(null);
+                                    }}
+                                >
+                                    <Text style={styles.styledModalCancelButtonText}>
+                                        Cancel
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.styledModalButton, styles.styledModalConfirmButton]}
+                                    onPress={() => handleEnrollmentConfirmation(enrollmentConfirmationData)}
+                                >
+                                    <Text style={styles.styledModalConfirmButtonText}>
+                                        Agree & Join
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                )}
             </Modal>
 
             {/* More Filters Modal */}
@@ -760,7 +818,11 @@ const Enrollment = ({ route, navigation }) => {
     );
 };
 
+// ... (Existing styles remain the same) ...
+
 const styles = StyleSheet.create({
+    // ... (All existing styles) ...
+
     safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, },
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
@@ -770,13 +832,13 @@ const styles = StyleSheet.create({
     mainContentWrapper: { flex: 1, alignItems: 'center', paddingVertical: 1, backgroundColor: '#053B90', paddingHorizontal: 15 },
     innerContentArea: { flex: 1, backgroundColor: '#F5F5F5', marginHorizontal: 0, borderRadius: 15, paddingVertical: 15, paddingBottom: 25, width: '104%' },
     filterContainer: { paddingHorizontal: 15, paddingBottom: 10, },
-    chipsScrollContainer: { paddingRight: 30, paddingLeft: 5 }, // Added paddingLeft
+    chipsScrollContainer: { paddingRight: 30, paddingLeft: 5 }, 
     chipsContainer: { flexDirection: 'row', gap: 10, alignItems: 'center' },
     chip: { 
         flexDirection: 'row', 
         alignItems: 'center', 
-        paddingVertical: 8, // Reduced for smaller size
-        paddingHorizontal: 15, // Reduced for smaller size
+        paddingVertical: 8, 
+        paddingHorizontal: 15, 
         borderRadius: 5, 
         backgroundColor: '#E0EFFF', 
         shadowColor: '#000', 
@@ -784,7 +846,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15, 
         shadowRadius: 2, 
         elevation: 1, 
-        // minWidth: 100, // Removed minWidth for smaller size
         justifyContent: 'center' 
     },
     selectedChip: { backgroundColor: '#053B90', borderColor: '#053B90', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 },
@@ -792,153 +853,170 @@ const styles = StyleSheet.create({
     chipText: { fontSize: 12, fontWeight: '600', color: '#4A4A4A' },
     selectedChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
     scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
+    
     card: {
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: 15,
-        marginVertical: 8,
-        borderRadius: 15,
+        padding: 10, 
+        marginVertical: 6, 
+        borderRadius: 12, 
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 2 }, 
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 4,
         width: '105%',
-        borderWidth: 0.5,
         alignSelf: 'center'
     },
     offlineCardOverlay: { opacity: 0.6 },
-    cardHeader: {
+    
+    cardHeaderSmall: {
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 5,
         position: 'relative',
+    
     },
-    groupValueContainer: {
+    groupMainInfoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+      
+    },
+    groupNameAndValueBlock: {
+        flex: 1, 
+        marginLeft: 0,
+        overflow: 'hidden',
+    },
+    groupValueContainerSmall: {
         flexDirection: 'row',
         alignItems: 'baseline',
         marginBottom: 0,
-        justifyContent: 'flex-start',
-        width: '100%',
-        height: 50,
     },
-    groupName: {
-        fontSize: 20,
+    groupValueSmall: {
+        fontSize: 25, 
         fontWeight: 'bold',
-        alignSelf: 'flex-start',
-        marginBottom: 1,
+        marginRight: 6,
     },
-    groupNameLabel: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: '#666',
-        marginRight: 4,
-    },
-    groupValue: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginRight: 8,
-    },
-    chitValueText: {
-        fontSize: 16,
+    chitValueTextSmall: {
+        fontSize: 14, 
         fontWeight: '600',
     },
-    headerSeparator: {
+    groupNameSmall: {
+        fontSize: 15, 
+        fontWeight: 'bold',
+        marginTop: 2,
+    },
+    statusBadgeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 10,
+    },
+    statusBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        borderRadius: 4,
+    },
+    statusBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    headerSeparatorSmall: {
         height: 1,
         width: '100%',
         backgroundColor: '#E0E0E0',
-        marginVertical: 8,
+        marginVertical: 8, 
     },
-    cardDetailsRow: {
+    radioButtonContainer: {
+        paddingRight: 10, 
+        marginRight: 5, 
+    },
+    
+    cardDetailsRowSmall: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 10,
     },
-    detailItemRight: {
+    detailItemSmall: {
         flex: 1,
-        alignItems: 'flex-end',
-        paddingHorizontal: 5,
+        alignItems: 'center', 
+        paddingHorizontal: 2,
     },
-    detailItem: {
-        flex: 1,
-        alignItems: 'flex-start',
-        paddingHorizontal: 5,
-    },
-    detailLabel: {
-        fontSize: 10,
+    detailLabelSmall: {
+        fontSize: 9, 
         fontWeight: '500',
         color: '#777',
-        marginBottom: 2,
+        marginBottom: 1,
     },
-    detailValue: {
-        fontSize: 12,
+    detailValueSmall: {
+        fontSize: 12, 
         fontWeight: '700',
+        textAlign: 'center',
     },
-    highlightedVacantSeats: {
+    highlightedVacantSeatsSmall: {
       backgroundColor: '#1de94cff',
         color: '#060806ff',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: 6, 
+        paddingVertical: 2, 
+        borderRadius: 10, 
         fontWeight: 'bold',
         overflow: 'hidden',
     },
-    // --- STYLIST MODIFICATIONS START ---
-    viewMoreContainer: {
+
+    viewMoreContainerSmall: {
         width: '100%',
         alignItems: 'center',
-        marginTop: 15,
+        marginTop: 5, 
         flexDirection: 'row', 
         justifyContent: 'flex-end', 
-        paddingHorizontal: 5,
-        gap: 10, // Space between buttons
+        paddingHorizontal: 0,
+        gap: 8, 
         borderTopWidth: 1, 
         borderTopColor: '#E0E0E0',
-        paddingTop: 10,
+        paddingTop: 8, 
     },
-    // View Details Button (Secondary Action - Outline Style)
-    viewMoreButton: {
+    viewMoreButtonSmall: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        borderWidth: 2, // Outline style
+        paddingVertical: 8, 
+        paddingHorizontal: 10, 
+        borderRadius: 6, 
+        borderWidth: 1.5, 
         backgroundColor: 'transparent',
-        minWidth: 120,
+        minWidth: 100, 
         justifyContent: 'center',
         flex: 1,
     },
-    viewMoreButtonText: {
-        fontSize: 14,
+    viewMoreButtonTextSmall: {
+        fontSize: 12, 
         fontWeight: '700',
-        marginRight: 5,
+        marginRight: 3, 
     },
-    viewMoreIcon: {
-        marginLeft: 2
+    viewMoreIconSmall: {
+        marginLeft: 1
     },
-    // Join Now Button (Primary Action - Solid Background)
-    joinNowButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 8,
+    joinNowButtonSmall: {
+        paddingVertical: 8, 
+        paddingHorizontal: 15, 
+        borderRadius: 6, 
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        elevation: 4,
-        minWidth: 120,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 2,
+        minWidth: 100, 
         justifyContent: 'center',
         alignItems: 'center',
         flex: 1,
     },
-    joinNowButtonText: {
+    joinNowButtonTextSmall: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 14, 
         fontWeight: '700',
     },
-    // --- STYLIST MODIFICATIONS END ---
     emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
     noGroupsImage: {
         width: 250,
@@ -952,10 +1030,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         textAlign: 'center',
     },
-    radioButtonContainer: {
-        paddingRight: 20,
-        marginRight: 15,
-    },
+    
     noGroupsText: { fontSize: 16, color: '#777', textAlign: 'center', marginTop: 15, lineHeight: 22 },
     modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
     modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 25, alignItems: 'center', marginHorizontal: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 5, elevation: 7 },
@@ -963,55 +1038,79 @@ const styles = StyleSheet.create({
     modalCloseButton: { backgroundColor: '#053B90', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginTop: 10 },
     modalCloseButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
-    newLeadBadgeContainer: {
-        position: 'absolute',
-        top: -13,
-        right: -15,
-        backgroundColor: 'green',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderTopRightRadius: 15,
-        borderBottomLeftRadius: 15,
+
+    // NEW STYLED MODAL STYLES
+    styledModalContent: {
+        backgroundColor: '#fff',
+        borderRadius: 15,
+        padding: 25,
+        marginHorizontal: 30,
+        alignItems: 'center',
+        width: '85%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        borderWidth:2,
+        borderColor: '#053B90',
+        elevation: 10,
     },
-    newLeadBadgeText: {
-        color: 'white',
-        fontSize: 10,
-        fontWeight: 'bold',
+    styledModalTitle: {
+        fontSize: 22,
+        fontWeight: '900',
+        color: '#053B90',
+        marginBottom: 10,
+        textAlign: 'center',
     },
-    ongoingBadgeContainer: {
-        position: 'absolute',
-        top: -13,
-        right: -15,
-        backgroundColor: 'orange',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderTopRightRadius: 15,
-        borderBottomLeftRadius: 15,
+    styledModalMessage: {
+        fontSize: 16,
+        color: '#333',
+        textAlign: 'center',
+        marginBottom: 5,
+        lineHeight: 24,
     },
-    ongoingBadgeText: {
-        color: 'white',
-        fontSize: 10,
-        fontWeight: 'bold',
+    styledModalAgreement: {
+        fontSize: 13,
+        color: '#888',
+        textAlign: 'center',
+        marginBottom: 20,
+        fontStyle: 'italic',
     },
-    vacantSeatsContainer: {
-        marginTop: 20,
-        padding: 15,
-        backgroundColor: '#e6f7ff',
+    styledModalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 15,
+        gap: 10,
+    },
+    styledModalButton: {
+        flex: 1,
+        paddingVertical: 12,
         borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#b3e0ff',
+        alignItems: 'center',
     },
-    vacantSeatsText: {
+    styledModalCancelButton: {
+        backgroundColor: '#E0E0E0', 
+    },
+    styledModalCancelButtonText: {
+        color: '#666',
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#005a87',
     },
-    vacantSeatItem: {
-        fontSize: 14,
-        color: '#333',
-        marginTop: 5,
+    styledModalConfirmButton: {
+        backgroundColor: '#053B90', // Primary app color
+        shadowColor: '#053B90',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.5,
+        shadowRadius: 5,
+        elevation: 8,
     },
-    // Styles for the new "More Options" button and modal
+    styledModalConfirmButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+
     moreOptionsButton: {
         paddingHorizontal: 10,
         paddingVertical: 10,

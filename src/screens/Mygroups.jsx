@@ -566,6 +566,7 @@ const styles = StyleSheet.create({
     margin: 10,
     borderRadius: 20,
     overflow: "hidden",
+    marginBottom:50,
   },
   
   // --- NEW: Style for full screen loader ---

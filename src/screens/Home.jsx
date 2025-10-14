@@ -27,14 +27,12 @@ import { NetworkContext } from '../context/NetworkProvider';
 import Toast from 'react-native-toast-message';
 import { useFocusEffect, StackActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ContextProvider } from '../context/UserProvider';
-import Group400 from '../../assets/Group400.png';
-
+import { ContextProvider } from '../context/UserProvider';            
+import Group400 from '../../assets/Group400.png';                   
 
 const screenWidth = Dimensions.get('window').width;
 
 const Home = ({ route, navigation }) => {
-
     const [appUser, setAppUser] = useContext(ContextProvider);
     const userId = appUser.userId || {};
     const [activeIndex, setActiveIndex] = useState(0);
@@ -530,17 +528,15 @@ const Home = ({ route, navigation }) => {
         { navigateTo: 'EnrollTab', screen: 'EnrollScreenMain', icon: 'group-add', title: 'New Groups', bgColor: '#E3F2FD', iconBg: '#053B90', filter: 'New Groups', disabled: false },
         { navigateTo: 'PaymentScreen', icon: 'payment', title: 'My Payments', bgColor: '#FFF3E0', iconBg: '#EF6C00', disabled: false },
         { navigateTo: 'ReportScreen', icon: 'bar-chart', title: 'Reports', bgColor: '#F3E5F5', iconBg: '#6A1B9A', disabled: false },
-        // START OF MODIFICATION: Swapped My Profile with My Passbook for the main grid
         { navigateTo: 'MyPassbook', icon: 'book', title: 'My Passbook', bgColor: '#E0F7FA', iconBg: '#006064', disabled: false },
-        // END OF MODIFICATION
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
-        { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Introduce New Customers', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
+        { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Refer Now', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
         { navigateTo: 'MyLoan', screen: 'MyLoan', icon: 'account-balance-wallet', title: 'My Loan', bgColor: '#EDE7F6', iconBg: '#5E35B1', filter: 'My Loan', disabled: false },
         { navigateTo: 'PayYourDues', icon: 'currency-rupee', title: 'Pay Your Dues', bgColor: '#FFEBEE', iconBg: '#B71C1C', disabled: false },
     ];
 
     const mychitsAdvantages = [
-        { icon: 'lock-clock', text1: '2 mins onboarding', text2: '& 24Hrs Payouts', iconColor: '#EF6C00' },
+        { icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00' ,},
         {
             icon: 'gavel',
             text1: 'In app ',
@@ -943,7 +939,7 @@ const Home = ({ route, navigation }) => {
                             <View style={styles.benefitTextContent}>
                                 <Text style={styles.benefitHeading}>Large Choice of Chits</Text>
                                 <Text style={styles.benefitDescription}>
-                                    From ₹20,000 to ₹1 Crore, our subscriber-friendly plans are designed to suit your financial goals.
+                                    From ₹50,000 to ₹1 Crore, our subscriber-friendly plans are designed to suit your financial goals.
                                 </Text>
                             </View>
                         </View>
@@ -1202,7 +1198,7 @@ const styles = StyleSheet.create({
     welcomeContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1, },
 
     servicesSection: { borderColor: '#053B90', borderWidth: 5, marginTop: 25, backgroundColor: '#FFFFFF', borderRadius: 15, paddingTop: 30, width: '97%', alignSelf: 'center', alignItems: 'center', paddingBottom: 13, borderColor: '#053B90' },
-    servicesTitle: { position: 'absolute', top: -20, alignSelf: 'center', backgroundColor: '#B3E5FC', width: 230, height: 40, borderRadius: 11, textAlign: 'center', textAlignVertical: 'center', color: '#053B90', fontWeight: '900', fontSize: 20, lineHeight: 22, textTransform: 'capitalize', borderWidth: 1, borderColor: '#053B90' },
+    servicesTitle: { position: 'absolute', top: -20, alignSelf: 'center', backgroundColor: '#d9dbb6ff', width: 230, height: 40, borderRadius: 11, textAlign: 'center', textAlignVertical: 'center', color: '#053B90', fontWeight: '900', fontSize: 20, lineHeight: 22, textTransform: 'capitalize', borderWidth: 1, borderColor: '#053B90' },
     gridItemBox: { width: '27%', alignItems: 'center', marginBottom: 8, paddingVertical: 8, paddingHorizontal: 5, borderRadius: 12, marginHorizontal: 5.8, marginLeft: 14, borderWidth: 3, borderColor: '#ddd' },
     iconCircle: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginBottom: -2 },
     serviceTitle: { fontSize: 10, textAlign: 'center', fontWeight: '800', color: '#000', marginTop: 1 },
@@ -1551,12 +1547,11 @@ const styles = StyleSheet.create({
         color: '#455A64',
         fontWeight: 600,
         fontStyle: 'italic'
-    },
-    // Fix for FlatList item wrapping
+    },                                                                                                                                                                                                                                                            
     row: {
         justifyContent: 'space-around',
         paddingHorizontal: 5,
     },
 });
 
-export default Home;
+export default Home;     
