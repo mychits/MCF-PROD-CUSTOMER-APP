@@ -62,7 +62,7 @@ const formatNumberIndianStyle = (num) => {
   return (isNegative ? "-" : "") + formattedOther + lastThree + decimalPart;
 };
 
-// --- AccordionListItem Component (Unchanged) ---
+// --- AccordionListItem Component ---
 const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }) => (
     <View style={accordionStyles.itemWrapper}>
         <TouchableOpacity 
@@ -85,6 +85,24 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
 
         {isExpanded && (
             <View style={accordionStyles.content}>
+                {/* --- Date Display in Accordion --- */}
+                <View style={accordionStyles.contentRow}>
+                    <Text style={accordionStyles.contentLabel}>Start Date:</Text>
+                    <Text style={accordionStyles.contentValue}>
+                        {card.group_id.start_date 
+                            ? new Date(card.group_id.start_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) 
+                            : 'N/A'}
+                    </Text>
+                </View>
+                <View style={accordionStyles.contentRow}>
+                    <Text style={accordionStyles.contentLabel}>End Date:</Text>
+                    <Text style={accordionStyles.contentValue}>
+                        {card.group_id.end_date 
+                            ? new Date(card.group_id.end_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) 
+                            : 'N/A'}
+                    </Text>
+                </View>
+                {/* --- Existing Rows --- */}
                 <View style={accordionStyles.contentRow}>
                     <Text style={accordionStyles.contentLabel}>Ticket Number:</Text>
                     <Text style={accordionStyles.contentValue}>{card.tickets}</Text>
@@ -176,6 +194,7 @@ const Mygroups = ({ navigation }) => {
     try {
       const response = await axios.get(`${url}/enroll/users/${userId}`);
       setCardsData(response.data || []);
+      // console.log(response.data, "fdsdgfjdfjhsdgfjsdgf"); // Keep for debugging if needed
     } catch (error) {
       console.error("Error fetching tickets:", error);
       setCardsData([]);
@@ -253,7 +272,10 @@ const Mygroups = ({ navigation }) => {
   );
 
   const filteredCards = cardsData.filter((card) => card.group_id !== null);
-  const activeCards = filteredCards.filter(c => !c.deleted);
+  // *** KEY CHANGE: Use filteredCards (which includes deleted) for rendering to see all dates ***
+  const cardsToRender = filteredCards; 
+  // Keep activeCards only for the active count/specific logic
+  const activeCards = filteredCards.filter(c => !c.deleted); 
 
   const handleScrollToCard = (index) => {
     const cardId = `card-${index}`;
@@ -275,8 +297,9 @@ const Mygroups = ({ navigation }) => {
         }, 3000); 
 
     } else {
-        if (activeCards[index]?.group_id?._id) {
-            handleCardPress(activeCards[index].group_id._id, activeCards[index].tickets);
+        // Use cardsToRender for the correct index mapping
+        if (cardsToRender[index]?.group_id?._id) {
+            handleCardPress(cardsToRender[index].group_id._id, cardsToRender[index].tickets);
         }
     }
   };
@@ -344,18 +367,20 @@ const Mygroups = ({ navigation }) => {
               <View style={styles.enrolledGroupsCardContainer}>
                 <LinearGradient colors={["#6A1B9A", "#883EBF"]} style={styles.enrolledGroupsCard}>
                   <View>
-                    <Text style={styles.enrolledGroupsCount}>{enrolledGroupsCount}</Text>
-                    <Text style={styles.enrolledGroupsLabel}>Enrolled Groups</Text>
+                    {/* Shows count of ACTIVE groups */}
+                    <Text style={styles.enrolledGroupsCount}>{activeCards.length}</Text>
+                    <Text style={styles.enrolledGroupsLabel}>Active Groups</Text>
                   </View>
                   <Ionicons name="people" size={32} color="#fff" style={styles.enrolledGroupsIcon} />
                 </LinearGradient>
               </View>
               
-              {/* --- Accordion List Component --- */}
-              {activeCards.length > 0 && (
+              {/* --- Accordion List Component (Uses cardsToRender) --- */}
+              {cardsToRender.length > 0 && (
                 <View style={accordionStyles.listContainer}>
-                    <Text style={accordionStyles.listTitle}>Active Enrollments Index</Text>
-                    {activeCards.map((card, index) => (
+                    {/* Title updated to reflect all enrollments are shown for indexing */}
+                    <Text style={accordionStyles.listTitle}>All Enrollments Index</Text>
+                    {cardsToRender.map((card, index) => (
                         <AccordionListItem
                             key={index}
                             card={card}
@@ -369,20 +394,35 @@ const Mygroups = ({ navigation }) => {
               )}
               {/* ---------------------------------------------------- */}
 
-              {filteredCards.length === 0 ? (
+              {cardsToRender.length === 0 ? (
                 <View style={styles.noGroupWrapper}>
                   <Image source={NoGroupImage} style={styles.noGroupImage} resizeMode="contain" />
                   <Text style={styles.noGroupText}>No groups found for this user.</Text>
                 </View>
-              ) : (activeCards.length === 0 ? (
-                <View style={styles.noGroupWrapper}><Text style={styles.noGroupText}>No active groups found for this user.</Text></View>
-              ) : activeCards.map((card, index) => { 
+              ) : (cardsToRender.map((card, index) => { 
                   const groupIdFromCard = card.group_id?._id || card.group_id;
                   const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
                   const individualPaidAmount = individualGroupReports[groupReportKey]?.totalPaid || 0;
                   const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
                   const isDeleted = card.deleted; 
                   const isCompleted = card.completed;
+
+                  // --- Date Formatting for Main Card ---
+                  const startDate = card.group_id?.start_date
+                    ? new Date(card.group_id?.start_date).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : 'N/A';
+                  const endDate = card.group_id?.end_date
+                    ? new Date(card.group_id.end_date).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : 'N/A';
+                  // ------------------------------------------
 
                   const gradientColors = isDeleted
                     ? ["#F5F5F5", "#E0E0E0"]
@@ -416,10 +456,23 @@ const Mygroups = ({ navigation }) => {
                                 {card.group_id.group_name}
                               </Text>
                               <Text style={styles.ticketText}>Ticket: {card.tickets}</Text>
-                              {isDeleted && <Text style={styles.removalReason}>Reason: {card.removal_reason?.toUpperCase() !== "OTHERS" ? card.removal_reason : "Unknown"}</Text>}
+                              {isDeleted && <Text style={styles.removalReason}>Removed: {card.removal_reason?.toUpperCase() !== "OTHERS" ? card.removal_reason : "Unknown"}</Text>}
                               {isCompleted && <Text style={styles.completedText}>Completed</Text>}
                             </View>
                           </View>
+
+                          {/* --- Start and End Dates Block (Now includes the desired dates) --- */}
+                          <View style={styles.dateRow}>
+                              <View style={styles.dateColumn}>
+                                  <Text style={styles.dateLabel}>Start Date</Text>
+                                  <Text style={styles.dateValue}>{startDate}</Text>
+                              </View>
+                              <View style={styles.dateColumn}>
+                                  <Text style={styles.dateLabel}>End Date</Text>
+                                  <Text style={styles.dateValue}>{endDate}</Text>
+                              </View>
+                          </View>
+                          {/* -------------------------------------- */}
 
                           <View>
                             <View style={styles.progressHeader}>
@@ -710,6 +763,36 @@ const styles = StyleSheet.create({
   amountColumn: { alignItems: "center" },
   amountLabel: { fontSize: 12, color: Colors.mediumText },
   amountValue: { fontSize: 16, fontWeight: "bold" },
+
+  // --- Styles for Date Display ---
+  dateRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between",
+    marginBottom: 10,
+    marginTop: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: Colors.lightBackground, 
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.tableBorderColor,
+  },
+  dateColumn: { 
+    alignItems: "center",
+    flex: 1,
+  },
+  dateLabel: { 
+    fontSize: 12, 
+    color: Colors.mediumText, 
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  dateValue: { 
+    fontSize: 14, 
+    fontWeight: "bold", 
+    color: Colors.darkText,
+  },
+  // --------------------------------------
 });
 
 export default Mygroups;
