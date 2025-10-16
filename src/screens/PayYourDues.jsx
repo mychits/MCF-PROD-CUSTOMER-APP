@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
+import React, { useState, useEffect, useCallback, useContext, useRef } from "react";
 import {
   View,
   Text,
@@ -36,6 +36,7 @@ const Colors = {
   cardGradientEnd: "#F5F8FA",
   excessBackgroundStart: "#E8F5E9",
   excessBackgroundEnd: "#F2FAF2",
+  // Kept variable names as they refer to color schemes
   duesBackgroundStart: "#FBE9E7",
   duesBackgroundEnd: "#FFF6F5",
   successColor: "#388E3C",
@@ -100,6 +101,11 @@ const PayYourDues = ({ navigation, route }) => {
     groupName: "",
   });
   const [paymentAmount, setPaymentAmount] = useState("");
+  
+  // *** REF FOR KEYBOARD FOCUS ***
+  const amountInputRef = useRef(null); 
+  // *****************************
+
   const openLinkOnBrowser = useCallback(async (paymentUrl) => {
     const supported = await Linking.canOpenURL(paymentUrl);
     if (supported) {
@@ -108,6 +114,8 @@ const PayYourDues = ({ navigation, route }) => {
       throw new Error("Failed to Open Url");
     }
   });
+
+  // ... (rest of your fetch functions: fetchTicketsData, fetchAllOverviewData, fetchIndividualGroupOverview, fetchData)
   const fetchTicketsData = useCallback(async (currentUserId) => {
     if (!currentUserId) {
       return [];
@@ -248,6 +256,8 @@ const PayYourDues = ({ navigation, route }) => {
     fetchAllOverviewData,
     fetchIndividualGroupOverview,
   ]);
+  // ... (end of fetch functions)
+
 
   useEffect(() => {
     fetchData();
@@ -293,6 +303,17 @@ const PayYourDues = ({ navigation, route }) => {
     setPaymentAmount("");
     setModalVisible(true);
   };
+
+  // Force keyboard focus after modal opens
+  useEffect(() => {
+    if (isModalVisible && amountInputRef.current) {
+      // Use a timeout to reliably focus the input after the modal renders
+      setTimeout(() => {
+        amountInputRef.current.focus();
+      }, 100); 
+    }
+  }, [isModalVisible]);
+  // ************************************
 
   const handleModalClose = () => {
     setModalVisible(false);
@@ -391,7 +412,7 @@ const PayYourDues = ({ navigation, route }) => {
       <Header userId={userId} navigation={navigation} />
       <View style={styles.outerBoxContainer}>
         <View style={styles.mainContentWrapper}>
-          <Text style={styles.sectionTitle}>Pay Your Dues</Text>
+          <Text style={styles.sectionTitle}>Pay Your Outstanding Amount</Text>
           <Text style={styles.subSectionTitle}>
             Stay on top of your group payments!
           </Text>
@@ -430,7 +451,7 @@ const PayYourDues = ({ navigation, route }) => {
                   : Colors.warningColor;
                 const balanceMessage = isBalanceExcess
                   ? "You have an excess balance."
-                  : "Payment is due.";
+                  : "Payment still pending"; // Updated Text
                 const balanceAmountStyle = isBalanceExcess
                   ? styles.excessAmountText
                   : styles.duesAmountText;
@@ -570,11 +591,11 @@ const PayYourDues = ({ navigation, route }) => {
 
           <Text style={styles.duePaymentText}>Complete Your Chit Payment</Text>
           <Text style={styles.minAmountText}>
-            You can pay more than your due amount.
+            You can pay more than your outstanding amount.
           </Text>
-          <View style={styles.dueAmountBox}>
-            <Text style={styles.dueAmountLabel}>Due Amount:</Text>
-            <Text style={styles.dueAmountTextModal}>
+          <View style={styles.outstandingAmountBox}>
+            <Text style={styles.outstandingAmountLabel}>Outstanding Amount:</Text>
+            <Text style={styles.outstandingAmountTextModal}>
               ₹ {formatNumberIndianStyle(modalDetails.amount)}
             </Text>
           </View>
@@ -589,6 +610,7 @@ const PayYourDues = ({ navigation, route }) => {
                 onChangeText={handleAmountChange}
                 placeholder="Enter amount"
                 placeholderTextColor={Colors.mediumText}
+                ref={amountInputRef} 
               />
             </View>
           </View>
@@ -647,22 +669,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.cardBackground,
     paddingHorizontal: 25,
-    paddingTop: 5,
+    paddingTop: 18,
     paddingBottom: 20,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
   },
   sectionTitle: {
     fontWeight: "bold",
-    fontSize: 34,
+    fontSize: 24,
     color: Colors.darkText,
     textAlign: "center",
   },
   subSectionTitle: {
-    fontSize: 18,
+    fontSize: 13,
     color: Colors.mediumText,
     textAlign: "center",
     marginBottom: 30,
+    
+    fontWeight: "bold",
+
   },
   groupListContentContainer: {
     paddingBottom: 30,
@@ -836,6 +861,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     margin: 0,
     alignItems: "center",
+    // *** ADDED PADDING TOP TO PREVENT MODAL FROM HITTING THE TOP ***
+    paddingTop: 100, 
+    // ***************************************************************
   },
   modalContent: {
     backgroundColor: Colors.cardBackground,
@@ -878,14 +906,18 @@ const styles = StyleSheet.create({
     color: Colors.mediumText,
     marginBottom: 5,
     textAlign: "center",
+    
+    fontWeight: "bold",
   },
   minAmountText: {
     fontSize: 16,
     color: Colors.mediumText,
     marginBottom: 20,
     textAlign: "center",
+    
+    fontWeight: "bold",
   },
-  dueAmountBox: {
+  outstandingAmountBox: { // Renamed style
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 25,
@@ -893,12 +925,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Colors.lightBackground,
   },
-  dueAmountLabel: {
+  outstandingAmountLabel: { // Renamed style
     fontSize: 16,
     color: Colors.mediumText,
     marginRight: 10,
   },
-  dueAmountTextModal: {
+  outstandingAmountTextModal: { // Renamed style
     fontSize: 24,
     fontWeight: "bold",
     color: Colors.warningColor,
@@ -924,6 +956,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lightBackground,
     width: "80%",
     height: 50,
+    borderWidth:2,
+    borderColor:" #053B90",
   },
   currencySymbol: {
     fontSize: 18,
@@ -934,6 +968,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     color: Colors.darkText,
+    
   },
   payNowButtonModal: {
     flexDirection: "row",

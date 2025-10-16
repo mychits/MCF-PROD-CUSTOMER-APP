@@ -182,18 +182,9 @@ const MyLoan = ({ route, navigation }) => {
       {!loanId && <Header userId={userId} navigation={navigation} />}
 
       <View style={styles.outerBoxContainer}>
-        {isLoading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={Colors.primaryBlue} />
-          </View>
-        ) : error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : (
-          <ScrollView
-            contentContainerStyle={styles.innerContentArea}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.titleContainer}>
+        
+        {/* FIXED CONTENT: Title and Subheading */}
+        <View style={styles.fixedTitleContainer}>
               {loanId && (
                 <TouchableOpacity
                   onPress={() => {
@@ -213,7 +204,20 @@ const MyLoan = ({ route, navigation }) => {
               <Text style={styles.subHeading}>
                 {loanId ? "Recent payment history." : "Your current loan details and payment status."}
               </Text>
-            </View>
+        </View>
+
+        {isLoading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color={Colors.primaryBlue} />
+          </View>
+        ) : error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : (
+          /* SCROLLABLE CONTENT */
+          <ScrollView
+            contentContainerStyle={styles.scrollableContentArea}
+            showsVerticalScrollIndicator={false}
+          >
 
             {loanId ? (
               isDataLoading ? (
@@ -222,10 +226,9 @@ const MyLoan = ({ route, navigation }) => {
                 </View>
               ) : (
                 <>
-                  {/* Total payments summary Card */}
                   <View style={[styles.loanCard, styles.summaryCard]}>
                     <View style={styles.cardHeader}>
-                      <View style={[styles.iconContainer, { backgroundColor: Colors.accentColor }]}>
+                      <View style={[styles.iconContainer, { backgroundColor: Colors.vibrantBlue }]}>
                         <Ionicons name="stats-chart-outline" size={28} color={Colors.cardBackground} />
                       </View>
                       <View style={styles.cardTitleContainer}>
@@ -241,8 +244,6 @@ const MyLoan = ({ route, navigation }) => {
                       </Text>
                     )}
                   </View>
-
-                  {/* Payment boxes */}
                   <View>
                     <Text style={styles.paymentHistoryTitle}>Payment History</Text>
                     {totalPaymentsError ? (
@@ -265,8 +266,6 @@ const MyLoan = ({ route, navigation }) => {
                     ) : (
                       <Text style={styles.emptyText}>No payments found for this loan.</Text>
                     )}
-
-                    {/* Pagination footer */}
                     {totalPages > 1 && (
                       <View style={styles.paginationContainer}>
                         <TouchableOpacity
@@ -348,7 +347,7 @@ const MyLoan = ({ route, navigation }) => {
                   </View>
                 ))
               ) : (
-                // --- STYLISTIC NO LOAN FOUND SECTION ---
+                // --- REVISED STYLISTIC NO LOAN FOUND SECTION ---
                 <View style={styles.noLoanContainer}>
                     <View style={styles.noLoanHeader}>
                       <Ionicons name="rocket-outline" size={60} color={Colors.cardBackground} />
@@ -356,7 +355,12 @@ const MyLoan = ({ route, navigation }) => {
                     </View>
                     
                     <Text style={styles.noLoanMessage}>
-                        You currently have no active loans. Ready to make a move? Take a loan and enjoy the flexibility our financing plans offer.
+                        You currently have no active loans. Ready to make a move? Take a loan and enjoy the flexibility.
+                    </Text>
+
+                    {/* NEW SENTENCE FOR LOAN REQUEST */}
+                    <Text style={styles.requestLoanSentence}>
+                        Request your next loan instantly by contacting our executive now!
                     </Text>
                     
                     <View style={styles.contactGroup}>
@@ -364,11 +368,11 @@ const MyLoan = ({ route, navigation }) => {
                             Contact our executive to get started:
                         </Text>
                         
-                        {/* Primary Call to Action: Phone */}
+                        {/* Primary Call to Action: Phone (Updated with Icon and Number) */}
                         <TouchableOpacity onPress={handlePhonePress} style={styles.contactButtonPhone}>
                             <Ionicons name="call-outline" size={20} color={Colors.cardBackground} />
                             <Text style={styles.contactButtonText}>
-                                Call Us Now: {CONTACT_PHONE}
+                                Request Loan: {CONTACT_PHONE}
                             </Text>
                         </TouchableOpacity>
 
@@ -381,7 +385,7 @@ const MyLoan = ({ route, navigation }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
-                // --- END STYLISTIC NO LOAN FOUND SECTION ---
+                // --- END REVISED STYLISTIC NO LOAN FOUND SECTION ---
               )
             )}
           </ScrollView>
@@ -394,10 +398,39 @@ const MyLoan = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.primaryBlue, paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0 ,},
-  outerBoxContainer: { flex: 1, backgroundColor: Colors.lightBackground, margin: 10, borderRadius: 20, marginBottom:50, },
+  outerBoxContainer: { 
+    flex: 1, 
+    backgroundColor: Colors.lightBackground, 
+    margin: 10, 
+    borderRadius: 20, 
+    marginBottom:50, 
+    overflow: 'hidden', // Essential for internal elements to respect the radius
+  },
   loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center", minHeight: 200 },
-  innerContentArea: { flexGrow: 1, backgroundColor: Colors.cardBackground, padding: 25, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  titleContainer: { marginBottom: 20, alignItems: "center", position: "relative" },
+  
+  // *** NEW STYLE FOR FIXED TITLE AREA ***
+  fixedTitleContainer: { 
+    backgroundColor: Colors.cardBackground, // Ensure it has a background
+    paddingHorizontal: 25, 
+    paddingTop: 25, 
+    paddingBottom: 15, // Adjusted spacing below the text
+    alignItems: "center", 
+    position: "relative",
+    borderTopLeftRadius: 20, 
+    borderTopRightRadius: 20,
+    borderBottomWidth: 1, // Subtle separator
+    borderBottomColor: Colors.lightGrayBorder,
+  },
+  
+  // *** MODIFIED STYLE FOR SCROLLABLE AREA (formerly innerContentArea) ***
+  scrollableContentArea: { 
+    flexGrow: 1, 
+    backgroundColor: Colors.cardBackground, 
+    paddingHorizontal: 25, // Only horizontal padding needed here
+    paddingBottom: 25,
+  },
+  
+  titleContainer: { marginBottom: 20, alignItems: "center", position: "relative" }, // Kept for reference, but not used in the final structure
   backButton: { position: "absolute", left: 0, top: 5, zIndex: 10 },
   sectionTitle: { fontSize: 26, fontWeight: "900", color: Colors.darkText, marginTop: 5 },
   subHeading: { fontSize: 13, color: Colors.mediumText, textAlign: "center" },
@@ -517,14 +550,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   
-  // --- STYLISTIC NO LOAN FOUND SECTION STYLES ---
+  // --- REVISED STYLISTIC NO LOAN FOUND SECTION STYLES ---
   noLoanContainer: {
     alignItems: 'center',
-    padding: 0, // Padding moved to inner elements
+    padding: 0, 
     backgroundColor: Colors.primaryBlue,
     borderRadius: 16,
-    overflow: 'hidden', // Contain border radius
-    marginTop: 20,
+    overflow: 'hidden', 
+    marginTop: 5, // Reduced margin since padding is handled by scrollableContentArea
     elevation: 8,
     shadowColor: Colors.primaryBlue,
     shadowOffset: { width: 0, height: 6 },
@@ -542,7 +575,7 @@ const styles = StyleSheet.create({
   noLoanTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: Colors.cardBackground, // White text for contrast
+    color: Colors.cardBackground, 
     marginTop: 10,
   },
   noLoanMessage: {
@@ -553,10 +586,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
   },
+  // NEW STYLE FOR LOAN REQUEST SENTENCE
+  requestLoanSentence: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.cardBackground,
+    textAlign: 'center',
+    backgroundColor: Colors.vibrantBlue,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    width: '100%',
+    marginTop: 15,
+  },
   contactGroup: {
     width: '100%',
     padding: 20,
-    backgroundColor: Colors.cardBackground, // White background for the action part
+    backgroundColor: Colors.cardBackground, 
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     alignItems: 'center',
@@ -570,7 +615,7 @@ const styles = StyleSheet.create({
   contactButtonPhone: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.successGreen, // Green for primary action/call
+    backgroundColor: Colors.successGreen, 
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 10,
@@ -584,7 +629,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: Colors.accentColor, // Accent border for secondary action
+    borderColor: Colors.accentColor, 
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
@@ -598,7 +643,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   contactButtonTextEmail: {
-    color: Colors.accentColor, // Accent text for secondary action
+    color: Colors.accentColor, 
     fontSize: 16,
     fontWeight: '700',
     marginLeft: 10,

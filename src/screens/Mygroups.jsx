@@ -8,8 +8,8 @@ import {
   StatusBar,
   Image,
   StyleSheet,
-  LayoutAnimation, 
-  Platform, 
+  LayoutAnimation,
+  Platform,
   UIManager,
   Animated,
 } from "react-native";
@@ -41,7 +41,7 @@ const Colors = {
   removedText: "#E74C3C",
   completedText: "#27AE60",
   tableHeaderBlue: "#042D75",
-  tableBorderColor: "#E0E0E0", 
+  tableBorderColor: "#E0E0E0",
 };
 
 const formatNumberIndianStyle = (num) => {
@@ -65,7 +65,7 @@ const formatNumberIndianStyle = (num) => {
 // --- AccordionListItem Component ---
 const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }) => (
     <View style={accordionStyles.itemWrapper}>
-        <TouchableOpacity 
+        <TouchableOpacity
             style={accordionStyles.header}
             onPress={() => {
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -76,10 +76,10 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
                 <Text style={accordionStyles.indexText}>{index + 1}.</Text>
                 <Text style={accordionStyles.groupNameText} numberOfLines={1}>{card.group_id?.group_name}</Text>
             </View>
-            <Ionicons 
-                name={isExpanded ? "chevron-up" : "chevron-down"} 
-                size={20} 
-                color={Colors.primaryBlue} 
+            <Ionicons
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={Colors.primaryBlue}
             />
         </TouchableOpacity>
 
@@ -89,16 +89,16 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
                 <View style={accordionStyles.contentRow}>
                     <Text style={accordionStyles.contentLabel}>Start Date:</Text>
                     <Text style={accordionStyles.contentValue}>
-                        {card.group_id.start_date 
-                            ? new Date(card.group_id.start_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) 
+                        {card.group_id.start_date
+                            ? new Date(card.group_id.start_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
                             : 'N/A'}
                     </Text>
                 </View>
                 <View style={accordionStyles.contentRow}>
                     <Text style={accordionStyles.contentLabel}>End Date:</Text>
                     <Text style={accordionStyles.contentValue}>
-                        {card.group_id.end_date 
-                            ? new Date(card.group_id.end_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) 
+                        {card.group_id.end_date
+                            ? new Date(card.group_id.end_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
                             : 'N/A'}
                     </Text>
                 </View>
@@ -111,7 +111,7 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
                     <Text style={accordionStyles.contentLabel}>Group Value:</Text>
                     <Text style={accordionStyles.contentValue}>₹ {formatNumberIndianStyle(card.group_id.group_value)}</Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={accordionStyles.navigateButton}
                     onPress={() => onScrollToCard(index)} // Calls the scroll function
                 >
@@ -130,17 +130,17 @@ const Mygroups = ({ navigation }) => {
   const userId = appUser.userId || {};
   const [cardsData, setCardsData] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Initialize to null to hide values until loaded
-  const [Totalpaid, setTotalPaid] = useState(null); 
-  const [Totalprofit, setTotalProfit] = useState(null); 
-  
+  const [Totalpaid, setTotalPaid] = useState(null);
+  const [Totalprofit, setTotalProfit] = useState(null);
+
   const [individualGroupReports, setIndividualGroupReports] = useState({});
   const [enrolledGroupsCount, setEnrolledGroupsCount] = useState(0);
-  const [expandedIndex, setExpandedIndex] = useState(null); 
+  const [expandedIndex, setExpandedIndex] = useState(null);
   const [highlightedCardIndex, setHighlightedCardIndex] = useState(null);
-  
-  const scrollViewRef = useRef(null); 
+
+  const scrollViewRef = useRef(null);
   const cardLayouts = useRef({});
 
   // --- Animation Refs and Logic (Intensified) ---
@@ -154,12 +154,12 @@ const Mygroups = ({ navigation }) => {
           // Scale animation: Pulses from 1 to 1.3
           Animated.sequence([
             Animated.timing(scaleAnim, {
-              toValue: 1.3, 
-              duration: 400, 
+              toValue: 1.3,
+              duration: 400,
               useNativeDriver: true,
             }),
             Animated.timing(scaleAnim, {
-              toValue: 1, 
+              toValue: 1,
               duration: 400,
               useNativeDriver: true,
             }),
@@ -167,12 +167,12 @@ const Mygroups = ({ navigation }) => {
           // Slide animation: Slides 5 units to the right
           Animated.sequence([
             Animated.timing(slideAnim, {
-              toValue: 5, 
+              toValue: 5,
               duration: 400,
               useNativeDriver: true,
             }),
             Animated.timing(slideAnim, {
-              toValue: 0, 
+              toValue: 0,
               duration: 400,
               useNativeDriver: true,
             }),
@@ -207,7 +207,7 @@ const Mygroups = ({ navigation }) => {
       const response = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`);
       const data = response.data;
       setEnrolledGroupsCount(data.length);
-      
+
       // Set values after successful fetch
       setTotalPaid(data.reduce((sum, g) => sum + (g?.payments?.totalPaidAmount || 0), 0));
       setTotalProfit(data.reduce((sum, g) => sum + (g?.profit?.totalProfit || 0), 0));
@@ -272,10 +272,10 @@ const Mygroups = ({ navigation }) => {
   );
 
   const filteredCards = cardsData.filter((card) => card.group_id !== null);
-  // *** KEY CHANGE: Use filteredCards (which includes deleted) for rendering to see all dates ***
-  const cardsToRender = filteredCards; 
+  // *** MODIFIED LINE: Filter out deleted cards for rendering in the main list ***
+  const cardsToRender = filteredCards.filter(c => !c.deleted);
   // Keep activeCards only for the active count/specific logic
-  const activeCards = filteredCards.filter(c => !c.deleted); 
+  const activeCards = filteredCards.filter(c => !c.deleted);
 
   const handleScrollToCard = (index) => {
     const cardId = `card-${index}`;
@@ -283,18 +283,18 @@ const Mygroups = ({ navigation }) => {
 
     if (offset && scrollViewRef.current) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        
-        setHighlightedCardIndex(index); 
 
-        scrollViewRef.current.scrollTo({ 
-            y: offset - 100, 
-            animated: true 
+        setHighlightedCardIndex(index);
+
+        scrollViewRef.current.scrollTo({
+            y: offset - 100,
+            animated: true
         });
-        setExpandedIndex(null); 
+        setExpandedIndex(null);
 
         setTimeout(() => {
             setHighlightedCardIndex(null);
-        }, 3000); 
+        }, 3000);
 
     } else {
         // Use cardsToRender for the correct index mapping
@@ -310,23 +310,23 @@ const Mygroups = ({ navigation }) => {
       params: { screen: "EnrollGroup", params: { userId, groupId, ticket } },
     });
   };
-  
+
   const toggleAccordion = (index) => {
     setExpandedIndex(expandedIndex === index ? null : index);
   };
 
   // Check against 0 when calculating display profit to avoid showing '0' if total paid is null/loading
-  const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit; 
+  const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit;
 
   const calculatePaidPercentage = (group_value, paid_amount) => {
     if (!group_value || !paid_amount) return 0;
     return Math.min(100, Math.round((paid_amount / group_value) * 100));
   };
-  
+
   // Only display the currency prefix/number if the value is not null (i.e., loaded)
   const paidDisplay = Totalpaid !== null ? `₹ ${formatNumberIndianStyle(Totalpaid)}` : '';
   const profitDisplay = Totalprofit !== null ? `₹ ${formatNumberIndianStyle(displayTotalProfit)}` : '';
-  
+
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -359,7 +359,7 @@ const Mygroups = ({ navigation }) => {
             </View>
 
             <ScrollView
-              ref={scrollViewRef} 
+              ref={scrollViewRef}
               style={styles.scrollWrapper}
               contentContainerStyle={{ padding: 20, paddingBottom: 30 }}
               showsVerticalScrollIndicator={false}
@@ -374,12 +374,12 @@ const Mygroups = ({ navigation }) => {
                   <Ionicons name="people" size={32} color="#fff" style={styles.enrolledGroupsIcon} />
                 </LinearGradient>
               </View>
-              
-              {/* --- Accordion List Component (Uses cardsToRender) --- */}
+
+              {/* --- Accordion List Component (Now uses filtered active cards) --- */}
               {cardsToRender.length > 0 && (
                 <View style={accordionStyles.listContainer}>
-                    {/* Title updated to reflect all enrollments are shown for indexing */}
-                    <Text style={accordionStyles.listTitle}>All Enrollments Index</Text>
+                    {/* Title updated to reflect only active enrollments are shown */}
+                    <Text style={accordionStyles.listTitle}>Active Enrollments Index</Text>
                     {cardsToRender.map((card, index) => (
                         <AccordionListItem
                             key={index}
@@ -387,7 +387,7 @@ const Mygroups = ({ navigation }) => {
                             index={index}
                             isExpanded={expandedIndex === index}
                             onToggle={toggleAccordion}
-                            onScrollToCard={handleScrollToCard} 
+                            onScrollToCard={handleScrollToCard}
                         />
                     ))}
                 </View>
@@ -397,14 +397,15 @@ const Mygroups = ({ navigation }) => {
               {cardsToRender.length === 0 ? (
                 <View style={styles.noGroupWrapper}>
                   <Image source={NoGroupImage} style={styles.noGroupImage} resizeMode="contain" />
-                  <Text style={styles.noGroupText}>No groups found for this user.</Text>
+                  <Text style={styles.noGroupText}>No active groups found for this user.</Text>
                 </View>
-              ) : (cardsToRender.map((card, index) => { 
+              ) : (cardsToRender.map((card, index) => {
                   const groupIdFromCard = card.group_id?._id || card.group_id;
                   const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
                   const individualPaidAmount = individualGroupReports[groupReportKey]?.totalPaid || 0;
                   const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
-                  const isDeleted = card.deleted; 
+                  // Since we filtered cardsToRender, isDeleted should always be false here
+                  const isDeleted = card.deleted;
                   const isCompleted = card.completed;
 
                   // --- Date Formatting for Main Card ---
@@ -424,7 +425,7 @@ const Mygroups = ({ navigation }) => {
                     : 'N/A';
                   // ------------------------------------------
 
-                  const gradientColors = isDeleted
+                  const gradientColors = isDeleted // isDeleted will be false here, using logic just in case
                     ? ["#F5F5F5", "#E0E0E0"]
                     : isCompleted
                       ? ["#E8F6F3", "#27AE60"]
@@ -493,7 +494,7 @@ const Mygroups = ({ navigation }) => {
                               </View>
                             </View>
                           </View>
-                          
+
                           {/* --- Animated Payments Button with intensified animation --- */}
                           <View style={styles.paymentsButton}>
                               <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
@@ -621,7 +622,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom:50,
   },
-  
+
   // --- NEW: Style for full screen loader ---
   fullScreenLoader: {
     flex: 1,
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: Colors.darkText,
   },
-  
+
   fixedSummaryWrapper: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -648,7 +649,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
     alignItems: 'stretch',
   },
-  
+
   summaryCardLeft: {
     flex: 1,
     marginRight: 5,
@@ -676,7 +677,7 @@ const styles = StyleSheet.create({
   summaryAmount: { color: "#fff", fontSize: 18, fontWeight: "bold", marginTop: 5 },
   summaryText: { color: "#fff", fontSize: 11, textAlign: "center", marginTop: 3 },
   scrollWrapper: { flex: 1, backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  
+
   enrolledGroupsCardContainer: {
     marginBottom: 15,
     width: "100%",
@@ -708,7 +709,7 @@ const styles = StyleSheet.create({
   enrolledGroupsIcon: {
     fontSize: 32,
   },
-  
+
   highlightedCard: {
     borderWidth: 3,
     borderColor: Colors.accentColor, // Bold border to highlight
@@ -716,22 +717,22 @@ const styles = StyleSheet.create({
     shadowColor: Colors.accentColor, // Add shadow for extra pop
     shadowOpacity: 0.5,
     shadowRadius: 10,
-    elevation: 15, 
+    elevation: 15,
   },
-  
+
   paymentsButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 15,
     paddingVertical: 10,
-    borderRadius: 10, 
-    backgroundColor: Colors.primaryBlue, 
+    borderRadius: 10,
+    backgroundColor: Colors.primaryBlue,
   },
   paymentsButtonText: {
       fontSize: 14,
       fontWeight: '700',
-      color: '#fff', 
+      color: '#fff',
       marginRight: 8,
   },
 
@@ -765,31 +766,31 @@ const styles = StyleSheet.create({
   amountValue: { fontSize: 16, fontWeight: "bold" },
 
   // --- Styles for Date Display ---
-  dateRow: { 
-    flexDirection: "row", 
+  dateRow: {
+    flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 10,
     marginTop: 5,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: Colors.lightBackground, 
+    backgroundColor: Colors.lightBackground,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.tableBorderColor,
   },
-  dateColumn: { 
+  dateColumn: {
     alignItems: "center",
     flex: 1,
   },
-  dateLabel: { 
-    fontSize: 12, 
-    color: Colors.mediumText, 
+  dateLabel: {
+    fontSize: 12,
+    color: Colors.mediumText,
     fontWeight: '500',
     marginBottom: 2,
   },
-  dateValue: { 
-    fontSize: 14, 
-    fontWeight: "bold", 
+  dateValue: {
+    fontSize: 14,
+    fontWeight: "bold",
     color: Colors.darkText,
   },
   // --------------------------------------

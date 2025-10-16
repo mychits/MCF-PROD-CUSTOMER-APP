@@ -23,12 +23,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import NoGroupImage from "../../assets/Nogroup.png";
 import { ContextProvider } from "../context/UserProvider";
 
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android') {
-  if (UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  }
-}
+// REMOVED WARNING BLOCK: setLayoutAnimationEnabledExperimental is a no-op in New Architecture.
+// if (Platform.OS === 'android') {
+//   if (UIManager.setLayoutAnimationEnabledExperimental) {
+//     UIManager.setLayoutAnimationEnabledExperimental(true);
+//   }
+// }
 
 
 const Colors = {
@@ -62,51 +62,10 @@ const formatNumberIndianStyle = (num) => {
   return (isNegative ? "-" : "") + formattedOther + lastThree + decimalPart;
 };
 
-// --- AccordionListItem Component (Unchanged) ---
-const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }) => (
-    <View style={accordionStyles.itemWrapper}>
-        <TouchableOpacity 
-            style={accordionStyles.header}
-            onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                onToggle(index);
-            }}
-        >
-            <View style={accordionStyles.headerLeft}>
-                <Text style={accordionStyles.indexText}>{index + 1}.</Text>
-                <Text style={accordionStyles.groupNameText} numberOfLines={1}>{card.group_id?.group_name}</Text>
-            </View>
-            <Ionicons 
-                name={isExpanded ? "chevron-up" : "chevron-down"} 
-                size={20} 
-                color={Colors.primaryBlue} 
-            />
-        </TouchableOpacity>
-
-        {isExpanded && (
-            <View style={accordionStyles.content}>
-                <View style={accordionStyles.contentRow}>
-                    <Text style={accordionStyles.contentLabel}>Ticket Number:</Text>
-                    <Text style={accordionStyles.contentValue}>{card.tickets}</Text>
-                </View>
-                <View style={accordionStyles.contentRow}>
-                    <Text style={accordionStyles.contentLabel}>Group Value:</Text>
-                    <Text style={accordionStyles.contentValue}>₹ {formatNumberIndianStyle(card.group_id.group_value)}</Text>
-                </View>
-                <TouchableOpacity 
-                    style={accordionStyles.navigateButton}
-                    onPress={() => onScrollToCard(index)} // Calls the scroll function
-                >
-                    <Text style={accordionStyles.navigateButtonText}>View Detailed Card</Text>
-                    <Ionicons name="arrow-down" size={16} color="#fff" style={{ marginLeft: 5 }} />
-                </TouchableOpacity>
-            </View>
-        )}
-    </View>
-);
+// --- AccordionListItem Component REMOVED ---
 // ---------------------------------------------------------------------
 
-const ReportList = ({ navigation }) => {
+const Mygroups = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appUser] = useContext(ContextProvider);
   const userId = appUser.userId || {};
@@ -118,54 +77,79 @@ const ReportList = ({ navigation }) => {
   const [Totalprofit, setTotalProfit] = useState(null); 
   
   const [individualGroupReports, setIndividualGroupReports] = useState({});
-  const [enrolledGroupsCount, setEnrolledGroupsCount] = useState(0);
-  const [expandedIndex, setExpandedIndex] = useState(null); 
+  // const [enrolledGroupsCount, setEnrolledGroupsCount] = useState(0); // REMOVED
+  // const [expandedIndex, setExpandedIndex] = useState(null); // REMOVED
   const [highlightedCardIndex, setHighlightedCardIndex] = useState(null);
   
-  const scrollViewRef = useRef(null); 
-  const cardLayouts = useRef({});
+    const scrollViewRef = useRef(null); 
+    const cardLayouts = useRef({});
+  
+    // --- Animation Refs and Logic (Intensified) for Payments Button ---
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // --- Animation Refs and Logic (Intensified) ---
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
+    // --- NEW: Animation Refs for Auction/Insurance Buttons (Scale down on press) ---
+    const auctionScaleAnim = useRef(new Animated.Value(1)).current;
+    // const insuranceScaleAnim = useRef(new Animated.Value(1)).current; // REMOVED: insuranceScaleAnim
 
-  useEffect(() => {
-    const pulseAndSlide = () => {
-      Animated.loop(
-        Animated.parallel([
-          // Scale animation: Pulses from 1 to 1.3
-          Animated.sequence([
-            Animated.timing(scaleAnim, {
-              toValue: 1.3, 
-              duration: 400, 
-              useNativeDriver: true,
-            }),
-            Animated.timing(scaleAnim, {
-              toValue: 1, 
-              duration: 400,
-              useNativeDriver: true,
-            }),
-          ]),
-          // Slide animation: Slides 5 units to the right
-          Animated.sequence([
-            Animated.timing(slideAnim, {
-              toValue: 5, 
-              duration: 400,
-              useNativeDriver: true,
-            }),
-            Animated.timing(slideAnim, {
-              toValue: 0, 
-              duration: 400,
-              useNativeDriver: true,
-            }),
-          ]),
-        ])
-      ).start();
+    const handleAuctionPressIn = () => {
+      Animated.timing(auctionScaleAnim, {
+        toValue: 0.95, // Scale down slightly on press in
+        duration: 100,
+        useNativeDriver: true,
+      }).start();
     };
 
-    pulseAndSlide();
-  }, [scaleAnim, slideAnim]);
-  // ------------------------------------
+    const handleAuctionPressOut = () => {
+      Animated.timing(auctionScaleAnim, {
+        toValue: 1, // Scale back up on press out
+        duration: 150,
+        useNativeDriver: true,
+      }).start(() => {
+        // Add navigation logic here if you want to navigate on press out
+        // navigation.navigate("AuctionScreen"); // Example
+      });
+    };
+
+    // REMOVED: handleInsurancePressIn and handleInsurancePressOut
+  
+    useEffect(() => {
+      const pulseAndSlide = () => {
+        Animated.loop(
+          Animated.parallel([
+            // Scale animation: Pulses from 1 to 1.3
+            Animated.sequence([
+              Animated.timing(scaleAnim, {
+                toValue: 1.3, 
+                duration: 400, 
+                useNativeDriver: true,
+              }),
+              Animated.timing(scaleAnim, {
+                toValue: 1, 
+                duration: 400,
+                useNativeDriver: true,
+              }),
+            ]),
+            // Slide animation: Slides 5 units to the right
+            Animated.sequence([
+              Animated.timing(slideAnim, {
+                toValue: 5, 
+                duration: 400,
+                useNativeDriver: true,
+              }),
+              Animated.timing(slideAnim, {
+                toValue: 0, 
+                duration: 400,
+                useNativeDriver: true,
+              }),
+            ]),
+          ])
+        ).start();
+      };
+  
+      pulseAndSlide();
+    }, [scaleAnim, slideAnim]);
+
 
   const fetchTickets = useCallback(async () => {
     if (!userId) {
@@ -187,7 +171,7 @@ const ReportList = ({ navigation }) => {
     try {
       const response = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`);
       const data = response.data;
-      setEnrolledGroupsCount(data.length);
+      // setEnrolledGroupsCount(data.length); // REMOVED
       
       // Set values after successful fetch
       setTotalPaid(data.reduce((sum, g) => sum + (g?.payments?.totalPaidAmount || 0), 0));
@@ -209,7 +193,7 @@ const ReportList = ({ navigation }) => {
         setTotalPaid(0);
         setTotalProfit(0);
         setIndividualGroupReports({});
-        setEnrolledGroupsCount(0);
+        // setEnrolledGroupsCount(0); // REMOVED
       } else {
         console.error(error);
       }
@@ -223,7 +207,7 @@ const ReportList = ({ navigation }) => {
             await Promise.all([fetchTickets(), fetchAllOverview()]);
         } else {
             setCardsData([]);
-            setEnrolledGroupsCount(0);
+            // setEnrolledGroupsCount(0); // REMOVED
             setTotalPaid(null);
             setTotalProfit(null);
         }
@@ -241,7 +225,7 @@ const ReportList = ({ navigation }) => {
             await Promise.all([fetchTickets(), fetchAllOverview()]);
         } else {
             setCardsData([]);
-            setEnrolledGroupsCount(0);
+            // setEnrolledGroupsCount(0); // REMOVED
             setTotalPaid(null);
             setTotalProfit(null);
         }
@@ -268,7 +252,7 @@ const ReportList = ({ navigation }) => {
             y: offset - 100, 
             animated: true 
         });
-        setExpandedIndex(null); 
+        // setExpandedIndex(null); // REMOVED
 
         setTimeout(() => {
             setHighlightedCardIndex(null);
@@ -282,15 +266,28 @@ const ReportList = ({ navigation }) => {
   };
 
   const handleCardPress = (groupId, ticket) => {
-    navigation.navigate("BottomTab", {
-      screen: "EnrollTab",
-      params: { screen: "EnrollGroup", params: { userId, groupId, ticket } },
+    // New Tap Animation Logic: Scale up and slide right, then quickly return to normal.
+    Animated.sequence([
+        Animated.parallel([
+            Animated.timing(scaleAnim, { toValue: 1.2, duration: 100, useNativeDriver: true }),
+            Animated.timing(slideAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+            Animated.timing(scaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+            Animated.timing(slideAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+        ]),
+    ]).start(() => {
+        // Navigation runs only after the animation completes
+        navigation.navigate("BottomTab", {
+            screen: "EnrollTab",
+            params: { screen: "EnrollGroup", params: { userId, groupId, ticket } },
+        });
     });
   };
   
-  const toggleAccordion = (index) => {
-    setExpandedIndex(expandedIndex === index ? null : index);
-  };
+  // const toggleAccordion = (index) => { // REMOVED
+  //   setExpandedIndex(expandedIndex === index ? null : index);
+  // };
 
   // Check against 0 when calculating display profit to avoid showing '0' if total paid is null/loading
   const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit; 
@@ -303,6 +300,13 @@ const ReportList = ({ navigation }) => {
   // Only display the currency prefix/number if the value is not null (i.e., loaded)
   const paidDisplay = Totalpaid !== null ? `₹ ${formatNumberIndianStyle(Totalpaid)}` : '';
   const profitDisplay = Totalprofit !== null ? `₹ ${formatNumberIndianStyle(displayTotalProfit)}` : '';
+  
+  // Animation styles for the new buttons
+  const auctionAnimatedStyle = {
+    transform: [{ scale: auctionScaleAnim }],
+  };
+
+  // REMOVED: insuranceAnimatedStyle
   
 
   return (
@@ -335,39 +339,32 @@ const ReportList = ({ navigation }) => {
               </LinearGradient>
             </View>
 
+            {/* New Buttons for Navigation (now placed after summary cards) */}
+            {/* UPDATED STYLE: justifyContent: 'center' to center the single button */}
+            <View style={[styles.navigationButtonsContainer, { paddingHorizontal: 20, justifyContent: 'center' }]}>
+              <TouchableOpacity
+                style={[styles.navButton, { maxWidth: 200 }]} // FIX: Removed comment from this line
+                onPressIn={handleAuctionPressIn}
+                onPressOut={handleAuctionPressOut}
+                onPress={() => {
+                  // Actual navigation for Auction goes here
+                  // navigation.navigate("AuctionScreen"); 
+                }}
+              >
+               
+              </TouchableOpacity>
+              {/* REMOVED: View Insurance Button */}
+            </View>
+
             <ScrollView
               ref={scrollViewRef} 
               style={styles.scrollWrapper}
-              contentContainerStyle={{ padding: 20, paddingBottom: 30 }}
+              contentContainerStyle={{ padding: 20, paddingBottom: 100 }} // Increased paddingBottom
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.enrolledGroupsCardContainer}>
-                <LinearGradient colors={["#6A1B9A", "#883EBF"]} style={styles.enrolledGroupsCard}>
-                  <View>
-                    <Text style={styles.enrolledGroupsCount}>{enrolledGroupsCount}</Text>
-                    <Text style={styles.enrolledGroupsLabel}>Enrolled Groups</Text>
-                  </View>
-                  <Ionicons name="people" size={32} color="#fff" style={styles.enrolledGroupsIcon} />
-                </LinearGradient>
-              </View>
               
-              {/* --- Accordion List Component --- */}
-              {activeCards.length > 0 && (
-                <View style={accordionStyles.listContainer}>
-                    <Text style={accordionStyles.listTitle}>Active Enrollments Index</Text>
-                    {activeCards.map((card, index) => (
-                        <AccordionListItem
-                            key={index}
-                            card={card}
-                            index={index}
-                            isExpanded={expandedIndex === index}
-                            onToggle={toggleAccordion}
-                            onScrollToCard={handleScrollToCard} 
-                        />
-                    ))}
-                </View>
-              )}
-              {/* ---------------------------------------------------- */}
+              {/* REMOVED: Enrolled Groups Card */}
+              {/* REMOVED: Accordion List Component (Active Enrollments Index) */}
 
               {filteredCards.length === 0 ? (
                 <View style={styles.noGroupWrapper}>
@@ -383,6 +380,23 @@ const ReportList = ({ navigation }) => {
                   const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
                   const isDeleted = card.deleted; 
                   const isCompleted = card.completed;
+                  
+                  // --- Date Formatting for Main Card ---
+                  const startDate = card.group_id?.start_date
+                    ? new Date(card.group_id?.start_date).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : 'N/A';
+                  const endDate = card.group_id?.end_date
+                    ? new Date(card.group_id.end_date).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : 'N/A';
+                  // ------------------------------------------
 
                   const gradientColors = isDeleted
                     ? ["#F5F5F5", "#E0E0E0"]
@@ -420,6 +434,20 @@ const ReportList = ({ navigation }) => {
                               {isCompleted && <Text style={styles.completedText}>Completed</Text>}
                             </View>
                           </View>
+                          
+                          {/* --- Start and End Dates Block (ADDED) --- */}
+                          <View style={styles.dateRow}>
+                              <View style={styles.dateColumn}>
+                                  <Text style={styles.dateLabel}>Start Date</Text>
+                                  <Text style={styles.dateValue}>{startDate}</Text>
+                              </View>
+                              <View style={styles.dateColumn}>
+                                  <Text style={styles.dateLabel}>End Date</Text>
+                                  <Text style={styles.dateValue}>{endDate}</Text>
+                              </View>
+                          </View>
+                          {/* -------------------------------------- */}
+
 
                           <View>
                             <View style={styles.progressHeader}>
@@ -464,97 +492,7 @@ const ReportList = ({ navigation }) => {
   );
 };
 
-// --- Styles for the Accordion List (Unchanged) ---
-const accordionStyles = StyleSheet.create({
-    listContainer: {
-        marginBottom: 20,
-        backgroundColor: '#fff',
-        borderRadius: 15,
-        borderWidth: 1,
-        borderColor: Colors.tableBorderColor,
-        overflow: 'hidden',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2.84,
-        elevation: 3,
-    },
-    listTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: Colors.primaryBlue,
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.tableBorderColor,
-        backgroundColor: Colors.lightBackground,
-    },
-    itemWrapper: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 15,
-        backgroundColor: '#fff',
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    indexText: {
-        fontSize: 14,
-        color: Colors.mediumText,
-        marginRight: 10,
-        fontWeight: '500',
-    },
-    groupNameText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.darkText,
-        flexShrink: 1,
-    },
-    content: {
-        paddingHorizontal: 15,
-        paddingBottom: 15,
-        backgroundColor: '#F9F9F9',
-    },
-    contentRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 5,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
-        marginBottom: 2,
-    },
-    contentLabel: {
-        fontSize: 13,
-        color: Colors.mediumText,
-    },
-    contentValue: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: Colors.darkText,
-    },
-    navigateButton: {
-        flexDirection: 'row',
-        alignSelf: 'flex-start',
-        marginTop: 10,
-        backgroundColor: Colors.accentColor,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
-    },
-    navigateButtonText: {
-        color: '#fff',
-        fontSize: 13,
-        fontWeight: '600',
-    }
-});
+// --- Styles for the Accordion List (REMOVED) ---
 // ------------------------------------
 
 
@@ -621,39 +559,43 @@ const styles = StyleSheet.create({
   },
   summaryAmount: { color: "#fff", fontSize: 18, fontWeight: "bold", marginTop: 5 },
   summaryText: { color: "#fff", fontSize: 11, textAlign: "center", marginTop: 3 },
-  scrollWrapper: { flex: 1, backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   
-  enrolledGroupsCardContainer: {
-    marginBottom: 15,
-    width: "100%",
+  // --- NEW NAVIGATION BUTTON STYLES ---
+  navigationButtonsContainer: {
+    flexDirection: "row",
+    // NOTE: justifyContent is now set to 'center' directly in the JSX
+    // justifyContent: "space-between", 
+    marginBottom: 25,
+  },
+  navButton: {
+    // REMOVED: flex: 1 as there is only one button and it should not stretch full width
+    // flex: 1, 
+    marginHorizontal: 5,
+    borderRadius: 15,
+    overflow: 'hidden',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 8,
   },
-  enrolledGroupsCard: {
-    borderRadius: 15,
+  navButtonGradient: {
+    paddingVertical: 14,
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
   },
-  enrolledGroupsCount: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "800",
+  navButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 18,
   },
-  enrolledGroupsLabel: {
-    color: "#E0E0E0",
-    fontSize: 14,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  enrolledGroupsIcon: {
-    fontSize: 32,
-  },
+  // -----------------------------------
+  
+  scrollWrapper: { flex: 1, backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   
   highlightedCard: {
     borderWidth: 3,
@@ -709,6 +651,36 @@ const styles = StyleSheet.create({
   amountColumn: { alignItems: "center" },
   amountLabel: { fontSize: 12, color: Colors.mediumText },
   amountValue: { fontSize: 16, fontWeight: "bold" },
+  
+  // --- Styles for Date Display (ADDED from Mygroups.jsx) ---
+  dateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    marginTop: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: Colors.lightBackground,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.tableBorderColor,
+  },
+  dateColumn: {
+    alignItems: "center",
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: Colors.mediumText,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  dateValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.darkText,
+  },
+  // --------------------------------------
 });
 
-export default ReportList;
+export default Mygroups;

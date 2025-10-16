@@ -475,6 +475,17 @@ const Enrollment = ({ route, navigation }) => {
                     </View>
                 </View>
 
+                {/* START: NEW INSTALLMENT ROW */}
+                <View style={styles.installmentRowSmall}>
+                    <Text style={[styles.detailLabelSmall, { color: colors.darkText, fontWeight: 'bold', fontSize: 12 }]}>
+                        Installment Amount:
+                    </Text>
+                    <Text style={[styles.detailValueSmall, styles.highlightedInstallment]}>
+                        ₹ {formatNumberIndianStyle(card.group_install)} / month
+                    </Text>
+                </View>
+                {/* END: NEW INSTALLMENT ROW */}
+
                 <View style={styles.viewMoreContainerSmall}>
                     <TouchableOpacity
                         style={[
@@ -614,7 +625,8 @@ const Enrollment = ({ route, navigation }) => {
                                                         styles.card,
                                                         {
                                                             backgroundColor: colors.primary,
-                                                            borderColor: isSelected ? colors.selectedBorder : colors.primary,
+                                                            // MODIFIED: Use a distinct border color when not selected
+                                                            borderColor: isSelected ? colors.selectedBorder : '#E0E0E0', 
                                                             borderWidth: isSelected ? 2 : 1,
                                                         },
                                                         (!isConnected || !isInternetReachable) && !isSelected && styles.offlineCardOverlay
@@ -688,7 +700,6 @@ const Enrollment = ({ route, navigation }) => {
             <Modal
                 visible={enrollmentModalVisible}
                 transparent={true}
-                animationType="fade"
                 onRequestClose={() => setEnrollmentModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
@@ -712,7 +723,6 @@ const Enrollment = ({ route, navigation }) => {
             <Modal
                 visible={customEnrollModalVisible}
                 transparent={true}
-                animationType="slide"
                 onRequestClose={() => {
                     setCustomEnrollModalVisible(false);
                     setEnrollmentConfirmationData(null);
@@ -761,7 +771,6 @@ const Enrollment = ({ route, navigation }) => {
             <Modal
                 visible={moreFiltersModalVisible}
                 transparent={true}
-                animationType="slide"
                 onRequestClose={() => setMoreFiltersModalVisible(false)}
             >
                 <View style={styles.moreFiltersModalOverlay}>
@@ -818,13 +827,17 @@ const Enrollment = ({ route, navigation }) => {
     );
 };
 
-// ... (Existing styles remain the same) ...
 
 const styles = StyleSheet.create({
-    // ... (All existing styles) ...
-
+    // Standard Layout Styles
     safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, },
-    loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    // **FIXED LOADER STYLE**
+    loaderContainer: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        backgroundColor: '#F5F5F5' // Ensures a white background under the loader
+    },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
     errorText: { fontSize: 15, color: '#DC143C', textAlign: 'center', marginTop: 10, fontWeight: 'bold' },
     retryButton: { marginTop: 20, backgroundColor: '#053B90', paddingVertical: 12, paddingHorizontal: 25, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 6 },
@@ -834,6 +847,8 @@ const styles = StyleSheet.create({
     filterContainer: { paddingHorizontal: 15, paddingBottom: 10, },
     chipsScrollContainer: { paddingRight: 30, paddingLeft: 5 }, 
     chipsContainer: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+    
+    // Chip/Filter Styles
     chip: { 
         flexDirection: 'row', 
         alignItems: 'center', 
@@ -852,8 +867,23 @@ const styles = StyleSheet.create({
     chipIcon: { marginRight: 2 },
     chipText: { fontSize: 12, fontWeight: '600', color: '#4A4A4A' },
     selectedChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
-    scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
+    moreOptionsButton: {
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        backgroundColor: '#E0EFFF',
+        borderRadius: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     
+    // Card Styles
+    scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
+    groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
     card: {
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -870,20 +900,23 @@ const styles = StyleSheet.create({
     },
     offlineCardOverlay: { opacity: 0.6 },
     
+    // Card Header/Content Styles (Small)
     cardHeaderSmall: {
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
         marginBottom: 5,
         position: 'relative',
-    
     },
     groupMainInfoRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-      
+    },
+    radioButtonContainer: {
+        paddingRight: 10, 
+        marginRight: 5, 
     },
     groupNameAndValueBlock: {
         flex: 1, 
@@ -930,11 +963,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#E0E0E0',
         marginVertical: 8, 
     },
-    radioButtonContainer: {
-        paddingRight: 10, 
-        marginRight: 5, 
-    },
     
+    // Card Details Row Styles (Small)
     cardDetailsRowSmall: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -966,6 +996,27 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
 
+    // Installment row styles - NEW
+    installmentRowSmall: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        marginTop: 5,
+        marginBottom: 10,
+        backgroundColor: '#E0EFFF', // Light background for emphasis
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#053B90', // Primary color accent
+    },
+    highlightedInstallment: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#053B90', // Use primary color for the amount
+    },
+
+    // Card Action Button Styles (Small)
     viewMoreContainerSmall: {
         width: '100%',
         alignItems: 'center',
@@ -1017,6 +1068,8 @@ const styles = StyleSheet.create({
         fontSize: 14, 
         fontWeight: '700',
     },
+    
+    // Empty State Styles
     emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
     noGroupsImage: {
         width: 250,
@@ -1030,16 +1083,16 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         textAlign: 'center',
     },
-    
     noGroupsText: { fontSize: 16, color: '#777', textAlign: 'center', marginTop: 15, lineHeight: 22 },
+    
+    // General Modal Styles
     modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
     modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 25, alignItems: 'center', marginHorizontal: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 5, elevation: 7 },
     modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#333' },
     modalCloseButton: { backgroundColor: '#053B90', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginTop: 10 },
     modalCloseButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
 
-    // NEW STYLED MODAL STYLES
+    // Custom Styled Confirmation Modal Styles
     styledModalContent: {
         backgroundColor: '#fff',
         borderRadius: 15,
@@ -1111,19 +1164,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 
-    moreOptionsButton: {
-        paddingHorizontal: 10,
-        paddingVertical: 10,
-        backgroundColor: '#E0EFFF',
-        borderRadius: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.15,
-        shadowRadius: 2,
-        elevation: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    // More Filters Modal Styles
     moreFiltersModalOverlay: {
         flex: 1,
         justifyContent: 'flex-end',

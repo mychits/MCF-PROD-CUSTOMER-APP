@@ -43,6 +43,31 @@ const formatNumberIndianStyle = (num) => {
   }
 };
 
+const Colors = {
+  primary: "#053B90",
+  primaryDark: "#053B90",
+  secondary: "#28A745",
+  danger: "#DC3545",
+  warning: "#FFC107",
+  lightGray: "#F8F9FA",
+  mediumGray: "#E9ECEF",
+  darkGray: "#6C757D",
+  white: "#FFFFFF",
+  black: "#212529",
+  primaryBackground: "#E0F2F7",
+  contentCardBackground: "#FFFFFF",
+  groupCardGradient: ["#007BFF", "#0056b3"],
+  whiteAccent: "#F0F8FF",
+  textGray: "#495057",
+  disabledGray: "#A0A0A0",
+  successGreen: "#28A745",
+  errorRed: "#DC3545",
+  linkBlue: "#007BFF",
+  warningOrange: "#FF9800",
+  primaryText: "#343A40",
+};
+
+
 const EnrollForm = ({ navigation, route }) => {
   const [appUser, setAppUser] = useContext(ContextProvider);
   const userId = appUser.userId || {};
@@ -313,41 +338,16 @@ const EnrollForm = ({ navigation, route }) => {
   };
 
   if (loading) {
-    // NOTE: Added Colors object temporarily to avoid ReferenceError in loading state
-    const Colors = { primary: "#053B90" };
     return (
-      <SafeAreaView style={styles.centeredFlexContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
+        <Header userId={userId} navigation={navigation} />
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       </SafeAreaView>
     );
   }
-
-  // NOTE: Defined Colors object here so it's available for error/offline states
-  const Colors = {
-    primary: "#053B90",
-    primaryDark: "#053B90",
-    secondary: "#28A745",
-    danger: "#DC3545",
-    warning: "#FFC107",
-    lightGray: "#F8F9FA",
-    mediumGray: "#E9ECEF",
-    darkGray: "#6C757D",
-    white: "#FFFFFF",
-    black: "#212529",
-    primaryBackground: "#E0F2F7",
-    contentCardBackground: "#FFFFFF",
-    groupCardGradient: ["#007BFF", "#0056b3"],
-    whiteAccent: "#F0F8FF",
-    textGray: "#495057",
-    disabledGray: "#A0A0A0",
-    successGreen: "#28A745",
-    errorRed: "#DC3545",
-    linkBlue: "#007BFF",
-    warningOrange: "#FF9800",
-    primaryText: "#343A40",
-  };
 
   if (!isConnected || !isInternetReachable) {
     return (
@@ -680,31 +680,12 @@ const EnrollForm = ({ navigation, route }) => {
   );
 };
 
-const Colors = {
-  primary: "#053B90",
-  primaryDark: "#053B90",
-  secondary: "#28A745",
-  danger: "#DC3545",
-  warning: "#FFC107",
-  lightGray: "#F8F9FA",
-  mediumGray: "#E9ECEF",
-  darkGray: "#6C757D",
-  white: "#FFFFFF",
-  black: "#212529",
-  primaryBackground: "#E0F2F7",
-  contentCardBackground: "#FFFFFF",
-  groupCardGradient: ["#007BFF", "#0056b3"],
-  whiteAccent: "#F0F8FF",
-  textGray: "#495057",
-  disabledGray: "#A0A0A0",
-  successGreen: "#28A745",
-  errorRed: "#DC3545",
-  linkBlue: "#007BFF",
-  warningOrange: "#FF9800",
-  primaryText: "#343A40",
-};
 
 const styles = StyleSheet.create({
+  // ADDED: The style for the full screen with primary background (matching Enrollment.jsx)
+  safeArea: { 
+  flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
   fullScreenContainer: {
     flex: 1,
     backgroundColor: Colors.primary, // Main outer blue
@@ -941,8 +922,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
 
-  // NOTE: Removed unused summaryBoxSecondary styles for compactness
-
   // END: COMBINED SUMMARY ROW STYLES
 
   boldText: {
@@ -1020,10 +999,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryBackground,
   },
   loaderContainer: {
-    flex: 1,
+    // MODIFIED: Ensure flex: 1 for full screen coverage under the header
+    flex: 1, 
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    backgroundColor: Colors.white, // Use white/light color for the loader background
   },
   loadingText: {
     marginTop: 15,

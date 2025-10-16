@@ -65,7 +65,7 @@ const formatNumberIndianStyle = (num) => {
 // --- AccordionListItem Component REMOVED ---
 // ---------------------------------------------------------------------
 
-const Mygroups = ({ navigation }) => {
+const Payments = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appUser] = useContext(ContextProvider);
   const userId = appUser.userId || {};
@@ -387,6 +387,23 @@ const Mygroups = ({ navigation }) => {
                   const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
                   const isDeleted = card.deleted; 
                   const isCompleted = card.completed;
+                  
+                  // --- Date Formatting for Main Card ---
+                  const startDate = card.group_id?.start_date
+                    ? new Date(card.group_id?.start_date).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : 'N/A';
+                  const endDate = card.group_id?.end_date
+                    ? new Date(card.group_id.end_date).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : 'N/A';
+                  // ------------------------------------------
 
                   const gradientColors = isDeleted
                     ? ["#F5F5F5", "#E0E0E0"]
@@ -424,6 +441,20 @@ const Mygroups = ({ navigation }) => {
                               {isCompleted && <Text style={styles.completedText}>Completed</Text>}
                             </View>
                           </View>
+                          
+                          {/* --- Start and End Dates Block (ADDED) --- */}
+                          <View style={styles.dateRow}>
+                              <View style={styles.dateColumn}>
+                                  <Text style={styles.dateLabel}>Start Date</Text>
+                                  <Text style={styles.dateValue}>{startDate}</Text>
+                              </View>
+                              <View style={styles.dateColumn}>
+                                  <Text style={styles.dateLabel}>End Date</Text>
+                                  <Text style={styles.dateValue}>{endDate}</Text>
+                              </View>
+                          </View>
+                          {/* -------------------------------------- */}
+
 
                           <View>
                             <View style={styles.progressHeader}>
@@ -627,6 +658,36 @@ const styles = StyleSheet.create({
   amountColumn: { alignItems: "center" },
   amountLabel: { fontSize: 12, color: Colors.mediumText },
   amountValue: { fontSize: 16, fontWeight: "bold" },
+  
+  // --- Styles for Date Display (ADDED from Mygroups.jsx) ---
+  dateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    marginTop: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: Colors.lightBackground,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.tableBorderColor,
+  },
+  dateColumn: {
+    alignItems: "center",
+    flex: 1,
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: Colors.mediumText,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  dateValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.darkText,
+  },
+  // --------------------------------------
 });
 
-export default Mygroups;
+export default Payments;

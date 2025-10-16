@@ -15,7 +15,6 @@ import { Ionicons, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
 import { useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-// Removed: import LottieView from "lottie-react-native"; // Removed LottieView import
 
 import url from "../../data/url"; // Your API base URL
 
@@ -97,14 +96,9 @@ const Header = ({ userId, navigation }) => {
 
           <View style={styles.headerContainer}>
             {/* Left side: Back Button (if applicable) and Profile Info */}
-            <TouchableOpacity
+            <View // Changed from TouchableOpacity to a standard View
               style={styles.leftContainer}
-              onPress={() =>
-                navigation.navigate("BottomTab", {
-                  screen: "ProfileScreen",
-                  params: { userId: userId }, // Pass userId as parameters
-                })
-              }
+              // REMOVED onPress HANDLER HERE to stop navigation
             >
               {/* Conditional Back Button */}
               {showBackButton && (
@@ -115,10 +109,14 @@ const Header = ({ userId, navigation }) => {
                   <Ionicons name="arrow-back" size={28} color="#fff" />
                 </TouchableOpacity>
               )}
-              {/* Profile Image and Name/ID */}
-              <View
+              
+              {/* Profile Image and Name/ID - Now in its own TouchableOpacity if you want to keep that touch feedback */}
+              <TouchableOpacity // Wrapped the profile details in an inner TouchableOpacity
+                // ADDED onPress={null} or simply remove the onPress for no action on touch
+                activeOpacity={1} // Optional: set activeOpacity to 1 to remove touch feedback, making it look like a static View
                 style={[
                   styles.profileContainer,
+                  // The profileContainer style now correctly handles the positioning/margin
                   !showBackButton && { marginLeft: width * 0.02 },
                 ]}
               >
@@ -135,8 +133,8 @@ const Header = ({ userId, navigation }) => {
                     {userData.phone_number || "..."}
                   </Text>
                 </View>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </View>
 
             {/* Right side: Info Icon to trigger popup */}
             <TouchableOpacity

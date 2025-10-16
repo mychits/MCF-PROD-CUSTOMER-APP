@@ -111,13 +111,7 @@ const MyPassbookScreen = ({ navigation, route }) => {
     });
   };
 
-  if (isLoadingData) {
-    return (
-      <SafeAreaView style={styles.loadingScreen}>
-        <ActivityIndicator size="large" color="#053B90" />
-      </SafeAreaView>
-    );
-  }
+  // *** REMOVED: The previous if (isLoadingData) return block ***
 
   return (
     <SafeAreaView
@@ -141,106 +135,117 @@ const MyPassbookScreen = ({ navigation, route }) => {
         contentContainerStyle={styles.mainScrollViewContent}
       >
         <View style={styles.contentArea}>
-          <Text style={styles.mainTitle}>Your Financial Snapshot</Text>
-          <Text style={styles.subtitle}>
-            A quick look at your investments & returns.
-          </Text>
+          {/* *** START: Conditional rendering of content/loading indicator *** */}
+          {isLoadingData ? (
+            <View style={styles.centeredLoading}>
+              <ActivityIndicator size="large" color="#053B90" />
+            </View>
+          ) : (
+            <>
+              {/* All your actual content is now inside this conditional fragment */}
+              <Text style={styles.mainTitle}>Your Financial Snapshot</Text>
+              <Text style={styles.subtitle}>
+                A quick look at your investments & returns.
+              </Text>
 
-          {dataError && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{dataError}</Text>
-              <TouchableOpacity
-                onPress={fetchAllOverview}
-                style={styles.retryButton}
-              >
-                
-              </TouchableOpacity>
-            </View>
-          )}
-          <View style={styles.summaryCardsColumn}>
-            <View style={[styles.summaryCard, styles.investmentCardBackground]}>
-              <FontAwesome5
-                name="wallet"
-                size={24}
-                color="#E0E0E0"
-                style={styles.summaryIcon}
-              />
-              <View style={styles.summaryTextContent}>
-                <Text style={styles.summaryLabel}>Total Investment</Text>
-                <Text style={styles.summaryAmount}>
-                  ₹ {totalPaid.toLocaleString("en-IN")}
-                </Text>
-              </View>
-            </View>
-            <View style={[styles.summaryCard, styles.profitCardBackground]}>
-              <FontAwesome5
-                name="chart-line"
-                size={24}
-                color="#E0E0E0"
-                style={styles.summaryIcon}
-              />
-              <View style={styles.summaryTextContent}>
-                <Text style={styles.summaryLabel}>Total Dividend / Profit</Text>
-                <Text style={styles.summaryAmount}>
-                  ₹ {totalProfit.toLocaleString("en-IN")}
-                </Text>
-              </View>
-            </View>
-            <View
-              style={[styles.summaryCard, styles.enrolledGroupsCardBackground]}
-            >
-              <MaterialIcons
-                name="group"
-                size={28}
-                color="#E0E0E0"
-                style={styles.summaryIcon}
-              />
-              <View style={styles.summaryTextContent}>
-                <Text style={styles.summaryLabel}>Enrolled Groups</Text>
-                <Text style={styles.summaryAmount}>{enrolledGroupsCount}</Text>
-              </View>
-            </View>
-          </View>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Your Chit Groups</Text>
-            {(chitGroups.length > 0 || (!isLoadingData && !dataError)) && (
-              <TouchableOpacity
-                onPress={handleViewAllChits}
-                style={styles.viewAllButton} // Apply new style here
-              >
-                <Text style={styles.viewAllText}>
-                  View All{" "}
-                  <Ionicons
-                    name="arrow-forward-outline"
-                    size={16}
-                    color="#007BFF"
+              {dataError && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{dataError}</Text>
+                  <TouchableOpacity
+                    onPress={fetchAllOverview}
+                    style={styles.retryButton}
+                  >
+                    
+                  </TouchableOpacity>
+                </View>
+              )}
+              <View style={styles.summaryCardsColumn}>
+                <View style={[styles.summaryCard, styles.investmentCardBackground]}>
+                  <FontAwesome5
+                    name="wallet"
+                    size={24}
+                    color="#E0E0E0"
+                    style={styles.summaryIcon}
                   />
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          {chitGroups.length === 0 && !isLoadingData && !dataError && (
-            <View style={styles.noDataContainer}>
-              <Image
-                source={NoGroupImage}
-                style={styles.noGroupImage}
-                resizeMode="contain"
-              />
-              <Text style={styles.noDataText}>
-                No Chit Groups Enrolled Yet!
-              </Text>
-              <Text style={styles.noDataSubText}>
-                It looks like you haven't joined any groups. Explore available
-                chits and start your journey!
-              </Text>
-              <TouchableOpacity
-                style={styles.enrollButton}
-                onPress={() => navigation.navigate("Discover")}
-              >
-                <Text style={styles.enrollButtonText}>Discover Groups</Text>
-              </TouchableOpacity>
-            </View>
+                  <View style={styles.summaryTextContent}>
+                    <Text style={styles.summaryLabel}>Total Investment</Text>
+                    <Text style={styles.summaryAmount}>
+                      ₹ {totalPaid.toLocaleString("en-IN")}
+                    </Text>
+                  </View>
+                </View>
+                <View style={[styles.summaryCard, styles.profitCardBackground]}>
+                  <FontAwesome5
+                    name="chart-line"
+                    size={24}
+                    color="#E0E0E0"
+                    style={styles.summaryIcon}
+                  />
+                  <View style={styles.summaryTextContent}>
+                    <Text style={styles.summaryLabel}>Total Dividend / Profit</Text>
+                    <Text style={styles.summaryAmount}>
+                      ₹ {totalProfit.toLocaleString("en-IN")}
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={[styles.summaryCard, styles.enrolledGroupsCardBackground]}
+                >
+                  <MaterialIcons
+                    name="group"
+                    size={28}
+                    color="#E0E0E0"
+                    style={styles.summaryIcon}
+                  />
+                  <View style={styles.summaryTextContent}>
+                    <Text style={styles.summaryLabel}>Enrolled Groups</Text>
+                    <Text style={styles.summaryAmount}>{enrolledGroupsCount}</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Your Chit Groups</Text>
+                {(chitGroups.length > 0 || (!isLoadingData && !dataError)) && (
+                  <TouchableOpacity
+                    onPress={handleViewAllChits}
+                    style={styles.viewAllButton} // Apply new style here
+                  >
+                    <Text style={styles.viewAllText}>
+                      View All{" "}
+                      <Ionicons
+                        name="arrow-forward-outline"
+                        size={16}
+                        color="#007BFF"
+                      />
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {chitGroups.length === 0 && !isLoadingData && !dataError && (
+                <View style={styles.noDataContainer}>
+                  <Image
+                    source={NoGroupImage}
+                    style={styles.noGroupImage}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.noDataText}>
+                    No Chit Groups Enrolled Yet!
+                  </Text>
+                  <Text style={styles.noDataSubText}>
+                    It looks like you haven't joined any groups. Explore available
+                    chits and start your journey!
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.enrollButton}
+                    onPress={() => navigation.navigate("Discover")}
+                  >
+                    <Text style={styles.enrollButtonText}>Discover Groups</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
           )}
+          {/* *** END: Conditional rendering *** */}
         </View>
       </ScrollView>
       <Toast />
@@ -249,17 +254,20 @@ const MyPassbookScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  loadingScreen: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F0F8FF",
-  },
+  // *** REMOVED: The old loadingScreen style ***
   loadingText: {
     marginTop: 10,
     fontSize: 16,
     color: "#053B90",
     fontWeight: "600",
+  },
+  // *** ADDED: New style for centering indicator in the content area ***
+  centeredLoading: {
+    flex: 1, // Takes up all available space in contentArea
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: Dimensions.get("window").height * 0.4, // Ensures visibility
+    paddingVertical: 50,
   },
   safeArea: {
     flex: 1,

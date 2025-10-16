@@ -190,6 +190,34 @@ const FloatingLabelInput = ({
   );
 };
 
+// --- NEW: Loading Overlay Component ---
+const LoadingOverlay = ({ visible }) => {
+  if (!visible) return null;
+
+  return (
+    <View style={overlayStyles.overlay}>
+      <ActivityIndicator size="large" color="#fff" />
+      <Text style={overlayStyles.overlayText}>Accessing Contacts...</Text>
+    </View>
+  );
+};
+
+const overlayStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9998, // Below toast (9999), above everything else
+  },
+  overlayText: {
+    color: '#fff',
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: '600',
+  }
+});
+
 // --- Main Screen ---
 const IntroduceNewCustomers = () => {
   const navigation = useNavigation();
@@ -202,7 +230,7 @@ const IntroduceNewCustomers = () => {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [zipCode, setZipCode] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Controls both button and overlay
 
   const customToastRef = useRef();
 
@@ -259,16 +287,18 @@ const IntroduceNewCustomers = () => {
     }
   };
 
-  // --- New: Use native contact picker ---
+  // --- Updated: Use native contact picker with loader ---
   const handlePickContact = async () => {
-    // Request permissions
-    const { status } = await Contacts.requestPermissionsAsync();
-    if (status !== "granted") {
-      showCustomToast("Permission to access contacts was denied.");
-      return;
-    }
+    setIsLoading(true); // Start loading overlay
 
     try {
+      // Request permissions
+      const { status } = await Contacts.requestPermissionsAsync();
+      if (status !== "granted") {
+        showCustomToast("Permission to access contacts was denied.");
+        return;
+      }
+
       const contact = await Contacts.presentContactPickerAsync();
       // If user cancels, contact will be null
       if (!contact) {
@@ -277,13 +307,12 @@ const IntroduceNewCustomers = () => {
       }
 
       // Now contact is a Contact object
-      // Get name and phone
       const name = contact.name ?? "";
-      // It might have multiple phone numbers
       const phoneNumbers = contact.phoneNumbers;
       let phone = "";
       if (phoneNumbers && phoneNumbers.length > 0) {
-        phone = phoneNumbers[0].number.replace(/\D/g, ""); // strip non digits
+        // Get the first one and strip non digits
+        phone = phoneNumbers[0].number.replace(/\D/g, ""); 
       }
       if (name) setFullName(name);
       if (phone) setPhoneNumber(phone);
@@ -292,6 +321,8 @@ const IntroduceNewCustomers = () => {
     } catch (err) {
       console.error("Error picking contact:", err);
       showCustomToast("Failed to pick contact.");
+    } finally {
+      setIsLoading(false); // Stop loading overlay
     }
   };
 
@@ -336,7 +367,7 @@ const IntroduceNewCustomers = () => {
             </Text>
 
             {/* Contact Picker Button */}
-            <TouchableOpacity style={styles.contactButton} onPress={handlePickContact}>
+            <TouchableOpacity style={styles.contactButton} onPress={handlePickContact} disabled={isLoading}>
               <View style={styles.contactButtonContent}>
                 <Ionicons name="person-circle-outline" size={22} color={Colors.primaryViolet} />
                 <Text style={styles.contactButtonText}>Pick from Contacts</Text>
@@ -389,6 +420,9 @@ const IntroduceNewCustomers = () => {
       </KeyboardAvoidingView>
 
       <CustomToast ref={customToastRef} />
+      
+      {/* RENDER THE FULL-SCREEN LOADER */}
+      <LoadingOverlay visible={isLoading} /> 
     </SafeAreaView>
   );
 };

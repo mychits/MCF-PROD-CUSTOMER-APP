@@ -197,140 +197,146 @@ const Becomeanagent = ({ navigation, route }) => {
         },
       ]}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#053B90" />
+      <StatusBar barStyle="light-content" backgroundColor="#053B90" />
       <Header
         userId={currentUserId}
         navigation={navigation}
         title="Become an Agent"
       />
 
+      {/* FIXED TITLE/SUBTITLE SECTION */}
+      <LinearGradient
+        colors={["#FFFFFF", "#E0F2F7"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.fixedTitleContainer} // New style for the fixed section
+      >
+        <Text style={styles.formTitle}>Agent Application Form</Text>
+        <Text style={styles.formSubtitle}>
+          Please fill in your details to apply.
+        </Text>
+      </LinearGradient>
+      {/* END FIXED TITLE/SUBTITLE SECTION */}
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
-          <LinearGradient
-            colors={["#FFFFFF", "#E0F2F7"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.formContainer}
-          >
-            <Text style={styles.formTitle}>Agent Application Form</Text>
-            <Text style={styles.formSubtitle}>
-              Please fill in your details to apply.
-            </Text>
+          
+            {/* Scrollable Form Content */}
+            <View style={styles.formContent}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                style={styles.input}
+                placeholder="Enter your full name"
+                value={fullName}
+                onChangeText={setFullName}
+                autoCapitalize="words"
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>Full Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your full name"
-              value={fullName}
-              onChangeText={setFullName}
-              autoCapitalize="words"
-              placeholderTextColor="#999"
-            />
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>Email Address</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor="#999"
-            />
+                <Text style={styles.inputLabel}>Phone Number</Text>
+                <TextInput
+                style={styles.input}
+                placeholder="Enter your phone number"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                maxLength={10}
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>Phone Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your phone number"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              keyboardType="phone-pad"
-              maxLength={10}
-              placeholderTextColor="#999"
-            />
+                <Text style={styles.inputLabel}>Full Address</Text>
+                <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Enter your full address"
+                value={address}
+                onChangeText={setAddress}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>Full Address</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Enter your full address"
-              value={address}
-              onChangeText={setAddress}
-              multiline
-              numberOfLines={3}
-              placeholderTextColor="#999"
-            />
+                <Text style={styles.inputLabel}>
+                ID Proof Type (e.g., Aadhaar, PAN)
+                </Text>
+                <TextInput
+                style={styles.input}
+                placeholder="e.g., Aadhaar Card"
+                value={idProofType}
+                onChangeText={setIdProofType}
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>
-              ID Proof Type (e.g., Aadhaar, PAN)
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Aadhaar Card"
-              value={idProofType}
-              onChangeText={setIdProofType}
-              placeholderTextColor="#999"
-            />
+                <Text style={styles.inputLabel}>ID Proof Number</Text>
+                <TextInput
+                style={styles.input}
+                placeholder="Enter ID proof number"
+                value={idProofNumber}
+                onChangeText={setIdProofNumber}
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>ID Proof Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter ID proof number"
-              value={idProofNumber}
-              onChangeText={setIdProofNumber}
-              placeholderTextColor="#999"
-            />
+                <Text style={styles.inputLabel}>Bank Account Number</Text>
+                <TextInput
+                style={styles.input}
+                placeholder="Enter bank account number"
+                value={bankAccountNumber}
+                onChangeText={setBankAccountNumber}
+                keyboardType="numeric"
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>Bank Account Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter bank account number"
-              value={bankAccountNumber}
-              onChangeText={setBankAccountNumber}
-              keyboardType="numeric"
-              placeholderTextColor="#999"
-            />
+                <Text style={styles.inputLabel}>IFSC Code</Text>
+                <TextInput
+                style={styles.input}
+                placeholder="Enter IFSC code"
+                value={ifscCode}
+                onChangeText={setIfscCode}
+                autoCapitalize="characters"
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>IFSC Code</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter IFSC code"
-              value={ifscCode}
-              onChangeText={setIfscCode}
-              autoCapitalize="characters"
-              placeholderTextColor="#999"
-            />
+                <Text style={styles.inputLabel}>
+                Relevant Experience (Optional)
+                </Text>
+                <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="e.g., 2 years in sales, managed a chits group"
+                value={experience}
+                onChangeText={setExperience}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor="#999"
+                />
 
-            <Text style={styles.inputLabel}>
-              Relevant Experience (Optional)
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="e.g., 2 years in sales, managed a chits group"
-              value={experience}
-              onChangeText={setExperience}
-              multiline
-              numberOfLines={3}
-              placeholderTextColor="#999"
-            />
-
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                isLoading && styles.submitButtonDisabled,
-              ]}
-              onPress={handleSubmitApplication}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.submitButtonText}>Submit Application</Text>
-              )}
-            </TouchableOpacity>
-          </LinearGradient>
+                <TouchableOpacity
+                style={[
+                    styles.submitButton,
+                    isLoading && styles.submitButtonDisabled,
+                ]}
+                onPress={handleSubmitApplication}
+                disabled={isLoading}
+                >
+                {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.submitButtonText}>Submit Application</Text>
+                )}
+                </TouchableOpacity>
+            </View>
         </ScrollView>
       </KeyboardAvoidingView>
       <Toast />
@@ -344,6 +350,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F5F5F5",
+    
   },
   loadingText: {
     marginTop: 10,
@@ -353,19 +360,39 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#053B90",
+    
+  },
+  // NEW STYLE for the fixed title section
+  fixedTitleContainer: {
+    width: "100%",
+    paddingHorizontal: 15,
+    paddingTop: 15, // Add a bit of padding above the title
+    backgroundColor: "#FFF", // Set a solid background for the fixed part
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+    // Add shadow to make it float above the scrolling content (optional)
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   scrollViewContent: {
     flexGrow: 1,
     alignItems: "center",
     paddingHorizontal: 15,
-    paddingBottom: 20,
-    backgroundColor: "#053B90",
-  },
-  formContainer: {
+    paddingBottom: 50, // This is your bottom margin, set to 50
+    backgroundColor: "transparent", 
+},
+  formContent: {
     width: "100%",
     borderRadius: 15,
     padding: 25,
-    marginTop: 10,
+    marginTop: 20, // Add margin top to space it from the fixed header
+    backgroundColor: "#FFFFFF", // Give the scrollable form a white background
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
