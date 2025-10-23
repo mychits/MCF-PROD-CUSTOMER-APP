@@ -44,9 +44,14 @@ const Colors = {
   tableBorderColor: "#E0E0E0", 
 };
 
+// --- MODIFIED FUNCTION: formatNumberIndianStyle ---
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) return "0";
-  const parts = num.toString().split(".");
+  
+  // Modification: Convert to number, fix to 2 decimal places, and get as a string
+  const formattedNum = parseFloat(num).toFixed(2);
+
+  const parts = formattedNum.toString().split(".");
   let integerPart = parts[0];
   let decimalPart = parts.length > 1 ? "." + parts[1] : "";
   let isNegative = false;
@@ -61,6 +66,7 @@ const formatNumberIndianStyle = (num) => {
     : "";
   return (isNegative ? "-" : "") + formattedOther + lastThree + decimalPart;
 };
+// --------------------------------------------------
 
 // --- AccordionListItem Component REMOVED ---
 // ---------------------------------------------------------------------
