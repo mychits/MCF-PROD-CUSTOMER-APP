@@ -130,19 +130,21 @@ const Enrollment = ({ route, navigation }) => {
         setError(null);
         let endpoint = `${url}/group/get-group/`;
         if (selectedGroup === "AllGroups") {
-            endpoint = `${url}/group/get-group-by-filter/AllGroups`;
+            endpoint = `${url}/group/filter/AllGroups`;
         }
         if (selectedGroup === "NewGroups") {
-            endpoint = `${url}/group/get-group-by-filter/NewGroups`;
+            endpoint = `${url}/group/filter/NewGroups`;
         } else if (selectedGroup === "OngoingGroups") {
-            endpoint = `${url}/group/get-group-by-filter/OngoingGroups`;
+            endpoint = `${url}/group/filter/OngoingGroups`;
+        }else if (selectedGroup === "VacantGroups") {
+            endpoint = `${url}/group/filter/VacantGroups`;
         }
         try {
             const response = await fetch(endpoint);
             if (response.ok) {
                 const data = await response.json();
                 const groupsWithVacantSeats = await Promise.all(
-                    data.map(async (group) => {
+                    data?.groups?.map(async (group) => {
                         const vacantSeats = await fetchVacantSeats(group._id);
                         return { ...group, vacantSeats };
                     })
@@ -327,7 +329,6 @@ const Enrollment = ({ route, navigation }) => {
             // 5. Reset loading state
             setIsJoining(false);
             setJoinGroupId(null);
-            // Re-fetch groups to update the vacant seat count
             fetchGroups(); 
         }
     };
@@ -393,15 +394,40 @@ const Enrollment = ({ route, navigation }) => {
 
     const NoGroupsIllustration = require('../../assets/Nogroup.png');
     
-    const CardContent = ({ card, colors, isSelected }) => {
+    // START: MODIFIED CardContent to show selected filter as badge
+    const CardContent = ({ card, colors, isSelected, currentFilter }) => {
+        const getFilterDisplayName = (filterKey) => {
+            switch (filterKey) {
+                case "NewGroups":
+                    return "New Group";
+                case "OngoingGroups":
+                    return "Ongoing";
+                case "VacantGroups":
+                    return "Vacant Group";
+                case "AllGroups":
+                    // To avoid a very long badge, we can show a more descriptive status like 'Active' or 'Available'
+                    // For "AllGroups", let's revert to the actual group status (New/Ongoing) or just 'Group' if ended.
+                    const type = getGroupType(card);
+                    if (type === 'new') return 'New';
+                    if (type === 'ongoing') return 'Ongoing';
+                    return 'Group'; // Don't show a badge for 'ended' groups in 'AllGroups'
+                default:
+                    return "Group";
+            }
+        };
+
         const formatDate = (dateString) => {
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
             return new Date(dateString).toLocaleDateString('en-GB', options);
         };
-        const groupType = getGroupType(card);
+        // Removed: const groupType = getGroupType(card);
         const vacantSeats = card.vacantSeats || 0;
         
         const isCurrentCardJoining = isJoining && joinGroupId === card._id; 
+        const badgeText = getFilterDisplayName(currentFilter);
+        
+        // Don't display a badge for ended groups in "AllGroups" to keep the UI clean
+        const shouldShowBadge = !(currentFilter === "AllGroups" && getGroupType(card) === 'ended');
 
         return (
             <>
@@ -432,14 +458,9 @@ const Enrollment = ({ route, navigation }) => {
                         </View>
                         
                         <View style={styles.statusBadgeContainer}>
-                            {groupType === 'new' && (
+                            {shouldShowBadge && (
                                 <View style={[styles.statusBadge, { backgroundColor: colors.secondary }]}>
-                                    <Text style={styles.statusBadgeText}>New</Text>
-                                </View>
-                            )}
-                            {groupType === 'ongoing' && (
-                                <View style={[styles.statusBadge, { backgroundColor: colors.secondary }]}>
-                                    <Text style={styles.statusBadgeText}>Ongoing</Text>
+                                    <Text style={styles.statusBadgeText}>{badgeText}</Text>
                                 </View>
                             )}
                         </View>
@@ -524,6 +545,7 @@ const Enrollment = ({ route, navigation }) => {
             </>
         );
     };
+    // END: MODIFIED CardContent
 
     if (isLoading) {
         return (
@@ -647,6 +669,7 @@ const Enrollment = ({ route, navigation }) => {
                                                             card={card}
                                                             colors={colors}
                                                             isSelected={isSelected}
+                                                            currentFilter={selectedGroup} // <-- ADDED prop for the badge
                                                         />
                                                     </CardWrapper>
                                                 </TouchableOpacity>
@@ -954,7 +977,7 @@ const styles = StyleSheet.create({
     },
     statusBadgeText: {
         color: 'white',
-        fontSize: 10,
+        fontSize: 8,
         fontWeight: 'bold',
     },
     headerSeparatorSmall: {
