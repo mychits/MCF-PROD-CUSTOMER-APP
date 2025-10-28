@@ -27,33 +27,59 @@ const formatNumberIndianStyle = (num) => {
     if (num === null || num === undefined) {
         return "0";
     }
-    const parts = num.toString().split(',');
+    // Fixed split on '.' for standard number formatting, not ',' as was in the original snippet
+    const parts = num.toString().split('.');
     let integerPart = parts[0];
-    let decimalPart = parts.length > 1 ? ',' + parts[1] : '';
+    let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
     let isNegative = false;
     if (integerPart.startsWith('-')) {
         isNegative = true;
         integerPart = integerPart.substring(1);
     }
+    
+    // Logic for Indian style (2-digit grouping after the first 3)
     const lastThree = integerPart.substring(integerPart.length - 3);
     const otherNumbers = integerPart.substring(0, integerPart.length - 3);
+    
     if (otherNumbers !== '') {
         const formattedOtherNumbers = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-        return (isNegative ? '-' : '') + formattedOtherNumbers + ',' + lastThree + decimalPart;
+        integerPart = formattedOtherNumbers + ',' + lastThree;
     } else {
-        return (isNegative ? '-' : '') + lastThree + decimalPart;
+        integerPart = lastThree;
     }
+    
+    return (isNegative ? '-' : '') + integerPart + decimalPart;
 };
 
+// **NEW HELPER FUNCTION FOR CONDITIONAL VACANT SEATS**
+const getVacantSeats = (card) => {
+    // 1. Prioritize the new app_display_vacany_seat field
+    const appDisplaySeats = parseInt(card.app_display_vacany_seat, 10);
+    if (!isNaN(appDisplaySeats) && appDisplaySeats > 0) {
+        return appDisplaySeats;
+    }
+
+    // 2. Fallback: Calculate vacant seats using old logic
+    const totalMembers = parseInt(card.number_of_members, 10) || 0;
+    // Assuming 'enrolled_members' exists on the card object for the fallback calculation
+    const enrolledMembers = parseInt(card.enrolled_members, 10) || 0; 
+    
+    const calculatedSeats = totalMembers - enrolledMembers;
+    
+    // Ensure the result is not negative
+    return Math.max(0, calculatedSeats);
+};
+
+
 const Enrollment = ({ route, navigation }) => {
-    const { groupFilter } = route.params;
+    const { groupFilter } = route.params || {};
     const [appUser, setAppUser] = useContext(ContextProvider);
-    const userId = appUser.userId || {};
+    const userId = appUser?.userId || appUser?.user_id; 
     const [selectedCardIndex, setSelectedCardIndex] = useState(null);
     const [cardsData, setCardsData] = useState([]);
 
     const initialGroupFilter = "NewGroups";
-    const [selectedGroup, setSelectedGroup] = useState(initialGroupFilter);
+    const [selectedGroup, setSelectedGroup] = useState(groupFilter || initialGroupFilter);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [enrollmentModalVisible, setEnrollmentModalVisible] = useState(false);
@@ -61,28 +87,10 @@ const Enrollment = ({ route, navigation }) => {
     const { isConnected, isInternetReachable } = useContext(NetworkContext);
     const [moreFiltersModalVisible, setMoreFiltersModalVisible] = useState(false);
 
-    // NEW STATES FOR STYLED CONFIRMATION MODAL
     const [isJoining, setIsJoining] = useState(false);
     const [joinGroupId, setJoinGroupId] = useState(null);
     const [customEnrollModalVisible, setCustomEnrollModalVisible] = useState(false);
-    const [enrollmentConfirmationData, setEnrollmentConfirmationData] = useState(null); // Holds the card data for the modal
-
-    const fetchVacantSeats = async (groupId) => {
-        try {
-            const ticketsResponse = await axios.post(
-                `${url}/enroll/get-next-tickets/${groupId}`
-            );
-            const fetchedTickets = Array.isArray(
-                ticketsResponse.data.availableTickets
-            )
-                ? ticketsResponse.data.availableTickets
-                : [];
-            return fetchedTickets.length;
-        } catch (err) {
-            console.error(`Error fetching tickets for group ${groupId}:`, err);
-            return 0;
-        }
-    };
+    const [enrollmentConfirmationData, setEnrollmentConfirmationData] = useState(null); 
 
     const groupColors = {
         new: { primary: '#E0F7FA', secondary: '#00BCD4', text: '#00BCD4', darkText: '#263238', buttonBackground: '#00BCD4', selectedBorder: '#00BCD4', iconColor: '#00BCD4' },
@@ -143,18 +151,19 @@ const Enrollment = ({ route, navigation }) => {
             const response = await fetch(endpoint);
             if (response.ok) {
                 const data = await response.json();
-                const groupsWithVacantSeats = await Promise.all(
-                    data?.groups?.map(async (group) => {
-                        const vacantSeats = await fetchVacantSeats(group._id);
-                        return { ...group, vacantSeats };
-                    })
-                );
+                
+                let groupsData = data?.groups || [];
+
                 if (selectedGroup === "VacantGroups") {
-                    const vacantGroups = groupsWithVacantSeats.filter(group => group.vacantSeats > 0);
+                    // Filter using the new helper function that applies the fallback logic
+                    const vacantGroups = groupsData.filter(group => {
+                        return getVacantSeats(group) > 0;
+                    });
                     setCardsData(vacantGroups);
                 } else {
-                    setCardsData(groupsWithVacantSeats);
+                    setCardsData(groupsData);
                 }
+                
                 setIsLoading(false);
             } else {
                 const errorData = await response.json();
@@ -238,41 +247,39 @@ const Enrollment = ({ route, navigation }) => {
             return startDate <= now && endDate > now;
         });
         const endedGroups = cardsData.filter(card => new Date(card.end_date) <= now);
-        const vacantGroups = cardsData.filter(card => card.vacantSeats > 0);
+        
+        // Filter vacant groups using the helper function
+        const vacantGroups = cardsData.filter(card => getVacantSeats(card) > 0);
         
         if (selectedGroup === "AllGroups") {
             return {
                 new: newGroups,
                 ongoing: ongoingGroups,
                 ended: endedGroups,
-                vacant: []
+                vacant: [] 
             };
         } else if (selectedGroup === "NewGroups") {
             return { new: cardsData, ongoing: [], ended: [], vacant: [] };
         } else if (selectedGroup === "OngoingGroups") {
             return { new: [], ongoing: cardsData, ended: [], vacant: [] };
         } else if (selectedGroup === "VacantGroups") {
-            return { new: [], ongoing: [], ended: [], vacant: cardsData };
+            // cardsData is already filtered in fetchGroups when selectedGroup is "VacantGroups"
+            return { new: [], ongoing: [], ended: [], vacant: cardsData }; 
         }
         return { new: [], ongoing: [], ended: [], vacant: [] };
     };
 
-    // Function to handle the actual enrollment API call AFTER confirmation
     const handleEnrollmentConfirmation = async (card) => {
         if (!card) return;
 
-        // Hide the confirmation modal immediately
         setCustomEnrollModalVisible(false);
         setEnrollmentConfirmationData(null);
 
-        // --- Enrollment Logic Starts Here ---
         const selectedGroupId = card._id;
         
-        // 1. Set loading state for the specific card
         setJoinGroupId(selectedGroupId);
         setIsJoining(true);
 
-        // Assumption: Direct join is for 1 ticket, and chit_asking_month is derived from group_duration
         const ticketsCountInt = 1; 
         const chitAskingMonth = Number(card?.group_duration) || 0; 
 
@@ -290,7 +297,6 @@ const Enrollment = ({ route, navigation }) => {
                 },
             });
 
-            // 2. Success Feedback
             Toast.show({
                 type: "success",
                 text1: "Enrollment Successful!",
@@ -299,7 +305,6 @@ const Enrollment = ({ route, navigation }) => {
                 visibilityTime: 3000,
             });
           
-            // 3. Navigate to EnrollConfirm
             navigation.navigate("EnrollConfirm", { groupId: selectedGroupId, userId: userId });
 
         } catch (err) {
@@ -317,7 +322,6 @@ const Enrollment = ({ route, navigation }) => {
                 errorMessage = `An unexpected error occurred: ${err.message}`;
             }
 
-            // 4. Error Feedback
             Toast.show({
                 type: "error",
                 text1: "Enrollment Failed",
@@ -326,7 +330,6 @@ const Enrollment = ({ route, navigation }) => {
                 visibilityTime: 5000,
             });
         } finally {
-            // 5. Reset loading state
             setIsJoining(false);
             setJoinGroupId(null);
             fetchGroups(); 
@@ -375,7 +378,10 @@ const Enrollment = ({ route, navigation }) => {
             return;
         }
 
-        if (card.vacantSeats === 0) {
+        // CRITICAL CHANGE: Use the new helper function for the check
+        const vacantSeats = getVacantSeats(card); 
+        
+        if (vacantSeats === 0) {
              Toast.show({
                 type: "info",
                 text1: "No Seats Available",
@@ -386,7 +392,6 @@ const Enrollment = ({ route, navigation }) => {
             return;
         }
 
-        // Show the custom styled confirmation modal
         setEnrollmentConfirmationData(card);
         setCustomEnrollModalVisible(true);
     };
@@ -405,12 +410,10 @@ const Enrollment = ({ route, navigation }) => {
                 case "VacantGroups":
                     return "Vacant Group";
                 case "AllGroups":
-                    // To avoid a very long badge, we can show a more descriptive status like 'Active' or 'Available'
-                    // For "AllGroups", let's revert to the actual group status (New/Ongoing) or just 'Group' if ended.
                     const type = getGroupType(card);
                     if (type === 'new') return 'New';
                     if (type === 'ongoing') return 'Ongoing';
-                    return 'Group'; // Don't show a badge for 'ended' groups in 'AllGroups'
+                    return 'Group'; 
                 default:
                     return "Group";
             }
@@ -418,15 +421,17 @@ const Enrollment = ({ route, navigation }) => {
 
         const formatDate = (dateString) => {
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-            return new Date(dateString).toLocaleDateString('en-GB', options);
+            const date = new Date(dateString);
+            if (isNaN(date)) return dateString; 
+            return date.toLocaleDateString('en-GB', options);
         };
-        // Removed: const groupType = getGroupType(card);
-        const vacantSeats = card.vacantSeats || 0;
+        
+        // CRITICAL CHANGE: Use the new helper function for the display value
+        const vacantSeats = getVacantSeats(card);
         
         const isCurrentCardJoining = isJoining && joinGroupId === card._id; 
         const badgeText = getFilterDisplayName(currentFilter);
         
-        // Don't display a badge for ended groups in "AllGroups" to keep the UI clean
         const shouldShowBadge = !(currentFilter === "AllGroups" && getGroupType(card) === 'ended');
 
         return (
@@ -496,7 +501,6 @@ const Enrollment = ({ route, navigation }) => {
                     </View>
                 </View>
 
-                {/* START: NEW INSTALLMENT ROW */}
                 <View style={styles.installmentRowSmall}>
                     <Text style={[styles.detailLabelSmall, { color: colors.darkText, fontWeight: 'bold', fontSize: 12 }]}>
                         Installment Amount:
@@ -505,7 +509,6 @@ const Enrollment = ({ route, navigation }) => {
                         ₹ {formatNumberIndianStyle(card.group_install)} / month
                     </Text>
                 </View>
-                {/* END: NEW INSTALLMENT ROW */}
 
                 <View style={styles.viewMoreContainerSmall}>
                     <TouchableOpacity
@@ -647,7 +650,6 @@ const Enrollment = ({ route, navigation }) => {
                                                         styles.card,
                                                         {
                                                             backgroundColor: colors.primary,
-                                                            // MODIFIED: Use a distinct border color when not selected
                                                             borderColor: isSelected ? colors.selectedBorder : '#E0E0E0', 
                                                             borderWidth: isSelected ? 2 : 1,
                                                         },
@@ -669,7 +671,7 @@ const Enrollment = ({ route, navigation }) => {
                                                             card={card}
                                                             colors={colors}
                                                             isSelected={isSelected}
-                                                            currentFilter={selectedGroup} // <-- ADDED prop for the badge
+                                                            currentFilter={selectedGroup} 
                                                         />
                                                     </CardWrapper>
                                                 </TouchableOpacity>
@@ -759,7 +761,7 @@ const Enrollment = ({ route, navigation }) => {
                                 Confirm Enrollment
                             </Text>
                             <Text style={styles.styledModalMessage}>
-                                Do you want to join the group {enrollmentConfirmationData.group_name} with 1 ticket?
+                                 Do you want to join the group {enrollmentConfirmationData.group_name} with 1 ticket?
                             </Text>
                             <Text style={styles.styledModalAgreement}>
                                 By proceeding, you agree to the group terms and conditions.
@@ -854,12 +856,11 @@ const Enrollment = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     // Standard Layout Styles
     safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, },
-    // **FIXED LOADER STYLE**
     loaderContainer: { 
         flex: 1, 
         justifyContent: 'center', 
         alignItems: 'center',
-        backgroundColor: '#F5F5F5' // Ensures a white background under the loader
+        backgroundColor: '#F5F5F5' 
     },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
     errorText: { fontSize: 15, color: '#DC143C', textAlign: 'center', marginTop: 10, fontWeight: 'bold' },
@@ -1019,7 +1020,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
 
-    // Installment row styles - NEW
+    // Installment row styles - KEPT AS PER V1 UI
     installmentRowSmall: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -1028,15 +1029,15 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         marginTop: 5,
         marginBottom: 10,
-        backgroundColor: '#E0EFFF', // Light background for emphasis
+        backgroundColor: '#E0EFFF', 
         borderRadius: 8,
         borderLeftWidth: 4,
-        borderLeftColor: '#053B90', // Primary color accent
+        borderLeftColor: '#053B90', 
     },
     highlightedInstallment: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#053B90', // Use primary color for the amount
+        color: '#053B90', 
     },
 
     // Card Action Button Styles (Small)
@@ -1149,8 +1150,8 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#888',
         textAlign: 'center',
-        marginBottom: 20,
         fontStyle: 'italic',
+        marginBottom: 20,
     },
     styledModalButtonContainer: {
         flexDirection: 'row',
@@ -1174,7 +1175,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     styledModalConfirmButton: {
-        backgroundColor: '#053B90', // Primary app color
+        backgroundColor: '#053B90', 
         shadowColor: '#053B90',
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.5,
