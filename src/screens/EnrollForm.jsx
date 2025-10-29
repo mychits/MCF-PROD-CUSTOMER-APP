@@ -481,7 +481,7 @@ const EnrollForm = ({ navigation, route }) => {
                 />
                 <Text style={styles.infoItemText}>
                   <Text style={styles.highlightedText}>
-                    {availableTickets.length} Seats
+                    {cardsData.app_display_vacany_seat || availableTickets.length} Seats    
                   </Text>{" "}
                   are vacant
                 </Text>

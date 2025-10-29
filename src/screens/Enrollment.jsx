@@ -23,6 +23,14 @@ import { NetworkContext } from '../context/NetworkProvider';
 import Toast from 'react-native-toast-message';
 import { ContextProvider } from "../context/UserProvider"
 
+// START: LOTTIE IMPORT PLACEHOLDER
+// IMPORTANT: To use a Lottie animation, you need to:
+// 1. Install the dependency: npm install lottie-react-native
+// 2. Uncomment the following lines:
+// import LottieView from 'lottie-react-native'; 
+// const enrollmentLottie = require('../../assets/animations/enrollment-confirm.json'); 
+// END: LOTTIE IMPORT PLACEHOLDER
+
 const formatNumberIndianStyle = (num) => {
     if (num === null || num === undefined) {
         return "0";
@@ -75,6 +83,8 @@ const Enrollment = ({ route, navigation }) => {
     const { groupFilter } = route.params || {};
     const [appUser, setAppUser] = useContext(ContextProvider);
     const userId = appUser?.userId || appUser?.user_id; 
+    // ADDED: Define userName here for use in Toast and Modal
+    const userName = appUser?.name || appUser?.user_name || "User"; 
     const [selectedCardIndex, setSelectedCardIndex] = useState(null);
     const [cardsData, setCardsData] = useState([]);
 
@@ -297,9 +307,10 @@ const Enrollment = ({ route, navigation }) => {
                 },
             });
 
+            // MODIFIED: Added user name to the Toast message
             Toast.show({
                 type: "success",
-                text1: "Enrollment Successful!",
+                text1: `Dear ${userName}, Enrollment Successful!`,
                 text2: `You are enrolled for ${card.group_name} with 1 ticket.`,
                 position: "bottom",
                 visibilityTime: 3000,
@@ -465,7 +476,9 @@ const Enrollment = ({ route, navigation }) => {
                         <View style={styles.statusBadgeContainer}>
                             {shouldShowBadge && (
                                 <View style={[styles.statusBadge, { backgroundColor: colors.secondary }]}>
-                                    <Text style={styles.statusBadgeText}>{badgeText}</Text>
+                                    <Text style={styles.statusBadgeText}>
+                                        {badgeText}
+                                    </Text>
                                 </View>
                             )}
                         </View>
@@ -743,8 +756,8 @@ const Enrollment = ({ route, navigation }) => {
                     </View>
                 </View>
             </Modal>
-
-            {/* Custom Styled Enrollment Confirmation Modal */}
+            
+            {/* Custom Styled Confirmation Modal (Enrollment/Alert) - MODIFIED WITH ANIMATION PLACEHOLDER */}
             <Modal
                 visible={customEnrollModalVisible}
                 transparent={true}
@@ -756,12 +769,21 @@ const Enrollment = ({ route, navigation }) => {
                 {enrollmentConfirmationData && (
                     <View style={styles.modalOverlay}>
                         <View style={styles.styledModalContent}>
-                            <Ionicons name="warning-outline" size={40} color="#FFD700" style={{ marginBottom: 10 }} />
+
+                            {/* START: ANIMATION/AVATAR PLACEHOLDER (Replace with LottieView) */}
+                            {/* Uncomment the Lottie code in the import section and replace the block below with LottieView if installed */}
+                            <View style={styles.modalAnimationPlaceholder}>
+                                <Ionicons name="people-circle" size={80} color="#053B90" />
+                            </View>
+                            {/* <LottieView source={enrollmentLottie} autoPlay loop={true} style={styles.modalAnimation} /> */}
+                            {/* END: ANIMATION/AVATAR PLACEHOLDER */}
+                            
                             <Text style={styles.styledModalTitle}>
                                 Confirm Enrollment
                             </Text>
                             <Text style={styles.styledModalMessage}>
-                                 Do you want to join the group {enrollmentConfirmationData.group_name} with 1 ticket?
+                                {/* MODIFIED: Corrected sentence structure and added {userName} */}
+                                Dear {userName}, do you want to join the group {enrollmentConfirmationData.group_name}? Installment Amount: ₹ {formatNumberIndianStyle(enrollmentConfirmationData.group_install)}, Duration: {enrollmentConfirmationData.group_duration} months with 1 ticket.
                             </Text>
                             <Text style={styles.styledModalAgreement}>
                                 By proceeding, you agree to the group terms and conditions.
@@ -1132,6 +1154,25 @@ const styles = StyleSheet.create({
         borderColor: '#053B90',
         elevation: 10,
     },
+    // NEW Styles for Animation/Avatar Placeholder
+    modalAnimation: {
+        width: 150, 
+        height: 150, 
+        marginBottom: 10,
+        // If using Lottie, use this style
+    },
+    modalAnimationPlaceholder: {
+        width: 100, 
+        height: 100, 
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 10,
+        borderRadius: 50,
+        backgroundColor: '#E0EFFF', // Light background for the avatar/icon
+        borderWidth: 2,
+        borderColor: '#053B90',
+    },
+    // End new animation styles
     styledModalTitle: {
         fontSize: 22,
         fontWeight: '900',
