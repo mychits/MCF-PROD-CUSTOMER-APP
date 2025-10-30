@@ -527,7 +527,7 @@ const Home = ({ route, navigation }) => {
         { navigateTo: 'Mygroups', icon: 'group', title: 'My Groups', bgColor: '#E8F5E9', iconBg: '#2E7D32', disabled: false },
         { navigateTo: 'EnrollTab', screen: 'EnrollScreenMain', icon: 'group-add', title: 'New Groups', bgColor: '#E3F2FD', iconBg: '#053B90', filter: 'New Groups', disabled: false },
         { navigateTo: 'PaymentScreen', icon: 'payment', title: 'My Payments', bgColor: '#FFF3E0', iconBg: '#EF6C00', disabled: false },
-        { navigateTo: 'ReportScreen', icon: 'bar-chart', title: 'Reports', bgColor: '#F3E5F5', iconBg: '#6A1B9A', disabled: false },
+        { navigateTo: 'ReportScreen', icon: 'bar-chart', title: 'My Pigme', bgColor: '#F3E5F5', iconBg: '#6A1B9A', disabled: false },
         { navigateTo: 'MyPassbook', icon: 'book', title: 'My Passbook', bgColor: '#E0F7FA', iconBg: '#006064', disabled: false },
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
         { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Refer Now', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
