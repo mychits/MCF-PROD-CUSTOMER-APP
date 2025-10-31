@@ -27,8 +27,8 @@ import { NetworkContext } from '../context/NetworkProvider';
 import Toast from 'react-native-toast-message';
 import { useFocusEffect, StackActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ContextProvider } from '../context/UserProvider';            
-import Group400 from '../../assets/Group400.png';                   
+import { ContextProvider } from '../context/UserProvider';
+import Group400 from '../../assets/Group400.png';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -466,14 +466,14 @@ const Home = ({ route, navigation }) => {
                 });
 
                 const groupManagers = Array.from(uniqueGroups.values());
-               
+
                 setRelationshipManagers(groupManagers);
             } else {
                 console.warn("No user tickets found for this userId.");
                 setRelationshipManagers([]);
             }
         } catch (error) {
-            
+
             Toast.show({
                 type: 'error',
                 text1: 'RM Data Error',
@@ -526,17 +526,21 @@ const Home = ({ route, navigation }) => {
     const services = [
         { navigateTo: 'Mygroups', icon: 'group', title: 'My Groups', bgColor: '#E8F5E9', iconBg: '#2E7D32', disabled: false },
         { navigateTo: 'EnrollTab', screen: 'EnrollScreenMain', icon: 'group-add', title: 'New Groups', bgColor: '#E3F2FD', iconBg: '#053B90', filter: 'New Groups', disabled: false },
-        { navigateTo: 'PaymentScreen', icon: 'payment', title: 'My Payments', bgColor: '#FFF3E0', iconBg: '#EF6C00', disabled: false },
-        { navigateTo: 'ReportScreen', icon: 'bar-chart', title: 'My Pigme', bgColor: '#F3E5F5', iconBg: '#6A1B9A', disabled: false },
         { navigateTo: 'MyPassbook', icon: 'book', title: 'My Passbook', bgColor: '#E0F7FA', iconBg: '#006064', disabled: false },
+        { navigateTo: 'ReportScreen', icon: 'bar-chart', title: 'My Pigme', bgColor: '#F3E5F5', iconBg: '#7c36a8ff', disabled: false },
+        { navigateTo: 'PaymentScreen', icon: 'payment', title: 'My Payments', bgColor: '#FFF3E0', iconBg: '#EF6C00', disabled: false },
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
+        { navigateTo: 'MyLoan', screen: 'MyLoan', icon: 'account-balance-wallet', title: 'My Loan', bgColor: '#EDE7F6', iconBg: '#3e09a7ff', filter: 'My Loan', disabled: false },
+
+
+
         { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Refer Now', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
-        { navigateTo: 'MyLoan', screen: 'MyLoan', icon: 'account-balance-wallet', title: 'My Loan', bgColor: '#EDE7F6', iconBg: '#5E35B1', filter: 'My Loan', disabled: false },
+
         { navigateTo: 'PayYourDues', icon: 'currency-rupee', title: 'Pay Your Dues', bgColor: '#FFEBEE', iconBg: '#B71C1C', disabled: false },
     ];
 
     const mychitsAdvantages = [
-        { icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00' ,},
+        { icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00', },
         {
             icon: 'gavel',
             text1: 'In app ',
@@ -842,7 +846,7 @@ const Home = ({ route, navigation }) => {
                         {/* MODIFICATION: Rewards onPress changed to an empty function */}
                         <TouchableOpacity
                             style={styles.blueGridItem}
-                            onPress={() => console.log('Rewards button disabled by user request.')} 
+                            onPress={() => console.log('Rewards button disabled by user request.')}
                         >
                             <View style={styles.iconCircleBlue}>
                                 <MaterialIcons name="emoji-events" size={30} color="#053B90" />
@@ -888,7 +892,7 @@ const Home = ({ route, navigation }) => {
                                 <MaterialIcons name="event-note" size={34} color="#053B90" />
                             </View>
                             <Text style={styles.bottomServiceTitle}> My </Text>
-                             <Text style={styles.bottomServiceTitle}>  Profile</Text>
+                            <Text style={styles.bottomServiceTitle}>  Profile</Text>
                         </TouchableOpacity>
                         {/* END OF MODIFICATION */}
                         <TouchableOpacity
@@ -1325,7 +1329,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         borderRadius: 15,
         marginBottom: 4,
-        
+
         alignSelf: 'center',
         width: '100%',
     },
@@ -1547,7 +1551,7 @@ const styles = StyleSheet.create({
         color: '#455A64',
         fontWeight: 600,
         fontStyle: 'italic'
-    },                                                                                                                                                                                                                                                            
+    },
     row: {
         justifyContent: 'space-around',
         paddingHorizontal: 5,

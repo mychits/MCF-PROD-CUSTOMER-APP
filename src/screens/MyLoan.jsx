@@ -27,14 +27,18 @@ const Colors = {
   darkText: "#212529", // Near-black for strong contrast
   mediumText: "#6C757D", // Muted secondary text
   accentColor: "#28A745", // A bright, inviting accent (Orange/Red for CTA)
-  shadowColor: "rgba(0,0,0,0.15)",
+  shadowColor: "rgba(0,0,0,0.2)", // Darker shadow for more lift
   vibrantBlue: "#17A2B8", // Teal/Cyan for values
   lightGrayBorder: "#E9ECEF", // Light separator
+  softGrayBackground: "#FAFAFC", // Used for detail list background
   paginationActive: "#053B90",
   paginationInactive: "#DEE2E6",
   paginationActiveText: "#FFFFFF",
   paginationInactiveText: "#495057",
   successGreen: "#28A745", // Green for Success/Call
+  softBlueAccent: "#E6F0FF",
+  // New Color for secondary highlight
+  secondaryHighlight: "#FFC107", // Yellow/Orange for "Total Paid"
 };
 
 // Define contact constants
@@ -62,6 +66,9 @@ const MyLoan = ({ route, navigation }) => {
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loanId, setLoanId] = useState(null);
+  
+  // NEW STATE: For Accordion-like behavior
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -86,6 +93,8 @@ const MyLoan = ({ route, navigation }) => {
     if (!userId || !loanId) return;
     const fetchData = async () => {
       setIsDataLoading(true);
+      // Reset expansion when new loan is selected
+      setIsSummaryExpanded(false); 
       try {
         const summaryApiUrl = `${url}/payment/user/${userId}/loan/${loanId}/summary`;
         const summaryResponse = await axios.get(summaryApiUrl);
@@ -123,7 +132,9 @@ const MyLoan = ({ route, navigation }) => {
 
   const formatNumberIndianStyle = (num) => {
     if (num === null || num === undefined) return "0";
-    const number = parseFloat(num).toFixed(2);
+    // Ensure the number is treated as a safe number before calculation/formatting
+    const safeNum = isNaN(parseFloat(num)) ? 0 : parseFloat(num);
+    const number = safeNum.toFixed(2);
     const parts = number.toString().split(".");
     let integerPart = parts[0];
     let decimalPart = parts.length > 1 ? "." + parts[1] : "";
@@ -174,6 +185,21 @@ const MyLoan = ({ route, navigation }) => {
   const handlePhonePress = () => {
     Linking.openURL(`tel:${CONTACT_PHONE}`);
   };
+
+  // --- START LOGIC FOR CALCULATING BALANCE ---
+  let totalLoanBalance = 0;
+  let loanAmount = 0;
+  let totalRepayment = 0;
+
+  if (loanId && !isDataLoading) {
+    const currentLoan = loans.find(loan => loan._id === loanId);
+    loanAmount = parseFloat(currentLoan?.loan_amount || 0);
+    totalRepayment = parseFloat(paymentsSummary?.totalPaidAmount || 0);
+    
+    // Calculation: Loan Amount - Total Repayment
+    totalLoanBalance = loanAmount - totalRepayment;
+  }
+  // --- END LOGIC FOR CALCULATING BALANCE ---
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -226,24 +252,75 @@ const MyLoan = ({ route, navigation }) => {
                 </View>
               ) : (
                 <>
+                  {/* UPDATED TOTAL LOAN BALANCE CARD (ACCORDIAN HOST) */}
                   <View style={[styles.loanCard, styles.summaryCard]}>
-                    <View style={styles.cardHeader}>
-                      <View style={[styles.iconContainer, { backgroundColor: Colors.vibrantBlue }]}>
-                        <Ionicons name="stats-chart-outline" size={28} color={Colors.cardBackground} />
+                    <TouchableOpacity
+                      style={styles.accordionHeader}
+                      onPress={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.cardHeader}>
+                        <View style={[styles.iconContainer, { backgroundColor: Colors.primaryBlue }]}>
+                          <Ionicons name="wallet-outline" size={28} color={Colors.cardBackground} />
+                        </View>
+                        <View style={styles.cardTitleContainer}>
+                          <Text style={styles.cardTitle}>Remaining Loan Balance</Text>
+                          {paymentsError ? (
+                            <Text style={styles.errorText}>{paymentsError}</Text>
+                          ) : (
+                            <Text style={[styles.detailValue, styles.summaryValue, { color: Colors.primaryBlue }]}>
+                              {/* Use the calculated balance */}
+                              ₹ {formatNumberIndianStyle(totalLoanBalance)}
+                            </Text>
+                          )}
+                        </View>
                       </View>
-                      <View style={styles.cardTitleContainer}>
-                        <Text style={styles.cardTitle}>Total Repayment</Text>
-                        <Text style={styles.cardSubtitle}>Payments made against Loan ID: {loanId.substring(0, 8)}...</Text>
+                      <Ionicons
+                          name={isSummaryExpanded ? "chevron-up" : "chevron-down"}
+                          size={24}
+                          color={Colors.darkText}
+                          style={styles.toggleIcon}
+                      />
+                    </TouchableOpacity>
+
+                    {/* NEW ACCORDIAN CONTENT: Detailed Summary */}
+                    {isSummaryExpanded && !paymentsError && (
+                      <View style={styles.summaryDetailsContainer}>
+                        
+                        {/* Detail 1: Original Loan Amount */}
+                        <View style={styles.summaryDetailItem}>
+                          <Ionicons name="cash-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
+                          <Text style={styles.detailLabelVertical}>Original Loan Amount</Text>
+                          <Text style={[styles.detailValueVertical, { color: Colors.primaryBlue, fontWeight: '900' }]}>
+                            ₹ {formatNumberIndianStyle(loanAmount)}
+                          </Text>
+                        </View>
+
+                        {/* Detail 2: TOTAL PAID (New Required Field) */}
+                        <View style={styles.summaryDetailItem}>
+                          <Ionicons name="checkmark-circle-outline" size={20} color={Colors.successGreen} style={styles.detailIcon}/>
+                          <Text style={styles.detailLabelVertical}>TOTAL PAID</Text>
+                          <Text style={[styles.detailValueVertical, { color: Colors.successGreen, fontWeight: '900' }]}>
+                            ₹ {formatNumberIndianStyle(totalRepayment)}
+                          </Text>
+                        </View>
+                        
+                        {/* Detail 3: Remaining Balance (Repeat for clarity) */}
+                        <View style={styles.summaryDetailItem}>
+                          <Ionicons name="calculator-outline" size={20} color={Colors.primaryBlue} style={styles.detailIcon}/>
+                          <Text style={styles.detailLabelVertical}>Remaining Balance</Text>
+                          <Text style={[styles.detailValueVertical, { color: Colors.primaryBlue, fontWeight: '900' }]}>
+                            ₹ {formatNumberIndianStyle(totalLoanBalance)}
+                          </Text>
+                        </View>
+
                       </View>
-                    </View>
-                    {paymentsError ? (
-                      <Text style={styles.errorText}>{paymentsError}</Text>
-                    ) : (
-                      <Text style={[styles.detailValue, styles.summaryValue]}>
-                        ₹ {paymentsSummary ? formatNumberIndianStyle(paymentsSummary.totalPaidAmount || 0) : "N/A"}
-                      </Text>
                     )}
+                    {/* END ACCORDIAN CONTENT */}
+
                   </View>
+                  {/* END UPDATED TOTAL LOAN BALANCE CARD */}
+
                   <View>
                     <Text style={styles.paymentHistoryTitle}>Payment History</Text>
                     {totalPaymentsError ? (
@@ -315,29 +392,42 @@ const MyLoan = ({ route, navigation }) => {
               loans.length > 0 ? (
                 loans.map((loan) => (
                   <View key={loan._id} style={styles.loanCard}>
-                    <View style={styles.cardHeader}>
-                      <View style={styles.iconContainer}>
-                        <Ionicons name="wallet-outline" size={28} color={Colors.cardBackground} />
-                      </View>
+                    {/* New Stylish Header */}
+                    <View style={styles.loanCardHeaderBar}>
+                      <Ionicons name="business-outline" size={24} color={Colors.primaryBlue} style={{ marginRight: 10 }} />
                       <View style={styles.cardTitleContainer}>
                         <Text style={styles.cardTitle}>Loan Account</Text>
-                        <Text style={styles.cardSubtitle}>ID: {loan.loan_id.substring(0, 10)}...</Text>
+                        <Text style={styles.cardSubtitle}>ID: {loan.loan_id.substring(0, 10)}</Text>
                       </View>
                     </View>
-                    <View style={styles.detailsRow}>
-                      <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>Amount</Text>
-                        <Text style={styles.detailValue}>₹ {formatNumberIndianStyle(loan.loan_amount)}</Text>
+                    
+                    <View style={styles.detailsList}>
+                      {/* Amount Row: Value uses primaryBlue for emphasis */}
+                      <View style={styles.detailItemVertical}>
+                        <Ionicons name="cash-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
+                        <Text style={styles.detailLabelVertical}>Loan Amount</Text>
+                        <Text style={[styles.detailValueVertical, styles.amountValueStyle]}>
+                          ₹ {formatNumberIndianStyle(loan.loan_amount)}
+                        </Text>
                       </View>
-                      <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>Tenure</Text>
-                        <Text style={styles.detailValue}>{loan.tenure} days</Text>
+                      {/* Tenure Row */}
+                      <View style={styles.detailItemVertical}>
+                        <Ionicons name="calendar-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
+                        <Text style={styles.detailLabelVertical}>Tenure</Text>
+                        <Text style={styles.detailValueVertical}>
+                          {loan.tenure} days
+                        </Text>
                       </View>
-                      <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>Start Date</Text>
-                        <Text style={styles.detailValue}>{new Date(loan.start_date).toLocaleDateString()}</Text>
+                      {/* Start Date Row */}
+                      <View style={styles.detailItemVertical}>
+                        <Ionicons name="time-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
+                        <Text style={styles.detailLabelVertical}>Start Date</Text>
+                        <Text style={styles.detailValueVertical}>
+                          {new Date(loan.start_date).toLocaleDateString()}
+                        </Text>
                       </View>
                     </View>
+                    
                     <TouchableOpacity
                       style={styles.viewPaymentsButton}
                       onPress={() => { setLoanId(loan._id); setCurrentPage(1); }}
@@ -404,78 +494,164 @@ const styles = StyleSheet.create({
     margin: 10, 
     borderRadius: 20, 
     marginBottom:50, 
-    overflow: 'hidden', // Essential for internal elements to respect the radius
+    overflow: 'hidden', 
   },
   loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center", minHeight: 200 },
   
-  // *** NEW STYLE FOR FIXED TITLE AREA ***
+  // *** FIXED TITLE AREA ***
   fixedTitleContainer: { 
-    backgroundColor: Colors.cardBackground, // Ensure it has a background
+    backgroundColor: Colors.cardBackground, 
     paddingHorizontal: 25, 
     paddingTop: 25, 
-    paddingBottom: 15, // Adjusted spacing below the text
+    paddingBottom: 15, 
     alignItems: "center", 
     position: "relative",
     borderTopLeftRadius: 20, 
     borderTopRightRadius: 20,
-    borderBottomWidth: 1, // Subtle separator
+    borderBottomWidth: 1, 
     borderBottomColor: Colors.lightGrayBorder,
   },
   
-  // *** MODIFIED STYLE FOR SCROLLABLE AREA (formerly innerContentArea) ***
   scrollableContentArea: { 
     flexGrow: 1, 
     backgroundColor: Colors.cardBackground, 
-    paddingHorizontal: 25, // Only horizontal padding needed here
+    paddingHorizontal: 25, 
     paddingBottom: 25,
   },
   
-  titleContainer: { marginBottom: 20, alignItems: "center", position: "relative" }, // Kept for reference, but not used in the final structure
-  backButton: { position: "absolute", left: 0, top: 5, zIndex: 10 },
+  titleContainer: { marginBottom: 20, alignItems: "center", position: "relative" }, 
+  backButton: { position: "absolute", left: 30, top: 20, zIndex: 10 },
   sectionTitle: { fontSize: 26, fontWeight: "900", color: Colors.darkText, marginTop: 5 },
   subHeading: { fontSize: 13, color: Colors.mediumText, textAlign: "center" },
   errorText: { textAlign: "center", color: "#E74C3C", marginTop: 20, fontSize: 16, fontWeight: "600" },
   
-  // Loan Card Styles
+  // *** PREMIUM Loan Card Styles ***
   loanCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 15,
-    elevation: 4,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 15, // Increased radius for softer look
+    padding: 0, // Removed card padding, will use inner paddings
+    marginBottom: 20, // More space between cards
+    elevation: 10, // Max shadow for max lift
     shadowColor: Colors.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.primaryBlue,
+    shadowOffset: { width: 0, height: 5 }, 
+    shadowOpacity: 0.15, // Softer opacity for elegance
+    shadowRadius: 10, // Larger radius for a smoother shadow
+    borderWidth: 3, // Subtle border
+    borderColor: Colors.lightGrayBorder, // Subtle border color
+    overflow: 'hidden', // Ensure header background respects radius
+    marginTop: 10,
+  },
+  loanCardHeaderBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: Colors.softBlueAccent, // Light background for header bar
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGrayBorder,
   },
   summaryCard: {
     borderLeftColor: Colors.vibrantBlue,
     marginBottom: 20,
+    padding: 0, // Removed padding here, moved to accordionHeader
   },
-  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
+  cardHeader: { flexDirection: "row", alignItems: "center", flex: 1 },
+  
+  // NEW STYLES FOR ACCORDION
+  accordionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 20, // Added padding to the touchable area
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGrayBorder,
+  },
+  toggleIcon: {
+    marginLeft: 10,
+  },
+  summaryDetailsContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: Colors.softGrayBackground,
+  },
+  summaryDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    backgroundColor: Colors.cardBackground, 
+    borderRadius: 8, 
+    marginBottom: 5, 
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.lightGrayBorder,
+  },
+  // END NEW STYLES FOR ACCORDION
+
   iconContainer: { width: 45, height: 45, borderRadius: 8, backgroundColor: Colors.primaryBlue, justifyContent: "center", alignItems: "center", marginRight: 15 },
   cardTitleContainer: { flex: 1 },
-  cardTitle: { fontSize: 17, fontWeight: "700", color: Colors.darkText },
+  cardTitle: { fontSize: 15, fontWeight: "700", color: Colors.darkText },
   cardSubtitle: { fontSize: 12, color: Colors.mediumText, marginTop: 2 },
-  detailsRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 15, paddingHorizontal: 5, borderTopWidth: 1, borderTopColor: Colors.lightGrayBorder, paddingTop: 10 },
-  detailItem: { flex: 1, alignItems: 'center' },
-  detailLabel: { fontSize: 12, color: Colors.mediumText, marginBottom: 4 },
-  detailValue: { fontSize: 16, fontWeight: "bold", color: Colors.darkText },
-  summaryValue: { fontSize: 32, fontWeight: "bold", color: Colors.successGreen, textAlign: 'center', marginTop: 10 },
+  
+  summaryValue: { fontSize: 30, fontWeight: "bold", color: Colors.successGreen, marginTop: 4 }, // Adjusted font size
+  // Your original summaryValue style was: summaryValue: { fontSize: 32, fontWeight: "bold", color: Colors.successGreen, textAlign: 'center', marginTop: 1 },
+
+  // *** STYLISH VERTICAL LOAN DETAILS (Used for list of loans and details inside accordion) ***
+  detailsList: {
+    flexDirection: 'column', 
+    padding: 10, // Inner padding for the list container
+    backgroundColor: Colors.softGrayBackground, // Slight contrast background
+    borderRadius: 10,
+    marginHorizontal: 15, // Space it from the card edges
+    marginVertical: 15,
+  },
+  detailItemVertical: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 15, // More vertical space for clarity
+    paddingHorizontal: 10,
+    backgroundColor: Colors.cardBackground, // White background for the detail item itself
+    borderRadius: 10, // Rounded corners for each detail item
+    marginBottom: 5, // Space between list items
+    borderLeftWidth: 3, // Accent color stripe
+    borderLeftColor: Colors.vibrantBlue, 
+  },
+  detailIcon: {
+    marginRight: 15,
+  },
+  detailLabelVertical: {
+    fontSize: 15,
+    color: Colors.mediumText,
+    flex: 2, 
+    fontWeight: '500', // Lighter weight for label
+  },
+  detailValueVertical: {
+    fontSize: 15,
+    fontWeight: "700", // Bold for value
+    color: Colors.darkText,
+    flex: 3, 
+    textAlign: 'right', 
+  },
+  amountValueStyle: {
+    fontSize: 15,
+    fontWeight: "900", // Extra bold for amount
+    color: Colors.primaryBlue, // Primary color for amount
+  },
+  // *** END STYLISH VERTICAL LOAN DETAILS ***
   
   viewPaymentsButton: {
     backgroundColor: Colors.accentColor,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14, // Increased padding
+    borderRadius: 0, // Let the button use the card's radius
+    borderBottomLeftRadius: 15, 
+    borderBottomRightRadius: 15, 
     alignItems: "center",
-    marginTop: 5,
-    elevation: 2,
+    marginTop: 0, // Button flush with details
+    elevation: 0,
   },
-  viewPaymentsButtonText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+  viewPaymentsButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   
-  // Payment List Styles
+  // Payment List Styles (No changes needed for payment cards)
   paymentHistoryTitle: {
     fontSize: 18,
     fontWeight: "800",
@@ -503,12 +679,12 @@ const styles = StyleSheet.create({
   },
   paymentDetailsRow: { flex: 1, flexDirection: "row", justifyContent: "space-between", marginLeft: 15, alignItems: "center" },
   receiptText: { fontSize: 14, fontWeight: "600", color: Colors.darkText, marginBottom: 2 },
-  amountText: { fontSize: 16, fontWeight: "bold", color: Colors.vibrantBlue },
+  amountText: { fontSize: 14, fontWeight: "bold", color: Colors.vibrantBlue },
   dateText: { fontSize: 12, color: Colors.mediumText },
   emptyText: { marginTop: 14, fontSize: 16, color: Colors.mediumText, textAlign: "center" },
 
 
-  // Pagination styles
+  // Pagination styles (No changes here)
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -550,14 +726,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   
-  // --- REVISED STYLISTIC NO LOAN FOUND SECTION STYLES ---
+  // --- NO LOAN FOUND SECTION STYLES (No changes here) ---
   noLoanContainer: {
     alignItems: 'center',
     padding: 0, 
     backgroundColor: Colors.primaryBlue,
     borderRadius: 16,
     overflow: 'hidden', 
-    marginTop: 5, // Reduced margin since padding is handled by scrollableContentArea
+    marginTop: 5, 
     elevation: 8,
     shadowColor: Colors.primaryBlue,
     shadowOffset: { width: 0, height: 6 },
@@ -586,7 +762,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
   },
-  // NEW STYLE FOR LOAN REQUEST SENTENCE
   requestLoanSentence: {
     fontSize: 15,
     fontWeight: '600',
