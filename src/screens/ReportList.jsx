@@ -198,7 +198,7 @@ const ReportList = ({ route, navigation }) => {
         <View style={[styles.loanCardHeaderBar, { backgroundColor: Colors.softPigmeAccent }]}>
             <Ionicons name="save-outline" size={24} color={Colors.accentColor} style={{ marginRight: 10 }} />
             <View style={styles.cardTitleContainer}>
-              <Text style={styles.cardTitle}>Pigme Account</Text>
+              <Text style={styles.cardTitle}>Pigmy Account</Text>
               <Text style={styles.cardSubtitle}>ID: {pigme.pigme_id || "N/A"}</Text>
             </View>
         </View>
@@ -273,7 +273,7 @@ const ReportList = ({ route, navigation }) => {
             </View>
           ))
         ) : (
-          <Text style={styles.emptyText}>No deposits found for this Pigme account.</Text>
+          <Text style={styles.emptyText}>No deposits found for this Pigmy account.</Text>
         )}
 
         {/* Pagination */}
@@ -328,11 +328,11 @@ const ReportList = ({ route, navigation }) => {
         </View>
         
         <Text style={styles.noLoanMessage}>
-            You currently have no active Pigme savings accounts. Start saving now and see your money grow.
+            You currently have no active Pigmy savings accounts. Start saving now and see your money grow.
         </Text>
 
         <Text style={[styles.requestLoanSentence, {backgroundColor: Colors.primaryBlue}]}>
-            Request your new Pigme account by contacting our executive now!
+            Request your new Pigmy account by contacting our executive now!
         </Text>
         
         <View style={styles.contactGroup}>
@@ -343,7 +343,7 @@ const ReportList = ({ route, navigation }) => {
             <TouchableOpacity onPress={handlePhonePress} style={styles.contactButtonPhone}>
                 <Ionicons name="call-outline" size={20} color={Colors.cardBackground} />
                 <Text style={styles.contactButtonText}>
-                    Request Pigme: {CONTACT_PHONE}
+                    Request Pigmy: {CONTACT_PHONE}
                 </Text>
             </TouchableOpacity>
 
@@ -379,9 +379,9 @@ const ReportList = ({ route, navigation }) => {
                   <Ionicons name="arrow-back-outline" size={28} color={Colors.darkText} />
                 </TouchableOpacity>
               )}
-              <Text style={styles.sectionTitle}>Pigme Reports</Text>
+              <Text style={styles.sectionTitle}>Pigmy Reports</Text>
               <Text style={styles.subHeading}>
-                {selectedPigme ? "Your recent deposit and summary details." : "Your current Pigme savings accounts."}
+                {selectedPigme ? "Your recent deposit and summary details." : "Your current Pigmy savings accounts."}
               </Text>
         </View>
 
