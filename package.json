@@ -38,7 +38,6 @@
     "react-native-linear-gradient": "^2.8.3",
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-particles": "^0.0.8",
-    "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-shadow-2": "^7.1.2",

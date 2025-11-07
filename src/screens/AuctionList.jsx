@@ -23,7 +23,7 @@ import {
 } from "react-native";
 import url from "../data/url";
 import axios from "axios";
-import { LinearGradient } from "expo-linear-gradient"; // <--- NOW USED
+import { LinearGradient } from "expo-linear-gradient";
 import Header from "../components/layouts/Header";
 import { MaterialIcons, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -54,7 +54,7 @@ const Colors = {
   accentBlue: "#3F51B5", // Soft Indigo for Dates
   accentGreen: "#4CAF50", // Standard Green
   successGreen: "#04810bff", // Deeper Green for metrics background
-  gold: "#FFC300", // <--- USED FOR BID AMOUNT HIGHLIGHT
+  gold: "#FFC300", // USED FOR BID AMOUNT HIGHLIGHT
   error: "#E74C3C",
   border: "#E0E0E0",
   shadow: "rgba(0,0,0,0.18)", // Slightly stronger default shadow
@@ -133,8 +133,8 @@ const calculateCommencementDate = (auctionDateString) => {
 };
 
 
-// NEW: Extracted sub-component for the Commencement Date Card (Sleek/Small version)
-const CommencementDateCard = ({
+// REFACTORED: Extracted sub-component for the Commencement Date Card (Now uses Auction Record Card style)
+const CommencementRecordCard = ({
   groupName,
   firstAuctionDate, // This prop is the actual date of the first auction
   onPress,
@@ -145,10 +145,12 @@ const CommencementDateCard = ({
 
   let remainingDays = 'N/A';
   let isClose = false; 
-
+  let isPassed = false;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); 
+  
   if (commencementDateString) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); 
     const cDate = new Date(commencementDateString);
     cDate.setHours(0, 0, 0, 0); 
 
@@ -159,50 +161,78 @@ const CommencementDateCard = ({
         remainingDays = diffDays;
     } else {
         remainingDays = "Passed"; 
+        isPassed = true;
     }
     
     // Highlight if the Commencement Date is within the next 10 days
     isClose = diffDays >= 0 && diffDays <= 10;
   }
   
-  const daysValue = remainingDays !== "Passed" ? remainingDays : "0";
-  
-  // Guard clause for when the firstAuctionDate is null (no records found yet)
+  // Card only renders if we have groupName or firstAuctionDate
   if (!firstAuctionDate && !groupName) return null;
     
+  // --- New Card Structure ---
   return (
     <TouchableOpacity
       style={[
-        styles.commencementCardSleek, 
-        isClose && styles.commencementCardCloseSleek,
-        remainingDays === "Passed" && styles.commencementCardPassedSleek,
+        styles.auctionRecordCard,
+        isClose && styles.commencementCardCloseStyle, // Custom style for close
+        isPassed && styles.commencementCardPassedStyle, // Custom style for passed
+        styles.commencementCardCustom, // Base custom style
       ]}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <MaterialCommunityIcons
-        name="calendar-clock"
-        size={22} 
-        color={isClose ? Colors.error : Colors.primary}
-      />
       
-      {/* LEFT CONTENT: Title and Calculated Date */}
-      <View style={styles.commencementCardSleekContent}>
-        <Text style={styles.commencementCardSleekTitle}>
-          Commencement Date for: {groupName || "Your Group"}
-        </Text>
-        {firstAuctionDate ? (
-            <Text style={styles.commencementCardSleekSubtitle}>
-                {formatDate(commencementDateString)}
-            </Text>
-        ) : (
-             <Text style={[styles.commencementCardSleekSubtitle, {fontWeight: 'bold', color: Colors.accentOrange}]}>
-                First Auction Date Not Set Yet.
-            </Text>
-        )}
+      {/* === 1. Sequential Number Chip (Header - Custom for Commencement) === */}
+      <View style={[styles.recordNumberChip, styles.commencementChip]}>
+         <MaterialCommunityIcons name="rocket-launch" size={16} color={Colors.card} />
+         <Text style={styles.recordNumberChipText}>RECORD 1: COMMENCEMENT</Text>
       </View>
       
-       
+      {/* === 2. Segmented Date Block (Uses Commencement and First Auction Date) === */}
+      <View style={styles.dateSegmentContainer}>
+         {/* Commencement Date (The actual event date for this card) */}
+         <View style={styles.dateSegment}>
+            <MaterialCommunityIcons name="calendar-start" size={20} color={Colors.accentBlue} />
+            <Text style={styles.dateSegmentTitle}>Commencement </Text>
+             <Text style={styles.dateSegmentTitle}> Date</Text>
+            {firstAuctionDate ? (
+                <Text style={[styles.dateSegmentValue, {color: Colors.primary}]}>
+                    {formatDate(commencementDateString)}
+                </Text>
+            ) : (
+                 <Text style={[styles.dateSegmentValue, {color: Colors.error}]}>
+                    Not Set
+                </Text>
+            )}
+         </View>
+         
+         {/* First Auction Date (The date after commencement) */}
+         <View style={[styles.dateSegment, styles.dateSegmentSeparator]}>
+            <MaterialCommunityIcons name="calendar-end" size={20} color={Colors.accentBlue} />
+            <Text style={styles.dateSegmentTitle}>next Auction </Text>
+              <Text style={styles.dateSegmentTitle}> Date</Text>
+            {firstAuctionDate ? (
+                <Text style={styles.dateSegmentValue}>{formatDate(firstAuctionDate)}</Text>
+            ) : (
+                <Text style={[styles.dateSegmentValue, {color: Colors.error}]}>N/A</Text>
+            )}
+         </View>
+      </View>
+
+      {/* === 3. Secondary Info List (Auction Type) === */}
+      <View style={styles.secondaryInfoList}>
+         <View style={styles.infoRow}>
+           <Text style={styles.infoTitle}>Auction Type</Text>
+           <Text style={[styles.infoValue, {color: Colors.selectedBorder}]}>
+               COMMENCEMENT
+           </Text>
+         </View>
+         
+      </View>
+      
+      
     </TouchableOpacity>
   );
 };
@@ -309,10 +339,11 @@ const AuctionRecordsView = ({
     );
   }
 
+  const hasCommencementData = !!(commencementData && (commencementData.group_name || commencementData.commencement_date));
   const showNoRecordsMessage = records.length === 0 || error;
   
   // Show no records message ONLY if there is no commencement data either
-  if (showNoRecordsMessage && !commencementData) {
+  if (showNoRecordsMessage && !hasCommencementData) {
     return (
       <View style={styles.auctionRecordsContainer}>
         <TouchableOpacity
@@ -332,6 +363,10 @@ const AuctionRecordsView = ({
       </View>
     );
   }
+  
+  // The total number of actual auction records
+  const totalActualRecords = records.length;
+
 
   return (
     <View style={styles.auctionRecordsContainer}>
@@ -353,7 +388,12 @@ const AuctionRecordsView = ({
             ? record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1)
             : "Normal"; 
           
-          const recordNumber = records.length - index;
+          // Numbering: Since records is reversed (newest first), the newest record is index 0.
+          // The oldest record (index records.length - 1) should be RECORD 2.
+          // The newest record (index 0) should be RECORD N+1.
+          // Since the Commencement Card (RECORD 1) is now at the end, the records should still start at RECORD 2 
+          // (if the commencement card is conceptually record 1).
+          const recordNumber = totalActualRecords - index + 1; // Correctly numbers from 2 up to N+1
             
           return (
             <View key={record._id || `auction-${index}`} style={styles.auctionRecordCard}>
@@ -424,22 +464,22 @@ const AuctionRecordsView = ({
           );
         })}
 
-        {/* --- COMMENCEMENT DATE CARD INTEGRATION (At the bottom) --- */}
-        {commencementData && (
-          <CommencementDateCard
+        {/* --- COMMENCEMENT DATE CARD INTEGRATION (Now at the BOTTOM) --- */}
+        {hasCommencementData && (
+          <CommencementRecordCard
               groupName={commencementData.group_name}
               firstAuctionDate={commencementData.commencement_date} 
               onPress={onCommencementPress}
           />
         )}
-        {/* ------------------------------------------------------------- */}
-        
-        {/* Show no data message if no records but commencement data exists (CommencementCard is already rendered) */}
-        {records.length === 0 && commencementData && (
+        {/* ------------------------------------------------------------------ */}
+
+        {/* Show no data message if no records but commencement data exists (CommencementCard is now rendered below) */}
+        {records.length === 0 && hasCommencementData && (
             <View style={styles.noDataPlaceholder}>
                 <MaterialCommunityIcons name="information" size={30} color={Colors.primaryLight} />
                 <Text style={styles.noDataPlaceholderText}>
-                    This group's auctions have not started yet. The card above provides details about the commencement date (if available).
+                    This group's auctions have not started yet. The card below provides details about the commencement date.
                 </Text>
             </View>
         )}
@@ -467,7 +507,7 @@ const AuctionList = ({ navigation }) => {
   });
 
   // State for the commencement date card data (now dynamically set)
-  const [commencementAuctionData, setCommencementAuctionData] = useState(null); // <--- CHANGE: Initialized to null
+  const [commencementAuctionData, setCommencementAuctionData] = useState(null); // Initialized to null
 
 
   const fetchUserTicketsAndReport = useCallback(async () => {
@@ -497,14 +537,14 @@ const AuctionList = ({ navigation }) => {
     }
   }, [userId]);
 
-  const fetchAuctionDetails = useCallback(async (groupId, groupName) => { // <--- CHANGE: Added groupName
+  const fetchAuctionDetails = useCallback(async (groupId, groupName) => { 
     if (!groupId) {
       setAuctionData(prev => ({ ...prev, error: "No Group ID provided." }));
-      setCommencementAuctionData(null); // Clear commencement data on error
+      setCommencementAuctionData(null); 
       return;
     }
     setAuctionData(prev => ({ ...prev, loading: true, error: null, records: [] }));
-    setCommencementAuctionData(null); // Clear previous commencement data
+    setCommencementAuctionData(null); 
     try {
       const response = await axios.get(`${url}/auction/group/${groupId}`);
       if (response.status === 200) {
@@ -569,7 +609,7 @@ const AuctionList = ({ navigation }) => {
         selectedTicketNumber: null,
         highlightedCardId: null,
       });
-      setCommencementAuctionData(null); // Clear commencement data on focus
+      setCommencementAuctionData(null); 
     }, [fetchUserTicketsAndReport])
   );
   
@@ -588,17 +628,11 @@ const AuctionList = ({ navigation }) => {
       
       const calculatedCommencementDate = calculateCommencementDate(firstAuctionDate);
 
-      Alert.alert(
-          "Commencement Date Calculation", 
-          `The First Auction for ${commencementAuctionData.group_name} is scheduled for ${formatDate(firstAuctionDate)}.
-          
-          The Commencement Date is calculated as:
-          ${formatDate(firstAuctionDate)} - 10 days = ${formatDate(calculatedCommencementDate)}.`
-      );
+      
   };
 
 
-  const handleViewDetails = (enrollmentId, groupId, ticket, groupName) => { // <--- CHANGE: Added groupName
+  const handleViewDetails = (enrollmentId, groupId, ticket, groupName) => { 
     Vibration.vibrate(50);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setAuctionData(prev => ({
@@ -608,7 +642,7 @@ const AuctionList = ({ navigation }) => {
       highlightedCardId: enrollmentId,
     }));
     setIsShowingRecords(true);
-    fetchAuctionDetails(groupId, groupName); // <--- CHANGE: Passed groupName
+    fetchAuctionDetails(groupId, groupName); 
   };
 
   const handleBackToGroups = () => {
@@ -623,7 +657,7 @@ const AuctionList = ({ navigation }) => {
       records: [],
       error: null,
     }));
-    setCommencementAuctionData(null); // Clear commencement data on back
+    setCommencementAuctionData(null); 
   };
 
   const filteredCards = userTickets.filter((card) => card.group_id !== null);
@@ -1080,6 +1114,24 @@ const styles = StyleSheet.create({
       fontSize: 15, // Slightly larger text
       fontWeight: '800',
   },
+  
+  // --- COMMENCEMENT CARD CUSTOM STYLES ---
+  commencementCardCustom: {
+    borderWidth: 1,
+    borderColor: Colors.accentOrange,
+  },
+  commencementChip: {
+    backgroundColor: Colors.accentOrange,
+  },
+  commencementCardCloseStyle: {
+    borderColor: Colors.error,
+    backgroundColor: Colors.selectedBackground,
+  },
+  commencementCardPassedStyle: {
+    opacity: 0.8,
+    borderColor: Colors.textMedium,
+  },
+  // ----------------------------------------
 
   // 2. Segmented Date Block
   dateSegmentContainer: {
@@ -1103,6 +1155,7 @@ const styles = StyleSheet.create({
       color: Colors.textMedium,
       marginTop: 5,
       textTransform: 'uppercase',
+      textAlign:'center',
   },
   // Date values use primary color
   dateSegmentValue: {
@@ -1179,71 +1232,7 @@ const styles = StyleSheet.create({
       color: Colors.gold, // Use Gold for the final amount
   },
   
-  // === NEW SLEEK STYLES FOR COMMENCEMENT DATE CARD (No change needed) ===
-  commencementCardSleek: {
-    width: "100%",
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.card,
-    marginVertical: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: Colors.lightDivider,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.shadow,
-        shadowOffset: { width: 6, height: 7 },
-        shadowOpacity: 0.4,
-        shadowRadius: 9,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  commencementCardCloseSleek: {
-      borderColor: Colors.error, 
-      backgroundColor: Colors.selectedBackground,
-  },
-  commencementCardPassedSleek: {
-    opacity: 0.7, 
-  },
-  commencementCardSleekContent: {
-      flex: 1,
-      marginLeft: 10,
-  },
-  commencementCardSleekTitle: {
-      fontSize: 15,
-      fontWeight: 'bold',
-      color: Colors.textDark,
-  },
-  commencementCardSleekSubtitle: {
-      fontSize: 13,
-      color: Colors.successGreen,
-      marginTop: 2,
-      fontWeight: "bold",
-  },
-  commencementDaysPill: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  commencementDaysPillLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: Colors.card,
-    textTransform: 'uppercase',
-  },
-  commencementDaysPillValue: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: Colors.card,
-    marginTop: 1,
-  },
+  // === NEW SLEEK STYLES FOR PLACEHOLDER (Cleaned up old styles) ===
   noDataPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1262,6 +1251,8 @@ const styles = StyleSheet.create({
     color: Colors.textMedium,
     fontWeight: '500',
   },
+  // Old commencementCardSleek styles (and related sub-styles) are no longer needed
+  // and have been removed to clean up the stylesheet.
 });
 
 export default AuctionList;
