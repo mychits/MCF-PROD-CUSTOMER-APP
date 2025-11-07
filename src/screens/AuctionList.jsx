@@ -19,10 +19,11 @@ import {
   LayoutAnimation,
   NativeModules,
   Dimensions,
+  Alert,
 } from "react-native";
 import url from "../data/url";
 import axios from "axios";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "expo-linear-gradient"; // <--- NOW USED
 import Header from "../components/layouts/Header";
 import { MaterialIcons, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -49,14 +50,14 @@ const Colors = {
   card: "#FFFFFF",
   textDark: "#212121", // Darker text for more contrast
   textMedium: "#757575",
-  accentOrange: "#F48024", // Vibrant Orange for Free Auction
+  accentOrange: "#F48024", // Vibrant Orange for Free Auction/Highlights
   accentBlue: "#3F51B5", // Soft Indigo for Dates
   accentGreen: "#4CAF50", // Standard Green
-  successGreen: "#388E3C", // Deeper Green for metrics background
-  gold: "#FFC300",
+  successGreen: "#04810bff", // Deeper Green for metrics background
+  gold: "#FFC300", // <--- USED FOR BID AMOUNT HIGHLIGHT
   error: "#E74C3C",
   border: "#E0E0E0",
-  shadow: "rgba(0,0,0,0.1)",
+  shadow: "rgba(0,0,0,0.18)", // Slightly stronger default shadow
   selectedBorder: "#F39C12",
   selectedBackground: "#FFF8E1",
   lightDivider: "#EEEEEE",
@@ -114,7 +115,100 @@ const formatDate = (dateString) => {
   return "";
 };
 
-// Extracted sub-component for a single group card (remains the same)
+// NEW: Helper function to calculate a date 10 days before the auction date
+const calculateCommencementDate = (auctionDateString) => {
+  if (!auctionDateString) return "";
+  try {
+    const date = new Date(auctionDateString);
+    if (!isNaN(date.getTime())) {
+      // Subtract 10 days
+      date.setDate(date.getDate() - 10);
+      // Return in ISO string format (YYYY-MM-DD) for consistency with date parsers
+      return date.toISOString().split('T')[0]; 
+    }
+  } catch (error) {
+    console.error("Error calculating commencement date:", auctionDateString, error);
+  }
+  return "";
+};
+
+
+// NEW: Extracted sub-component for the Commencement Date Card (Sleek/Small version)
+const CommencementDateCard = ({
+  groupName,
+  firstAuctionDate, // This prop is the actual date of the first auction
+  onPress,
+}) => {
+  
+  // Calculate the commencement date: First Auction Date - 10 days
+  const commencementDateString = calculateCommencementDate(firstAuctionDate);
+
+  let remainingDays = 'N/A';
+  let isClose = false; 
+
+  if (commencementDateString) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+    const cDate = new Date(commencementDateString);
+    cDate.setHours(0, 0, 0, 0); 
+
+    const diffTime = cDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays >= 0) {
+        remainingDays = diffDays;
+    } else {
+        remainingDays = "Passed"; 
+    }
+    
+    // Highlight if the Commencement Date is within the next 10 days
+    isClose = diffDays >= 0 && diffDays <= 10;
+  }
+  
+  const daysValue = remainingDays !== "Passed" ? remainingDays : "0";
+  
+  // Guard clause for when the firstAuctionDate is null (no records found yet)
+  if (!firstAuctionDate && !groupName) return null;
+    
+  return (
+    <TouchableOpacity
+      style={[
+        styles.commencementCardSleek, 
+        isClose && styles.commencementCardCloseSleek,
+        remainingDays === "Passed" && styles.commencementCardPassedSleek,
+      ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <MaterialCommunityIcons
+        name="calendar-clock"
+        size={22} 
+        color={isClose ? Colors.error : Colors.primary}
+      />
+      
+      {/* LEFT CONTENT: Title and Calculated Date */}
+      <View style={styles.commencementCardSleekContent}>
+        <Text style={styles.commencementCardSleekTitle}>
+          Commencement Date for: {groupName || "Your Group"}
+        </Text>
+        {firstAuctionDate ? (
+            <Text style={styles.commencementCardSleekSubtitle}>
+                {formatDate(commencementDateString)}
+            </Text>
+        ) : (
+             <Text style={[styles.commencementCardSleekSubtitle, {fontWeight: 'bold', color: Colors.accentOrange}]}>
+                First Auction Date Not Set Yet.
+            </Text>
+        )}
+      </View>
+      
+       
+    </TouchableOpacity>
+  );
+};
+
+
+// Extracted sub-component for a single group card (REVISED)
 const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
   const { group_id, tickets, _id } = card;
   const { group_name, group_value, amount_due, auction_type } = group_id || {};
@@ -130,7 +224,13 @@ const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
         isHighlighted && styles.selectedNewGroupCard,
       ]}
     >
-      <View style={styles.cardHeader}>
+      {/* REPLACED solid background with LinearGradient for premium look */}
+      <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight]}
+          start={[0, 0]}
+          end={[1, 0]}
+          style={styles.cardHeaderGradient}
+      >
         <View style={styles.cardHeaderContent}>
           <Text style={styles.cardHeaderTitle}>{group_name || ""}</Text>
           {formattedAuctionType && (
@@ -148,11 +248,12 @@ const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
             </View>
           )}
         </View>
-      </View>
+      </LinearGradient>
 
       <View style={styles.cardBody}>
         <View style={styles.infoColumn}>
           <Text style={styles.infoTitle}>Group Value:</Text>
+          {/* Group Value is styled to be more prominent */}
           <Text style={styles.infoValue}>
             ₹ {formatNumberIndianStyle(group_value)}
           </Text>
@@ -164,7 +265,7 @@ const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
       <View style={styles.actionButtonsRow}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => onSelect(_id, group_id?._id, tickets)}
+          onPress={() => onSelect(_id, group_id?._id, tickets, group_name)} // Passed group_name
           activeOpacity={0.8}
         >
           <MaterialIcons
@@ -176,7 +277,7 @@ const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => onSelect(_id, group_id?._id, tickets)}
+          onPress={() => onSelect(_id, group_id?._id, tickets, group_name)} // Passed group_name
           activeOpacity={0.8}
         >
           <MaterialIcons
@@ -193,12 +294,14 @@ const GroupCard = ({ card, onSelect, isHighlighted, cardRadius = 20 }) => {
 };
 
 
-// Extracted sub-component for displaying auction records - NEW SLEEK DESIGN
+// UPDATED Extracted sub-component for displaying auction records
 const AuctionRecordsView = ({
   records,
   onBack,
   isLoading,
   error,
+  commencementData, 
+  onCommencementPress, 
 }) => {
   if (isLoading) {
     return (
@@ -207,8 +310,9 @@ const AuctionRecordsView = ({
   }
 
   const showNoRecordsMessage = records.length === 0 || error;
-
-  if (showNoRecordsMessage) {
+  
+  // Show no records message ONLY if there is no commencement data either
+  if (showNoRecordsMessage && !commencementData) {
     return (
       <View style={styles.auctionRecordsContainer}>
         <TouchableOpacity
@@ -241,6 +345,8 @@ const AuctionRecordsView = ({
       </TouchableOpacity>
       <Text style={styles.recordsListTitle}>Auction Records</Text>
       <ScrollView contentContainerStyle={styles.auctionRecordsScrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* Map renders all existing auction records (newest to oldest) */}
         {records.map((record, index) => {
           const isFreeAuctionRecord = record.auction_type?.toLowerCase() === "free";
           const formattedAuctionType = record.auction_type
@@ -252,13 +358,13 @@ const AuctionRecordsView = ({
           return (
             <View key={record._id || `auction-${index}`} style={styles.auctionRecordCard}>
               
-              {/* === 1. Sequential Number Chip (Header) === */}
+              {/* === 1. Sequential Number Chip (Header - REVISED COLOR) === */}
               <View style={styles.recordNumberChip}>
                  <MaterialCommunityIcons name="gavel" size={16} color={Colors.card} />
                  <Text style={styles.recordNumberChipText}>RECORD {recordNumber}</Text>
               </View>
               
-              {/* === 2. Segmented Date Block === */}
+              {/* === 2. Segmented Date Block (REVISED FONT SIZE/COLOR) === */}
               <View style={styles.dateSegmentContainer}>
                  {/* Auction Date */}
                  <View style={styles.dateSegment}>
@@ -297,7 +403,7 @@ const AuctionRecordsView = ({
                  </View>
               </View>
               
-              {/* === 4. Footer Metrics Panel === */}
+              {/* === 4. Footer Metrics Panel (REVISED COLOR/CONTRAST) === */}
               <View style={styles.footerMetricsPanel}>
                  
                  {/* Win Ticket */}
@@ -306,7 +412,7 @@ const AuctionRecordsView = ({
                     <Text style={styles.metricTicketValue}>{record.ticket || "N/A"}</Text>
                  </View>
                  
-                 {/* Bid Amount (Highlighted Segment) */}
+                 {/* Bid Amount (Highlighted Segment - uses primary dark blue/gold) */}
                  <View style={[styles.metricItem, styles.metricItemSeparator]}>
                     <Text style={[styles.metricLabel, {color: Colors.card}]}>BID AMOUNT</Text>
                     <Text style={styles.metricAmountValue}>
@@ -317,6 +423,26 @@ const AuctionRecordsView = ({
             </View>
           );
         })}
+
+        {/* --- COMMENCEMENT DATE CARD INTEGRATION (At the bottom) --- */}
+        {commencementData && (
+          <CommencementDateCard
+              groupName={commencementData.group_name}
+              firstAuctionDate={commencementData.commencement_date} 
+              onPress={onCommencementPress}
+          />
+        )}
+        {/* ------------------------------------------------------------- */}
+        
+        {/* Show no data message if no records but commencement data exists (CommencementCard is already rendered) */}
+        {records.length === 0 && commencementData && (
+            <View style={styles.noDataPlaceholder}>
+                <MaterialCommunityIcons name="information" size={30} color={Colors.primaryLight} />
+                <Text style={styles.noDataPlaceholderText}>
+                    This group's auctions have not started yet. The card above provides details about the commencement date (if available).
+                </Text>
+            </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -339,6 +465,10 @@ const AuctionList = ({ navigation }) => {
     selectedTicketNumber: null,
     highlightedCardId: null,
   });
+
+  // State for the commencement date card data (now dynamically set)
+  const [commencementAuctionData, setCommencementAuctionData] = useState(null); // <--- CHANGE: Initialized to null
+
 
   const fetchUserTicketsAndReport = useCallback(async () => {
     if (!userId) {
@@ -367,19 +497,44 @@ const AuctionList = ({ navigation }) => {
     }
   }, [userId]);
 
-  const fetchAuctionDetails = useCallback(async (groupId) => {
+  const fetchAuctionDetails = useCallback(async (groupId, groupName) => { // <--- CHANGE: Added groupName
     if (!groupId) {
       setAuctionData(prev => ({ ...prev, error: "No Group ID provided." }));
+      setCommencementAuctionData(null); // Clear commencement data on error
       return;
     }
     setAuctionData(prev => ({ ...prev, loading: true, error: null, records: [] }));
+    setCommencementAuctionData(null); // Clear previous commencement data
     try {
       const response = await axios.get(`${url}/auction/group/${groupId}`);
       if (response.status === 200) {
-        // Reverse the array to show the most recent auction first
-        setAuctionData(prev => ({ ...prev, records: (response.data || []).reverse() }));
+        const records = response.data || [];
+        // The API is assumed to return the oldest record first. We reverse for display (newest first)
+        const reversedRecords = records.slice().reverse(); 
+        
+        // Find the FIRST (oldest) auction date
+        const firstAuction = records.length > 0 ? records[0] : null; 
+        
+        if (firstAuction && firstAuction.auction_date) {
+          setCommencementAuctionData({
+            group_name: firstAuction.group_id?.group_name || groupName || "Selected Group",
+            commencement_date: firstAuction.auction_date, // This is the First Auction Date
+            _id: "commencement-card-id",
+          });
+        } else {
+             // Set group name even if no auction date is found (for the placeholder card)
+             setCommencementAuctionData({
+                group_name: groupName || "Selected Group",
+                commencement_date: null,
+                _id: "commencement-card-id",
+            });
+        }
+        
+        setAuctionData(prev => ({ ...prev, records: reversedRecords }));
+        
       } else {
         setAuctionData(prev => ({ ...prev, error: "Failed to fetch auction records." }));
+        setCommencementAuctionData(null);
       }
     } catch (error) {
       console.error("Error fetching auction details:", error);
@@ -387,6 +542,12 @@ const AuctionList = ({ navigation }) => {
         ...prev, 
         error: "No auction records found for this group. The auction may not have started yet.",
       }));
+      // In case of error, set the group name but no date to show the placeholder card
+      setCommencementAuctionData({
+          group_name: groupName || "Selected Group",
+          commencement_date: null,
+          _id: "commencement-card-id",
+      });
     } finally {
       setAuctionData(prev => ({ ...prev, loading: false }));
     }
@@ -408,10 +569,36 @@ const AuctionList = ({ navigation }) => {
         selectedTicketNumber: null,
         highlightedCardId: null,
       });
+      setCommencementAuctionData(null); // Clear commencement data on focus
     }, [fetchUserTicketsAndReport])
   );
+  
+  // Handler for pressing the Commencement Date card
+  const handleCommencementCardPress = () => {
+      Vibration.vibrate(50);
+      const firstAuctionDate = commencementAuctionData.commencement_date;
+      
+      if (!firstAuctionDate) {
+           Alert.alert(
+              "Auction Not Started",
+              `The First Auction date for ${commencementAuctionData.group_name} has not been set yet. Check back later.`
+          );
+          return;
+      }
+      
+      const calculatedCommencementDate = calculateCommencementDate(firstAuctionDate);
 
-  const handleViewDetails = (enrollmentId, groupId, ticket) => {
+      Alert.alert(
+          "Commencement Date Calculation", 
+          `The First Auction for ${commencementAuctionData.group_name} is scheduled for ${formatDate(firstAuctionDate)}.
+          
+          The Commencement Date is calculated as:
+          ${formatDate(firstAuctionDate)} - 10 days = ${formatDate(calculatedCommencementDate)}.`
+      );
+  };
+
+
+  const handleViewDetails = (enrollmentId, groupId, ticket, groupName) => { // <--- CHANGE: Added groupName
     Vibration.vibrate(50);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setAuctionData(prev => ({
@@ -421,7 +608,7 @@ const AuctionList = ({ navigation }) => {
       highlightedCardId: enrollmentId,
     }));
     setIsShowingRecords(true);
-    fetchAuctionDetails(groupId);
+    fetchAuctionDetails(groupId, groupName); // <--- CHANGE: Passed groupName
   };
 
   const handleBackToGroups = () => {
@@ -436,6 +623,7 @@ const AuctionList = ({ navigation }) => {
       records: [],
       error: null,
     }));
+    setCommencementAuctionData(null); // Clear commencement data on back
   };
 
   const filteredCards = userTickets.filter((card) => card.group_id !== null);
@@ -519,6 +707,8 @@ const AuctionList = ({ navigation }) => {
               onBack={handleBackToGroups}
               isLoading={auctionData.loading}
               error={auctionData.error}
+              commencementData={commencementAuctionData} 
+              onCommencementPress={handleCommencementCardPress} 
             />
           )}
         </View>
@@ -528,7 +718,7 @@ const AuctionList = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  // Global Layout
+  // Global Layout (Enhanced shadows and larger radius for main container)
   screenContainer: {
     flex: 1,
     backgroundColor: Colors.primary,
@@ -536,20 +726,20 @@ const styles = StyleSheet.create({
   outerBoxContainer: {
     flex: 1,
     backgroundColor: Colors.backgroundLight,
-    marginHorizontal: 10,
+    marginHorizontal: 12,
     marginBottom: 10,
     marginBottom:50,
-    borderRadius: 25,
+    borderRadius: 30, // Larger radius
     overflow: "hidden",
     ...Platform.select({
       ios: {
-        shadowColor: Colors.shadow,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.35,
-        shadowRadius: 25,
+        shadowColor: Colors.primary, // Use primary color for a subtle, matching glow
+        shadowOffset: { width: 0, height: 12 }, // More lifted
+        shadowOpacity: 0.25, // Slightly less opaque
+        shadowRadius: 20,
       },
       android: {
-        elevation: 18,
+        elevation: 20,
       },
     }),
   },
@@ -559,8 +749,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 15, 
     paddingBottom: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+    borderBottomLeftRadius: 30, // Match outer container
+    borderBottomRightRadius: 30, // Match outer container
   },
   sectionTitleContainer: {
     flexDirection: "row",
@@ -598,23 +788,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     alignItems: "center",
   },
+  // Group Card Styles (Enhanced Shadow and Radius)
   newGroupCard: {
     width: "100%",
     backgroundColor: Colors.card,
-    marginVertical: 10,
-    borderRadius: 20,
+    marginVertical: 12, // Slightly more space
+    borderRadius: 18, // Slightly smaller radius than the main container
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.lightDivider,
+    borderWidth: 0, // Remove static border
+    // New, stronger shadow for depth
     ...Platform.select({
       ios: {
         shadowColor: Colors.shadow,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3, // Stronger shadow
+        shadowRadius: 15,
       },
       android: {
-        elevation: 8,
+        elevation: 12, // More elevation
       },
     }),
   },
@@ -623,8 +814,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: Colors.selectedBackground,
   },
+  // NEW: Gradient container style for GroupCard header
+  cardHeaderGradient: { 
+    paddingVertical: 15, // Increased padding
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  // cardHeader is now just a container, not defining the background
   cardHeader: {
-    backgroundColor: Colors.primary,
+    // backgroundColor: Colors.primary, // REMOVED
     paddingVertical: 10,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -637,7 +836,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cardHeaderTitle: {
-    fontSize: 15,
+    fontSize: 18, // Slightly larger title
     fontWeight: 'bold',
     color: Colors.card,
     textAlign: 'center',
@@ -667,7 +866,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 15, // Increased vertical padding
   },
   infoColumn: {
     alignItems: 'center',
@@ -678,18 +877,19 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     marginBottom: 5,
   },
+  // Info Value (Group Value) is now larger and colored
   infoValue: {
-    fontSize: 38,
+    fontSize: 42, // Larger font size
     fontWeight: '900',
-    color: Colors.textDark,
+    color: Colors.primary, // Use primary color for value
   },
   actionButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 10,
-    backgroundColor: Colors.backgroundLight,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    paddingVertical: 15, // Increased padding
+    backgroundColor: Colors.dataPanelBg, // Use a lighter background
+    borderTopWidth: 0, // Remove border
+    borderBottomWidth: 0, // Remove border
     borderColor: Colors.lightDivider,
   },
   actionButton: {
@@ -698,9 +898,9 @@ const styles = StyleSheet.create({
   },
   actionButtonLabel: {
     marginTop: 5,
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.textDark,
+    fontSize: 12, // Slightly larger label
+    fontWeight: '700', // Bolder label
+    color: Colors.primary, // Use primary color for label
     textAlign: 'center',
   },
   cardDivider: {
@@ -839,43 +1039,46 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 
-  // === UNIQUE STYLES FOR AUCTION RECORD CARDS ===
+  // === UNIQUE STYLES FOR AUCTION RECORD CARDS (Enhanced) ===
   auctionRecordCard: {
     backgroundColor: Colors.card,
-    borderRadius: 15,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 20, // Larger radius
+    marginVertical: 12,
+    borderWidth: 0, 
     overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: Colors.shadow,
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25, // Stronger shadow
+        shadowRadius: 15,
       },
       android: {
-        elevation: 8,
+        elevation: 10,
       },
     }),
   },
   
-  // 1. Sequential Number Chip
+  // 1. Sequential Number Chip (Vibrant Orange)
   recordNumberChip: {
       flexDirection: 'row',
       alignSelf: 'flex-start',
       alignItems: 'center',
-      backgroundColor: Colors.primary,
-      paddingVertical: 4,
-      paddingHorizontal: 12,
-      borderBottomRightRadius: 15, // Creates a nice sticker effect
-      marginBottom: -1, // Pull it slightly over the border/date panel for a better effect
+      backgroundColor: Colors.accentOrange, // Use vibrant orange
+      paddingVertical: 6, // More padding
+      paddingHorizontal: 15,
+      borderBottomRightRadius: 20, // Match new card radius
+      marginBottom: 0, 
+      ...Platform.select({
+          ios: { shadowColor: Colors.shadow, shadowOpacity: 0.3, shadowRadius: 3, shadowOffset: { height: 2, width: 0 } },
+          android: { elevation: 3 },
+      }),
   },
   recordNumberChipText: {
-      marginLeft: 6,
+      marginLeft: 8,
       color: Colors.card,
-      fontSize: 14,
-      fontWeight: '700',
+      fontSize: 15, // Slightly larger text
+      fontWeight: '800',
   },
 
   // 2. Segmented Date Block
@@ -901,14 +1104,15 @@ const styles = StyleSheet.create({
       marginTop: 5,
       textTransform: 'uppercase',
   },
+  // Date values use primary color
   dateSegmentValue: {
-      fontSize: 16,
-      fontWeight: '800',
-      color: Colors.textDark,
+      fontSize: 18, // Larger font
+      fontWeight: '900',
+      color: Colors.primary, // Use primary color
       marginTop: 2,
   },
 
-  // 3. Secondary Info List
+  // 3. Secondary Info List (No change, remains clean)
   secondaryInfoList: {
       paddingHorizontal: 20,
       paddingVertical: 15,
@@ -937,42 +1141,126 @@ const styles = StyleSheet.create({
       marginVertical: 0,
   },
 
-  // 4. Footer Metrics Panel
+  // 4. Footer Metrics Panel (High Contrast & Gold Highlight)
   footerMetricsPanel: {
       flexDirection: 'row',
-      backgroundColor: Colors.metricPanelBg,
+      backgroundColor: Colors.dataPanelBg,
       borderTopWidth: 1,
       borderColor: Colors.lightDivider,
-      borderBottomLeftRadius: 15,
-      borderBottomRightRadius: 15,
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
   },
   metricItem: {
       flex: 1,
       padding: 15,
       alignItems: 'center',
+      backgroundColor: Colors.dataPanelBg, // Ensure background is set
   },
   metricItemSeparator: {
-      borderLeftWidth: 1,
-      borderColor: Colors.lightDivider,
-      backgroundColor: Colors.successGreen, // Highlight the Bid Amount segment
+      borderLeftWidth: 0, // Remove vertical border
+      backgroundColor: Colors.primary, // Use primary dark blue for highlight
   },
   metricLabel: {
-      fontSize: 10,
+      fontSize: 11, // Slightly larger label
       fontWeight: '700',
-      color: Colors.textMedium,
+      color: Colors.card, // White text on dark blue background
       marginBottom: 5,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: 1, // More spacing
   },
   metricTicketValue: {
-      fontSize: 24,
+      fontSize: 16,
       fontWeight: '900',
-      color: Colors.primary,
+      color: Colors.textDark, // Use dark text for this value
   },
   metricAmountValue: {
-      fontSize: 24,
+      fontSize: 16, // Even larger font
       fontWeight: '900',
-      color: Colors.card, // White text on dark green background
+      color: Colors.gold, // Use Gold for the final amount
+  },
+  
+  // === NEW SLEEK STYLES FOR COMMENCEMENT DATE CARD (No change needed) ===
+  commencementCardSleek: {
+    width: "100%",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.card,
+    marginVertical: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: Colors.lightDivider,
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.shadow,
+        shadowOffset: { width: 6, height: 7 },
+        shadowOpacity: 0.4,
+        shadowRadius: 9,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  commencementCardCloseSleek: {
+      borderColor: Colors.error, 
+      backgroundColor: Colors.selectedBackground,
+  },
+  commencementCardPassedSleek: {
+    opacity: 0.7, 
+  },
+  commencementCardSleekContent: {
+      flex: 1,
+      marginLeft: 10,
+  },
+  commencementCardSleekTitle: {
+      fontSize: 15,
+      fontWeight: 'bold',
+      color: Colors.textDark,
+  },
+  commencementCardSleekSubtitle: {
+      fontSize: 13,
+      color: Colors.successGreen,
+      marginTop: 2,
+      fontWeight: "bold",
+  },
+  commencementDaysPill: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  commencementDaysPillLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: Colors.card,
+    textTransform: 'uppercase',
+  },
+  commencementDaysPillValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.card,
+    marginTop: 1,
+  },
+  noDataPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    marginTop: 10,
+    marginBottom: 20,
+    backgroundColor: Colors.dataPanelBg,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  noDataPlaceholderText: {
+    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 14,
+    color: Colors.textMedium,
+    fontWeight: '500',
   },
 });
 
