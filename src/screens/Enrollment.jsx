@@ -99,8 +99,7 @@ const Enrollment = ({ route, navigation }) => {
 
     const [isJoining, setIsJoining] = useState(false);
     const [joinGroupId, setJoinGroupId] = useState(null);
-    const [customEnrollModalVisible, setCustomEnrollModalVisible] = useState(false);
-    const [enrollmentConfirmationData, setEnrollmentConfirmationData] = useState(null); 
+    // REMOVED: [customEnrollModalVisible, setCustomEnrollModalVisible] and [enrollmentConfirmationData, setEnrollmentConfirmationData]
 
     const groupColors = {
         new: { primary: '#E0F7FA', secondary: '#00BCD4', text: '#00BCD4', darkText: '#263238', buttonBackground: '#00BCD4', selectedBorder: '#00BCD4', iconColor: '#00BCD4' },
@@ -279,73 +278,7 @@ const Enrollment = ({ route, navigation }) => {
         return { new: [], ongoing: [], ended: [], vacant: [] };
     };
 
-    const handleEnrollmentConfirmation = async (card) => {
-        if (!card) return;
-
-        setCustomEnrollModalVisible(false);
-        setEnrollmentConfirmationData(null);
-
-        const selectedGroupId = card._id;
-        
-        setJoinGroupId(selectedGroupId);
-        setIsJoining(true);
-
-        const ticketsCountInt = 1; 
-        const chitAskingMonth = Number(card?.group_duration) || 0; 
-
-        const payload = {
-            group_id: selectedGroupId,
-            user_id: userId,
-            no_of_tickets: ticketsCountInt,
-            chit_asking_month: chitAskingMonth,
-        };
-
-        try {
-            await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload, {
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            });
-
-            // MODIFIED: Added user name to the Toast message
-            Toast.show({
-                type: "success",
-                text1: `Dear ${userName}, Enrollment Successful!`,
-                text2: `You are enrolled for ${card.group_name} with 1 ticket.`,
-                position: "bottom",
-                visibilityTime: 3000,
-            });
-          
-            navigation.navigate("EnrollConfirm", { groupId: selectedGroupId, userId: userId });
-
-        } catch (err) {
-            console.error("Error enrolling user directly:", err);
-            let errorMessage = "An error occurred during enrollment. Please try again.";
-
-            if (err.response) {
-                errorMessage =
-                    err.response.data?.data?.message ||
-                    err.response.data?.message || 
-                    `Server error: ${err.response.status}`;
-            } else if (err.request) {
-                errorMessage = "Network error: No response from server. Please check your connection.";
-            } else {
-                errorMessage = `An unexpected error occurred: ${err.message}`;
-            }
-
-            Toast.show({
-                type: "error",
-                text1: "Enrollment Failed",
-                text2: errorMessage,
-                position: "bottom",
-                visibilityTime: 5000,
-            });
-        } finally {
-            setIsJoining(false);
-            setJoinGroupId(null);
-            fetchGroups(); 
-        }
-    };
+    // REMOVED: handleEnrollmentConfirmation function as it is no longer used and its purpose is replaced by direct navigation to EnrollForm.
 
 
     const handleEnrollment = (card) => {
@@ -363,7 +296,7 @@ const Enrollment = ({ route, navigation }) => {
         }
     };
     
-    // Function to handle direct enrollment (joining) - MODIFIED to use custom Modal
+    // Function to handle direct enrollment (joining) - MODIFIED TO NAVIGATE DIRECTLY TO ENROLLFORM
     const handleJoinNow = async (card) => { 
         if (!isConnected || !isInternetReachable) {
             Toast.show({
@@ -403,8 +336,9 @@ const Enrollment = ({ route, navigation }) => {
             return;
         }
 
-        setEnrollmentConfirmationData(card);
-        setCustomEnrollModalVisible(true);
+        // **CRITICAL MODIFICATION: Navigate directly to EnrollForm**
+        // Removed: setEnrollmentConfirmationData(card); setCustomEnrollModalVisible(true);
+        navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId });
     };
 
 
@@ -757,62 +691,7 @@ const Enrollment = ({ route, navigation }) => {
                 </View>
             </Modal>
             
-            {/* Custom Styled Confirmation Modal (Enrollment/Alert) - MODIFIED WITH ANIMATION PLACEHOLDER */}
-            <Modal
-                visible={customEnrollModalVisible}
-                transparent={true}
-                onRequestClose={() => {
-                    setCustomEnrollModalVisible(false);
-                    setEnrollmentConfirmationData(null);
-                }}
-            >
-                {enrollmentConfirmationData && (
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.styledModalContent}>
-
-                            {/* START: ANIMATION/AVATAR PLACEHOLDER (Replace with LottieView) */}
-                            {/* Uncomment the Lottie code in the import section and replace the block below with LottieView if installed */}
-                            <View style={styles.modalAnimationPlaceholder}>
-                                <Ionicons name="people-circle" size={80} color="#053B90" />
-                            </View>
-                            {/* <LottieView source={enrollmentLottie} autoPlay loop={true} style={styles.modalAnimation} /> */}
-                            {/* END: ANIMATION/AVATAR PLACEHOLDER */}
-                            
-                            <Text style={styles.styledModalTitle}>
-                                Confirm Enrollment
-                            </Text>
-                            <Text style={styles.styledModalMessage}>
-                                {/* MODIFIED: Corrected sentence structure and added {userName} */}
-                                Dear {userName}, do you want to join the group {enrollmentConfirmationData.group_name}? Installment Amount: ₹ {formatNumberIndianStyle(enrollmentConfirmationData.group_install)}, Duration: {enrollmentConfirmationData.group_duration} months with 1 ticket.
-                            </Text>
-                            <Text style={styles.styledModalAgreement}>
-                                By proceeding, you agree to the group terms and conditions.
-                            </Text>
-                            <View style={styles.styledModalButtonContainer}>
-                                <TouchableOpacity
-                                    style={[styles.styledModalButton, styles.styledModalCancelButton]}
-                                    onPress={() => {
-                                        setCustomEnrollModalVisible(false);
-                                        setEnrollmentConfirmationData(null);
-                                    }}
-                                >
-                                    <Text style={styles.styledModalCancelButtonText}>
-                                        Cancel
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.styledModalButton, styles.styledModalConfirmButton]}
-                                    onPress={() => handleEnrollmentConfirmation(enrollmentConfirmationData)}
-                                >
-                                    <Text style={styles.styledModalConfirmButtonText}>
-                                        Agree & Join
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                )}
-            </Modal>
+            {/* REMOVED: Custom Styled Confirmation Modal (Enrollment/Alert) */}
 
             {/* More Filters Modal */}
             <Modal
@@ -1138,96 +1017,7 @@ const styles = StyleSheet.create({
     modalCloseButton: { backgroundColor: '#053B90', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginTop: 10 },
     modalCloseButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 
-    // Custom Styled Confirmation Modal Styles
-    styledModalContent: {
-        backgroundColor: '#fff',
-        borderRadius: 15,
-        padding: 25,
-        marginHorizontal: 30,
-        alignItems: 'center',
-        width: '85%',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        borderWidth:2,
-        borderColor: '#053B90',
-        elevation: 10,
-    },
-    // NEW Styles for Animation/Avatar Placeholder
-    modalAnimation: {
-        width: 150, 
-        height: 150, 
-        marginBottom: 10,
-        // If using Lottie, use this style
-    },
-    modalAnimationPlaceholder: {
-        width: 100, 
-        height: 100, 
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 10,
-        borderRadius: 50,
-        backgroundColor: '#E0EFFF', // Light background for the avatar/icon
-        borderWidth: 2,
-        borderColor: '#053B90',
-    },
-    // End new animation styles
-    styledModalTitle: {
-        fontSize: 22,
-        fontWeight: '900',
-        color: '#053B90',
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    styledModalMessage: {
-        fontSize: 16,
-        color: '#333',
-        textAlign: 'center',
-        marginBottom: 5,
-        lineHeight: 24,
-    },
-    styledModalAgreement: {
-        fontSize: 13,
-        color: '#888',
-        textAlign: 'center',
-        fontStyle: 'italic',
-        marginBottom: 20,
-    },
-    styledModalButtonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        marginTop: 15,
-        gap: 10,
-    },
-    styledModalButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    styledModalCancelButton: {
-        backgroundColor: '#E0E0E0', 
-    },
-    styledModalCancelButtonText: {
-        color: '#666',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    styledModalConfirmButton: {
-        backgroundColor: '#053B90', 
-        shadowColor: '#053B90',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.5,
-        shadowRadius: 5,
-        elevation: 8,
-    },
-    styledModalConfirmButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+    // REMOVED: Custom Styled Confirmation Modal Styles
 
     // More Filters Modal Styles
     moreFiltersModalOverlay: {

@@ -77,6 +77,7 @@ export default function Register() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState(""); // State for referral code
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -120,7 +121,7 @@ export default function Register() {
       !trimmedPassword ||
       !trimmedConfirmPassword
     ) {
-      showAppToast("Please fill all fields.");
+      showAppToast("Please fill all required fields (Name, Phone, Password).");
       return false;
     }
 
@@ -142,13 +143,17 @@ export default function Register() {
     }
     setLoading(true);
     try {
+      // Constructing the payload including the optional referral_code
       const payload = {
         phone_number: phoneNumber.replace(/\s/g, ""),
         full_name: fullName.trim(),
+        // Conditionally add referral_code if the input is not empty
+        ...(referralCode.trim() && { referral_code: referralCode.trim() }),
       };
      
-      // Corrected line: Add /api/ to the endpoint
-      const apiEndpoint = `${url}/user/send-register-otp`; //
+      const apiEndpoint = `${url}/user/send-register-otp`; 
+      
+      // Console logs to show the data being sent
       console.log("Attempting to send OTP to:", apiEndpoint); 
       console.log("Sending OTP payload:", payload);
 
@@ -167,6 +172,7 @@ export default function Register() {
           mobileNumber: phoneNumber.replace(/\s/g, ""),
           fullName: fullName.trim(),
           password: password.trim(),
+          referralCode: referralCode.trim(), // Pass referral code to next screen
         });
       } else {
         let errorMessage = "Failed to send OTP. Please try again.";
@@ -177,7 +183,7 @@ export default function Register() {
         } else {
           const errorText = await response.text();
           console.error("OTP send error (non-JSON response):", response.status, errorText);
-          errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route.`; // Show truncated HTML
+          errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route.`;
         }
         showAppToast(errorMessage);
       }
@@ -214,7 +220,7 @@ export default function Register() {
             </View>
           )}
 
-          <View style={[styles.bottomSection, { paddingTop: 20 }]}>
+          <View style={[styles.bottomSection, { paddingTop: 30 }]}>
             <Text style={styles.registerTitle}>Register</Text>
             <Text style={styles.registerSubtitle}>Create your account</Text>
 
@@ -303,6 +309,19 @@ export default function Register() {
                 />
               </TouchableOpacity>
             </View>
+            
+            {/* Input for Referral Code (Optional) */}
+            <TextInput
+              style={styles.input}
+              placeholder="Referral Number (Optional)"
+              placeholderTextColor="#78909C"
+              value={referralCode}
+              onChangeText={setReferralCode}
+              accessible
+              accessibilityLabel="Referral Code input"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
 
             <TouchableOpacity
               style={styles.registerButton}

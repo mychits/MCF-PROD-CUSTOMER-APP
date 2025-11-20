@@ -71,7 +71,8 @@ const RegisterOtpVerify = ({ route }) => {
   const toastRef = useRef();
   const [appUser, setAppUser] = useContext(ContextProvider);
 
-  const { mobileNumber, fullName, password } = route.params;
+  // Change 1: Include referralCode in destructuring
+  const { mobileNumber, fullName, password, referralCode } = route.params;
 
   // Change 1: Initialize otp state for 4 digits
   const [otp, setOtp] = useState(["", "", "", ""]);
@@ -199,6 +200,8 @@ const RegisterOtpVerify = ({ route }) => {
               phone_number: mobileNumber,
               password: password,
               track_source: "mobile",
+              // Change 2: Include referral_code if it exists in the props
+              ...(referralCode && { referral_code: referralCode }),
             };
             const signupApiEndpoint = `${url}/user/signup-user`;
             console.log("Attempting to sign up user to:", signupApiEndpoint);

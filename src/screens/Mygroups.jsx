@@ -49,12 +49,12 @@ const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) return "0";
 
   // Convert to number, fix to 2 decimal places, and get as a string
-  const formattedNum = parseFloat(num).toFixed(2); 
+  const formattedNum = parseFloat(num).toFixed(2);
 
   const parts = formattedNum.toString().split(".");
   let integerPart = parts[0];
   // The decimal part will now reliably be the two fixed digits
-  let decimalPart = parts.length > 1 ? "." + parts[1] : ""; 
+  let decimalPart = parts.length > 1 ? "." + parts[1] : "";
 
   let isNegative = false;
   if (integerPart.startsWith("-")) {
@@ -202,7 +202,6 @@ const Mygroups = ({ navigation }) => {
     try {
       const response = await axios.get(`${url}/enroll/users/${userId}`);
       setCardsData(response.data || []);
-      // console.log(response.data, "fdsdgfjdfjhsdgfjsdgf"); // Keep for debugging if needed
     } catch (error) {
       console.error("Error fetching tickets:", error);
       setCardsData([]);
@@ -247,12 +246,12 @@ const Mygroups = ({ navigation }) => {
     const loadData = async () => {
         setLoading(true);
         if (userId) {
-            await Promise.all([fetchTickets(), fetchAllOverview()]);
+          await Promise.all([fetchTickets(), fetchAllOverview()]);
         } else {
-            setCardsData([]);
-            setEnrolledGroupsCount(0);
-            setTotalPaid(null);
-            setTotalProfit(null);
+          setCardsData([]);
+          setEnrolledGroupsCount(0);
+          setTotalPaid(null);
+          setTotalProfit(null);
         }
         setLoading(false);
     };
@@ -273,16 +272,14 @@ const Mygroups = ({ navigation }) => {
             setTotalProfit(null);
         }
         setLoading(false);
-    };
+      };
 
     loadData();
     }, [userId, fetchTickets, fetchAllOverview])
   );
 
   const filteredCards = cardsData.filter((card) => card.group_id !== null);
-  // *** MODIFIED LINE: Filter out deleted cards for rendering in the main list ***
   const cardsToRender = filteredCards.filter(c => !c.deleted);
-  // Keep activeCards only for the active count/specific logic
   const activeCards = filteredCards.filter(c => !c.deleted);
 
   const handleScrollToCard = (index) => {
@@ -305,7 +302,6 @@ const Mygroups = ({ navigation }) => {
         }, 3000);
 
     } else {
-        // Use cardsToRender for the correct index mapping
         if (cardsToRender[index]?.group_id?._id) {
             handleCardPress(cardsToRender[index].group_id._id, cardsToRender[index].tickets);
         }
@@ -323,7 +319,6 @@ const Mygroups = ({ navigation }) => {
     setExpandedIndex(expandedIndex === index ? null : index);
   };
 
-  // Check against 0 when calculating display profit to avoid showing '0' if total paid is null/loading
   const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit;
 
   const calculatePaidPercentage = (group_value, paid_amount) => {
@@ -331,9 +326,13 @@ const Mygroups = ({ navigation }) => {
     return Math.min(100, Math.round((paid_amount / group_value) * 100));
   };
 
-  // Only display the currency prefix/number if the value is not null (i.e., loaded)
   const paidDisplay = Totalpaid !== null ? `₹ ${formatNumberIndianStyle(Totalpaid)}` : '';
   const profitDisplay = Totalprofit !== null ? `₹ ${formatNumberIndianStyle(displayTotalProfit)}` : '';
+
+  // *** MODIFIED: Enroll Navigation Handler ***
+  const handleEnrollNow = () => {
+    navigation.navigate("BottomTab", { screen: "Enrollment" });
+  };
 
 
   return (
@@ -403,16 +402,26 @@ const Mygroups = ({ navigation }) => {
               {/* ---------------------------------------------------- */}
 
               {cardsToRender.length === 0 ? (
+                // *** STYLE ADJUSTED HERE: marginTop: 30 ***
                 <View style={styles.noGroupWrapper}>
                   <Image source={NoGroupImage} style={styles.noGroupImage} resizeMode="contain" />
                   <Text style={styles.noGroupText}>No active groups found for this user.</Text>
+
+                  {/* *** Enroll Now Button *** */}
+                  <TouchableOpacity 
+                    style={styles.enrollNowButton} 
+                    onPress={handleEnrollNow}
+                  >
+                    <Text style={styles.enrollNowButtonText}>Enroll Now</Text>
+                    <Ionicons name="arrow-forward-circle-outline" size={22} color="#fff" style={{ marginLeft: 8 }} />
+                  </TouchableOpacity>
+                  {/* ******************************* */}
                 </View>
               ) : (cardsToRender.map((card, index) => {
                   const groupIdFromCard = card.group_id?._id || card.group_id;
                   const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
                   const individualPaidAmount = individualGroupReports[groupReportKey]?.totalPaid || 0;
                   const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
-                  // Since we filtered cardsToRender, isDeleted should always be false here
                   const isDeleted = card.deleted;
                   const isCompleted = card.completed;
 
@@ -433,7 +442,7 @@ const Mygroups = ({ navigation }) => {
                     : 'N/A';
                   // ------------------------------------------
 
-                  const gradientColors = isDeleted // isDeleted will be false here, using logic just in case
+                  const gradientColors = isDeleted
                     ? ["#F5F5F5", "#E0E0E0"]
                     : isCompleted
                       ? ["#E8F6F3", "#27AE60"]
@@ -470,7 +479,7 @@ const Mygroups = ({ navigation }) => {
                             </View>
                           </View>
 
-                          {/* --- Start and End Dates Block (Now includes the desired dates) --- */}
+                          {/* --- Start and End Dates Block --- */}
                           <View style={styles.dateRow}>
                               <View style={styles.dateColumn}>
                                   <Text style={styles.dateLabel}>Start Date</Text>
@@ -631,13 +640,11 @@ const styles = StyleSheet.create({
     marginBottom:50,
   },
 
-  // --- NEW: Style for full screen loader ---
   fullScreenLoader: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // ------------------------------------------
 
   title: {
     fontSize: 26,
@@ -744,9 +751,31 @@ const styles = StyleSheet.create({
       marginRight: 8,
   },
 
-  noGroupWrapper: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30 },
-  noGroupImage: { width: 180, height: 180, marginBottom: 20 },
-  noGroupText: { fontSize: 20, fontWeight: "bold", color: Colors.darkText, textAlign: "center" },
+  // *** MODIFIED: marginTop reduced from 50 to 30 to move content up ***
+  noGroupWrapper: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30, marginTop: 30 },
+  
+  noGroupImage: { width: 180, height: 180, marginBottom: 10 },
+  noGroupText: { fontSize: 20, fontWeight: "bold", color: Colors.darkText, textAlign: "center", marginBottom: 20 },
+  
+  enrollNowButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.completedText, // Green for a positive action
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 10,
+  },
+  enrollNowButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  
   cardTouchable: { marginVertical: 8 },
   cardGradient: { borderRadius: 20, padding: 2 },
   cardInner: {
@@ -773,7 +802,6 @@ const styles = StyleSheet.create({
   amountLabel: { fontSize: 12, color: Colors.mediumText },
   amountValue: { fontSize: 16, fontWeight: "bold" },
 
-  // --- Styles for Date Display ---
   dateRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -801,7 +829,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.darkText,
   },
-  // --------------------------------------
 });
 
 export default Mygroups;

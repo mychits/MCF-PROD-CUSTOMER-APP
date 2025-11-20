@@ -9,10 +9,11 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  Alert, // Keeping Alert imported just in case, but removing usage
+  Modal, // <--- ADDED
+  Dimensions, // <--- ADDED
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { AntDesign, MaterialIcons, Ionicons } from "@expo/vector-icons"; // MODIFIED: Added Ionicons
 import axios from "axios";
 import url from "../data/url";
 import Header from "../components/layouts/Header";
@@ -73,13 +74,16 @@ const EnrollForm = ({ navigation, route }) => {
   const userId = appUser.userId || {};
   const { groupId } = route.params || {};
   const [ticketCount, setTicketCount] = useState(1); // Default to 1 ticket
-  const [termsAccepted, setTermsAccepted] = useState(true); // <--- MODIFIED TO TRUE
+  const [termsAccepted, setTermsAccepted] = useState(false); // <--- MODIFIED TO TRUE
   const [cardsData, setCardsData] = useState(null);
   const [availableTickets, setAvailableTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [termsRead, setTermsRead] = useState(false);
+  
+  // Custom Modal State 
+  const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
 
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
 
@@ -291,30 +295,15 @@ const EnrollForm = ({ navigation, route }) => {
       });
       return;
     }
-
-    const ticketsCountInt = parseInt(ticketCount, 10);
-
-    // NOTE: Replacing the unstyled native Alert.alert with direct enrollment
-    // If a stylish confirmation is needed, you must implement a custom React Native Modal here.
-
-    // Since you removed the alert, we will just proceed with a successful toast
-    // confirming the action *before* the API call for a better user experience.
-    Toast.show({
-      type: "info",
-      text1: "Proceeding to Enroll",
-      text2: `Attempting enrollment for ${cardsData?.group_name || "the group"} with ${ticketsCountInt} ticket(s).`,
-      position: "bottom",
-      visibilityTime: 1500, // Short visibility before main API call
-    });
-
-    await performEnrollment(ticketsCountInt);
+    
+    // Show the confirmation modal instead of calling performEnrollment directly
+    setIsConfirmModalVisible(true);
 
   }, [
     ticketCount,
     termsAccepted,
     availableTickets,
-    cardsData,
-    performEnrollment, // Dependency on the new function
+    setIsConfirmModalVisible, // Added dependency
   ]);
 
   const handleIncrementTicket = () => {
@@ -337,6 +326,92 @@ const EnrollForm = ({ navigation, route }) => {
     }
   };
 
+
+  // --- CUSTOM CONFIRMATION MODAL COMPONENT (Using new styles) ---
+  const renderConfirmModal = () => {
+    // Re-use data variables from previous implementation
+    const groupName = cardsData?.group_name || "the group";
+    const installmentAmount = formatNumberIndianStyle(cardsData?.group_install);
+    const durationMonths = cardsData?.group_duration || "N/A";
+    const tickets = ticketCount;
+    const ticketsText = `${tickets} ticket${tickets > 1 ? "s" : ""}`;
+
+    // Assuming appUser has a 'name' field, fallback to 'User'
+    const userName = appUser.name || 'User';
+
+    // The new confirmation text structure (consolidated)
+    const confirmationText = `Dear ${userName}, do you want to join the group ${groupName}? Installment Amount: ₹ ${installmentAmount}, Duration: ${durationMonths} months with ${ticketsText}.`;
+
+
+    return (
+        <Modal
+            animationType="slide" 
+            transparent={true}
+            visible={isConfirmModalVisible} // Use existing state
+            onRequestClose={() => {
+                setIsConfirmModalVisible(false);
+            }}
+        >
+            <View style={styles.modalOverlay}>
+                <View style={styles.styledModalContent}>
+
+                    {/* START: ANIMATION/AVATAR PLACEHOLDER (New JSX structure) */}
+                    <View style={styles.modalAnimationPlaceholder}>
+                        <Ionicons name="people-circle" size={80} color="#053B90" />
+                    </View>
+                    {/* END: ANIMATION/AVATAR PLACEHOLDER */}
+                    
+                    <Text style={styles.styledModalTitle}>
+                        Confirm Enrollment
+                    </Text>
+                    <Text style={styles.styledModalMessage}>
+                        {confirmationText}
+                    </Text>
+                    <Text style={styles.styledModalAgreement}>
+                        By proceeding, you agree to the group terms and conditions.
+                    </Text>
+                    <View style={styles.styledModalButtonContainer}>
+                        <TouchableOpacity
+                            style={[styles.styledModalButton, styles.styledModalCancelButton]}
+                            onPress={() => {
+                                setIsConfirmModalVisible(false); // Use existing state setter
+                            }}
+                            disabled={isSubmitting} 
+                        >
+                            <Text style={styles.styledModalCancelButtonText}>
+                                Cancel
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.styledModalButton, 
+                                styles.styledModalConfirmButton,
+                                isSubmitting ? styles.styledModalConfirmButtonDisabled : {} // Add disabled style
+                            ]}
+                            onPress={() => {
+                                setIsConfirmModalVisible(false);
+                                const ticketsCountInt = parseInt(ticketCount, 10);
+                                performEnrollment(ticketsCountInt); // Use existing function
+                            }}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator size="small" color={Colors.white} />
+                            ) : (
+                                <Text style={styles.styledModalConfirmButtonText}>
+                                    Agree & Join
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+  };
+  // --- END CUSTOM CONFIRMATION MODAL COMPONENT ---
+
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -348,6 +423,8 @@ const EnrollForm = ({ navigation, route }) => {
       </SafeAreaView>
     );
   }
+  
+  // ... (Error handling returns) ... 
 
   if (!isConnected || !isInternetReachable) {
     return (
@@ -419,6 +496,7 @@ const EnrollForm = ({ navigation, route }) => {
       </SafeAreaView>
     );
   }
+
 
   return (
     <SafeAreaView style={styles.fullScreenContainer}>
@@ -675,6 +753,7 @@ const EnrollForm = ({ navigation, route }) => {
           </ScrollView>
         </View>
       </View >
+      {renderConfirmModal()}
       <Toast />
     </SafeAreaView >
   );
@@ -1037,6 +1116,105 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  // --- NEW MODAL STYLES (FROM USER SNIPPET) ---
+  modalOverlay: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(0,0,0,0.6)' 
+  },
+  styledModalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 15,
+    padding: 25,
+    marginHorizontal: 30,
+    alignItems: 'center',
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    borderWidth: 2,
+    borderColor: '#053B90',
+    elevation: 10,
+  },
+  modalAnimationPlaceholder: {
+    width: 100, 
+    height: 100, 
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+    borderRadius: 50,
+    backgroundColor: '#E0EFFF', // Light background for the avatar/icon
+    borderWidth: 2,
+    borderColor: '#053B90',
+  },
+  styledModalTitle: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    marginBottom: 15, 
+    textAlign: 'center', 
+    color: Colors.primaryText 
+  },
+  styledModalMessage: {
+    fontSize: 14,
+    color: Colors.textGray,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 10,
+    width: '100%',
+  },
+  styledModalAgreement: {
+    fontSize: 11,
+    color: Colors.darkGray,
+    textAlign: "center",
+    marginTop: 10,
+    marginBottom: 25,
+    fontStyle: 'italic',
+  },
+  styledModalButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  styledModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  styledModalCancelButton: {
+    backgroundColor: Colors.lightGray,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: Colors.mediumGray,
+  },
+  styledModalCancelButtonText: {
+    color: Colors.darkGray,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  styledModalConfirmButton: {
+    backgroundColor: Colors.primary, // Use primary for Agree & Join
+    marginLeft: 10,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  styledModalConfirmButtonDisabled: {
+    backgroundColor: Colors.disabledGray,
+    shadowColor: 'transparent',
+    opacity: 0.7,
+    elevation: 3,
+  },
+  styledModalConfirmButtonText: {
     color: Colors.white,
     fontSize: 16,
     fontWeight: "bold",
