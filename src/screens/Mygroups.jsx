@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8,
   },
-  summaryAmount: { color: "#fff", fontSize: 18, fontWeight: "bold", marginTop: 5 },
+  summaryAmount: { color: "#fff", fontSize: 15, fontWeight: "bold", marginTop: 5 },
   summaryText: { color: "#fff", fontSize: 11, textAlign: "center", marginTop: 3 },
   scrollWrapper: { flex: 1, backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20 },
 

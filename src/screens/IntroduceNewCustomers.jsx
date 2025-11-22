@@ -366,13 +366,6 @@ const IntroduceNewCustomers = () => {
               Enter the required information to create a new customer lead.
             </Text>
 
-            {/* Contact Picker Button */}
-            <TouchableOpacity style={styles.contactButton} onPress={handlePickContact} disabled={isLoading}>
-              <View style={styles.contactButtonContent}>
-                <Ionicons name="person-circle-outline" size={22} color={Colors.primaryViolet} />
-                <Text style={styles.contactButtonText}>Pick from Contacts</Text>
-              </View>
-            </TouchableOpacity>
 
             <FloatingLabelInput
               label="Full Name"
@@ -486,12 +479,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.textDark,
     marginBottom: 5,
+    textAlign:"center",
   },
   cardFormSubtitle: {
     fontSize: 14,
     color: "#666",
     marginBottom: 30,
     fontWeight: "500",
+    textAlign:"center",
   },
   scrollContent: {
     paddingBottom: 20,
@@ -503,7 +498,7 @@ const styles = StyleSheet.create({
   inputField: {
     backgroundColor: Colors.inputBackground,
     borderRadius: 12,
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
     paddingTop: 20,
     paddingBottom: 10,
     fontSize: 16,
@@ -517,7 +512,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 40,
+    marginTop: 1,
     shadowColor: Colors.primaryViolet,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

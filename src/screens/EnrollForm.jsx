@@ -9,11 +9,11 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  Modal, // <--- ADDED
-  Dimensions, // <--- ADDED
+  Modal, 
+  Dimensions, 
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { AntDesign, MaterialIcons, Ionicons } from "@expo/vector-icons"; // MODIFIED: Added Ionicons
+import { AntDesign, MaterialIcons, Ionicons } from "@expo/vector-icons"; 
 import axios from "axios";
 import url from "../data/url";
 import Header from "../components/layouts/Header";
@@ -74,7 +74,7 @@ const EnrollForm = ({ navigation, route }) => {
   const userId = appUser.userId || {};
   const { groupId } = route.params || {};
   const [ticketCount, setTicketCount] = useState(1); // Default to 1 ticket
-  const [termsAccepted, setTermsAccepted] = useState(false); // <--- MODIFIED TO TRUE
+  const [termsAccepted, setTermsAccepted] = useState(false); 
   const [cardsData, setCardsData] = useState(null);
   const [availableTickets, setAvailableTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -217,11 +217,14 @@ const EnrollForm = ({ navigation, route }) => {
         position: "bottom",
         visibilityTime: 3000,
       });
+      
+      // ✅ FIX: Pass the tickets count here
       navigation.navigate("EnrollConfirm", {
         group_name: cardsData?.group_name,
-        // tickets: ticketsCountInt, // NOTE: Commented out original line
+        tickets: ticketsCountInt, // <-- CORRECTED: Pass the ticket count
         userId: userId,
       });
+      
     } catch (err) {
       console.error("Error enrolling user:", err);
       let errorMessage =
@@ -303,7 +306,7 @@ const EnrollForm = ({ navigation, route }) => {
     ticketCount,
     termsAccepted,
     availableTickets,
-    setIsConfirmModalVisible, // Added dependency
+    setIsConfirmModalVisible, 
   ]);
 
   const handleIncrementTicket = () => {
@@ -347,7 +350,7 @@ const EnrollForm = ({ navigation, route }) => {
         <Modal
             animationType="slide" 
             transparent={true}
-            visible={isConfirmModalVisible} // Use existing state
+            visible={isConfirmModalVisible} 
             onRequestClose={() => {
                 setIsConfirmModalVisible(false);
             }}
@@ -374,7 +377,7 @@ const EnrollForm = ({ navigation, route }) => {
                         <TouchableOpacity
                             style={[styles.styledModalButton, styles.styledModalCancelButton]}
                             onPress={() => {
-                                setIsConfirmModalVisible(false); // Use existing state setter
+                                setIsConfirmModalVisible(false); 
                             }}
                             disabled={isSubmitting} 
                         >
@@ -386,12 +389,12 @@ const EnrollForm = ({ navigation, route }) => {
                             style={[
                                 styles.styledModalButton, 
                                 styles.styledModalConfirmButton,
-                                isSubmitting ? styles.styledModalConfirmButtonDisabled : {} // Add disabled style
+                                isSubmitting ? styles.styledModalConfirmButtonDisabled : {} 
                             ]}
                             onPress={() => {
                                 setIsConfirmModalVisible(false);
                                 const ticketsCountInt = parseInt(ticketCount, 10);
-                                performEnrollment(ticketsCountInt); // Use existing function
+                                performEnrollment(ticketsCountInt); 
                             }}
                             disabled={isSubmitting}
                         >
@@ -521,7 +524,7 @@ const EnrollForm = ({ navigation, route }) => {
             >
               <View style={styles.valueDisplayContainer}>
                 <LinearGradient
-                  colors={["#4287f5", "#2a64c4"]} // Shades of blue for attractiveness
+                  colors={["#4287f5", "#2a64c4"]} 
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.valueGradientBackground}
@@ -535,20 +538,55 @@ const EnrollForm = ({ navigation, route }) => {
                 {cardsData.group_name}
               </Text>
 
+              {/* START: MODIFIED INSTALLMENT DISPLAY */}
+              {/* Monthly Installment */}
               <View style={styles.infoItem}>
                 <MaterialIcons
-                  name="credit-card"
+                  name="calendar-month" 
                   size={20}
                   color={Colors.whiteAccent}
                   style={styles.infoItemIcon}
                 />
                 <Text style={styles.infoItemText}>
-                  {" "}
+                  Monthly Installment:{" "}
                   <Text style={styles.highlightedText}>
-                    ₹ {formatNumberIndianStyle(cardsData.group_install)}/Installment
+                    ₹ {formatNumberIndianStyle(cardsData.monthly_installment)}
                   </Text>
                 </Text>
               </View>
+
+              {/* Weekly Installment */}
+              <View style={styles.infoItem}>
+                <MaterialIcons
+                  name="calendar-view-week" 
+                  size={20}
+                  color={Colors.whiteAccent}
+                  style={styles.infoItemIcon}
+                />
+                <Text style={styles.infoItemText}>
+                  Weekly Installment:{" "}
+                  <Text style={styles.highlightedText}>
+                    ₹ {formatNumberIndianStyle(cardsData.weekly_installment)}
+                  </Text>
+                </Text>
+              </View>
+
+              {/* Daily Installment */}
+              <View style={styles.infoItem}>
+                <MaterialIcons
+                  name="calendar-today" 
+                  size={20}
+                  color={Colors.whiteAccent}
+                  style={styles.infoItemIcon}
+                />
+                <Text style={styles.infoItemText}>
+                  Daily Installment:{" "}
+                  <Text style={styles.highlightedText}>
+                    ₹ {formatNumberIndianStyle(cardsData.daily_installment)}
+                  </Text>
+                </Text>
+              </View>
+              {/* END: MODIFIED INSTALLMENT DISPLAY */}
 
               <View style={styles.infoItem}>
                 <MaterialIcons
@@ -846,7 +884,7 @@ const styles = StyleSheet.create({
   },
 
   highlightedGroupName: {
-    fontSize: 15, // Reduced from 20
+    fontSize: 18, // Reduced from 20
     fontWeight: "bold",
     color: Colors.white,
     marginBottom: 10, // Reduced from 15
