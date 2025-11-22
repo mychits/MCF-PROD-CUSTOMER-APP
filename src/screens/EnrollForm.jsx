@@ -555,41 +555,8 @@ const EnrollForm = ({ navigation, route }) => {
                 </Text>
               </View>
 
-              {/* Weekly Installment - ONLY display if > 0 */}
-              {cardsData.weekly_installment > 0 && (
-                <View style={styles.infoItem}>
-                  <MaterialIcons
-                    name="calendar-view-week" 
-                    size={20}
-                    color={Colors.whiteAccent}
-                    style={styles.infoItemIcon}
-                  />
-                  <Text style={styles.infoItemText}>
-                    Weekly Installment:{" "}
-                    <Text style={styles.highlightedText}>
-                      ₹ {formatNumberIndianStyle(cardsData.weekly_installment)}
-                    </Text>
-                  </Text>
-                </View>
-              )}
+              
 
-              {/* Daily Installment - ONLY display if > 0 */}
-              {cardsData.daily_installment > 0 && (
-                <View style={styles.infoItem}>
-                  <MaterialIcons
-                    name="calendar-today" 
-                    size={20}
-                    color={Colors.whiteAccent}
-                    style={styles.infoItemIcon}
-                  />
-                  <Text style={styles.infoItemText}>
-                    Daily Installment:{" "}
-                    <Text style={styles.highlightedText}>
-                      ₹ {formatNumberIndianStyle(cardsData.daily_installment)}
-                    </Text>
-                  </Text>
-                </View>
-              )}
               {/* END: MODIFIED INSTALLMENT DISPLAY */}
 
               {/* START: GROUP MEMBERS DETAIL (Added in previous step) */}
@@ -634,7 +601,7 @@ const EnrollForm = ({ navigation, route }) => {
                 <Text style={styles.infoItemText}>
                   Duration:{" "}
                   <Text style={styles.highlightedText}>
-                    {cardsData.group_duration} Months
+                    {cardsData.group_duration} Installments
                   </Text>
                 </Text>
               </View>

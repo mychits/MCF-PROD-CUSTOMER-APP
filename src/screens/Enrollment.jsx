@@ -366,8 +366,9 @@ const Enrollment = ({ route, navigation }) => {
 
     // START: MODIFIED CardContent to show selected filter as badge and new installment rows
     const CardContent = ({ card, colors, isSelected, currentFilter }) => {
-        // NEW: State for toggling installment details
-        const [showInstallmentDetails, setShowInstallmentDetails] = useState(false);
+        
+        // **MODIFICATION:** Removed state for toggling installment details
+        // const [showInstallmentDetails, setShowInstallmentDetails] = useState(false);
         
         const getFilterDisplayName = (filterKey) => {
             switch (filterKey) {
@@ -404,12 +405,12 @@ const Enrollment = ({ route, navigation }) => {
 
         // NEW: Fetch installment amounts
         const monthlyInstallment = card.monthly_installment;
-        const weeklyInstallment = card.weekly_installment;
-        const dailyInstallment = card.daily_installment;
+        // const weeklyInstallment = card.weekly_installment; // Not needed
+        // const dailyInstallment = card.daily_installment; // Not needed
         
         // Determine the main installment to display on the headline (use monthly as priority)
-        const mainInstallmentAmount = monthlyInstallment; 
-        const formattedMainAmount = formatNumberIndianStyle(mainInstallmentAmount); 
+        // const mainInstallmentAmount = monthlyInstallment; // Not needed
+        // const formattedMainAmount = formatNumberIndianStyle(mainInstallmentAmount); // Not needed
 
         return (
             <>
@@ -480,38 +481,12 @@ const Enrollment = ({ route, navigation }) => {
                     </View>
                 </View>
                 
-                {/* START: INSTALLMENT DETAILS WITH TOGGLE */}
-                <View style={[styles.installmentToggleContainer, { borderColor: colors.secondary }]}>
-                    <TouchableOpacity 
-                        style={styles.installmentHeadline} 
-                        onPress={() => setShowInstallmentDetails(!showInstallmentDetails)}
-                        activeOpacity={0.8}
-                    >
-                        <Text style={[styles.detailLabelSmall, { color: colors.darkText, fontWeight: 'bold', fontSize: 14 }]}>
-                            Installment Details
-                        </Text>
-                        <View style={styles.headlineValueContainer}>
-                           
-                            <Ionicons 
-                                name={showInstallmentDetails ? "chevron-up" : "chevron-down"} 
-                                size={20} 
-                                color={colors.secondary} 
-                                style={{marginLeft: 5}}
-                            />
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* NEW INSTALLMENT ROWS - Show/Hide based on state */}
-                    {showInstallmentDetails && (
-                        <View style={[styles.installmentDetailsSection, { backgroundColor: colors.primary }]}>
-                            {/* Passing 'colors' to InstallmentRow for consistent styling */}
-                            <InstallmentRow amount={monthlyInstallment} label="Monthly Installment" timeUnit="month" colors={colors} />
-                            <InstallmentRow amount={weeklyInstallment} label="Weekly Installment" timeUnit="week" colors={colors} />
-                            <InstallmentRow amount={dailyInstallment} label="Daily Installment" timeUnit="day" colors={colors} />
-                        </View>
-                    )}
+                {/* START: INSTALLMENT DETAILS - MODIFIED TO SHOW ONLY MONTHLY INSTALLMENT WITHOUT TOGGLE */}
+                <View style={[styles.installmentDetailsStandalone, { borderColor: colors.secondary, backgroundColor: colors.primary }]}>
+                    {/* Passing 'colors' to InstallmentRow for consistent styling */}
+                    <InstallmentRow amount={monthlyInstallment} label="Monthly Installment" timeUnit="month" colors={colors} />
                 </View>
-                {/* END: INSTALLMENT DETAILS WITH TOGGLE */}
+                
 
 
                 <View style={styles.viewMoreContainerSmall}>
@@ -978,45 +953,25 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
 
-    // Installment Toggle Styles (NEW)
-    installmentToggleContainer: {
+    // Installment Toggle Styles (MODIFIED/Simplified)
+    // Removed installmentToggleContainer, installmentHeadline, headlineValueContainer styles
+    installmentDetailsStandalone: {
         marginTop: 5,
         marginBottom: 10,
         borderRadius: 8,
         borderWidth: 1, 
         borderColor: '#E0E0E0', 
         overflow: 'hidden',
-    },
-    installmentHeadline: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        backgroundColor: '#F0F0F0', // A light background for the headline
-    },
-    headlineValueContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    highlightedInstallmentHeadline: {
-        fontSize: 14, 
-        fontWeight: 'bold',
-        marginRight: 5,
-    },
-    installmentDetailsSection: {
+        // The background and border color are set dynamically via the 'colors' prop now
         paddingHorizontal: 5, 
-        paddingBottom: 5, 
+        paddingVertical: 5,
     },
-    // Installment row styles - MODIFIED to fit inside toggle
     installmentRowSmall: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 10, // Adjusted padding for inner view
         paddingVertical: 8, 
-        marginTop: 4, 
-        marginBottom: 4, 
         borderRadius: 6, // Slightly rounded corners for inner rows
         borderLeftWidth: 4,
         // The background and border color are set dynamically via the 'colors' prop now
