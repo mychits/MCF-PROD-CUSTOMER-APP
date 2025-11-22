@@ -42,6 +42,8 @@ const Colors = {
   completedText: "#27AE60",
   tableHeaderBlue: "#042D75",
   tableBorderColor: "#E0E0E0", 
+  // ADDED: Warning color for pending status (Matching Mygroups.jsx)
+  warningText: "#F39C12", 
 };
 
 // --- MODIFIED FUNCTION: formatNumberIndianStyle ---
@@ -156,7 +158,7 @@ const Payments = ({ navigation }) => {
       pulseAndSlide();
     }, [scaleAnim, slideAnim]);
 
-
+  // MODIFIED: Function to fetch and process both enrollment types (same route as Mygroups.jsx)
   const fetchTickets = useCallback(async () => {
     if (!userId) {
       setLoading(false);
@@ -164,13 +166,43 @@ const Payments = ({ navigation }) => {
       return;
     }
     try {
-      const response = await axios.get(`${url}/enroll/users/${userId}`);
-      setCardsData(response.data || []);
+      // Use the mobile endpoint which returns both pending and approved groups
+      const response = await axios.get(`${url}/enroll/mobile-enrolls/users/${userId}`);
+      
+      const responseData = response.data.data || [];
+      let allCards = [];
+
+      responseData.forEach(groupBlock => {
+        // Collect mobileAppEnrolls (Pending Approval)
+        if (groupBlock.mobileAppEnrolls && groupBlock.mobileAppEnrolls.length > 0) {
+            const mobileCards = groupBlock.mobileAppEnrolls.map(card => ({
+                ...card,
+                // Harmonize ticket key for consistency (enrollments uses 'tickets', mobile uses 'no_of_tickets')
+                tickets: card.no_of_tickets, 
+                isPendingApproval: true, 
+            }));
+            allCards.push(...mobileCards);
+        }
+        // Collect regular enrollments (Approved/Active)
+        if (groupBlock.enrollments && groupBlock.enrollments.length > 0) {
+            const approvedCards = groupBlock.enrollments.map(card => ({
+                ...card,
+                // Ensure approved cards have isPendingApproval: false
+                isPendingApproval: false,
+            }));
+            allCards.push(...approvedCards);
+        }
+      });
+
+      // setCardsData now includes both pending and approved enrollments
+      setCardsData(allCards);
+
     } catch (error) {
       console.error("Error fetching tickets:", error);
       setCardsData([]);
     }
   }, [userId]);
+
 
   const fetchAllOverview = useCallback(async () => {
     if (!userId) return;
@@ -243,7 +275,8 @@ const Payments = ({ navigation }) => {
   );
 
   const filteredCards = cardsData.filter((card) => card.group_id !== null);
-  const activeCards = filteredCards.filter(c => !c.deleted);
+  // Show all non-deleted enrollments (including pending approval)
+  const activeCards = filteredCards.filter(c => !c.deleted); 
 
   const handleScrollToCard = (index) => {
     const cardId = `card-${index}`;
@@ -389,10 +422,13 @@ const Payments = ({ navigation }) => {
               ) : activeCards.map((card, index) => { 
                   const groupIdFromCard = card.group_id?._id || card.group_id;
                   const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
-                  const individualPaidAmount = individualGroupReports[groupReportKey]?.totalPaid || 0;
+                  // Only calculate payment details for non-pending cards
+                  const individualPaidAmount = card.isPendingApproval ? 0 : individualGroupReports[groupReportKey]?.totalPaid || 0;
                   const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
                   const isDeleted = card.deleted; 
                   const isCompleted = card.completed;
+                  // NEW: Pending check
+                  const isPending = card.isPendingApproval; 
                   
                   // --- Date Formatting for Main Card ---
                   const startDate = card.group_id?.start_date
@@ -411,17 +447,23 @@ const Payments = ({ navigation }) => {
                     : 'N/A';
                   // ------------------------------------------
 
-                  const gradientColors = isDeleted
-                    ? ["#F5F5F5", "#E0E0E0"]
-                    : isCompleted
-                      ? ["#E8F6F3", "#27AE60"]
-                      : ["#E0F0FF", "#0C53B3"];
+                  let gradientColors;
+                  if (isDeleted) {
+                    gradientColors = ["#F5F5F5", "#E0E0E0"];
+                  } else if (isPending) {
+                    // MATCHING Mygroups.jsx pending color
+                    gradientColors = ["#FEF9E7", Colors.warningText]; 
+                  } else if (isCompleted) {
+                    gradientColors = ["#E8F6F3", "#27AE60"];
+                  } else {
+                    gradientColors = ["#E0F0FF", "#0C53B3"];
+                  }
 
                   return (
                     <TouchableOpacity
                       key={index}
                       onPress={() => handleCardPress(card.group_id._id, card.tickets)}
-                      disabled={isDeleted}
+                      disabled={isDeleted || card.isPendingApproval} // Disable navigation for deleted or pending cards
                       style={[
                         styles.cardTouchable,
                         index === highlightedCardIndex && styles.highlightedCard
@@ -435,16 +477,18 @@ const Payments = ({ navigation }) => {
                       <LinearGradient colors={gradientColors} style={styles.cardGradient}>
                         <View style={[styles.cardInner, { backgroundColor: isDeleted ? "#F0F0F0" : "#fff" }]}>
                           <View style={styles.cardHeader}>
-                            <View style={[styles.iconCircle, { backgroundColor: isDeleted ? "#BDC3C7" : isCompleted ? Colors.completedText : Colors.secondaryBlue }]}>
+                            <View style={[styles.iconCircle, { backgroundColor: isDeleted ? "#BDC3C7" : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.secondaryBlue }]}>
                               <MaterialCommunityIcons name="currency-inr" size={28} color="#fff" />
                             </View>
                             <View style={{ flex: 1 }}>
-                              <Text style={[styles.cardTitle, { color: isDeleted ? Colors.removedText : isCompleted ? Colors.completedText : Colors.darkText }]}>
+                              <Text style={[styles.cardTitle, { color: isDeleted ? Colors.removedText : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.darkText }]}>
                                 {card.group_id.group_name}
                               </Text>
                               <Text style={styles.ticketText}>Ticket: {card.tickets}</Text>
                               {isDeleted && <Text style={styles.removalReason}>Reason: {card.removal_reason?.toUpperCase() !== "OTHERS" ? card.removal_reason : "Unknown"}</Text>}
                               {isCompleted && <Text style={styles.completedText}>Completed</Text>}
+                              {/* UPDATED: Uses pendingApprovalText style for consistency */}
+                              {card.isPendingApproval && <Text style={styles.pendingApprovalText}>Approval Pending</Text>}
                             </View>
                           </View>
                           
@@ -461,34 +505,34 @@ const Payments = ({ navigation }) => {
                           </View>
                           {/* -------------------------------------- */}
 
-
-                          <View>
-                            <View style={styles.progressHeader}>
-                              <Text style={styles.progressText}>Paid</Text>
-                              <Text style={styles.progressTextBold}>{paidPercentage}%</Text>
+                          {/* PAYMENT DETAILS: Now always visible */}
+                          <View style={styles.progressHeader}>
+                            <Text style={styles.progressText}>Paid</Text>
+                            <Text style={styles.progressTextBold}>{paidPercentage}%</Text>
+                          </View>
+                          <View style={styles.progressBar}>
+                            <View style={{ width: `${paidPercentage}%`, height: 8, borderRadius: 10, backgroundColor: Colors.accentColor }} />
+                          </View>
+                          <View style={styles.amountRow}>
+                            <View style={styles.amountColumn}>
+                              <Text style={styles.amountLabel}>Total Value</Text>
+                              <Text style={styles.amountValue}>₹ {formatNumberIndianStyle(card.group_id.group_value)}</Text>
                             </View>
-                            <View style={styles.progressBar}>
-                              <View style={{ width: `${paidPercentage}%`, height: 8, borderRadius: 10, backgroundColor: Colors.accentColor }} />
-                            </View>
-                            <View style={styles.amountRow}>
-                              <View style={styles.amountColumn}>
-                                <Text style={styles.amountLabel}>Total Value</Text>
-                                <Text style={styles.amountValue}>₹ {formatNumberIndianStyle(card.group_id.group_value)}</Text>
-                              </View>
-                              <View style={styles.amountColumn}>
-                                <Text style={styles.amountLabel}>Paid</Text>
-                                <Text style={[styles.amountValue, { color: Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text>
-                              </View>
+                            <View style={styles.amountColumn}>
+                              <Text style={styles.amountLabel}>Paid</Text>
+                              <Text style={[styles.amountValue, { color: Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text>
                             </View>
                           </View>
                           
-                          {/* --- Animated Payments Button with intensified animation --- */}
-                          <View style={styles.paymentsButton}>
-                              <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
-                              <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}>
-                                <Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" />
-                              </Animated.View>
-                          </View>
+                          {/* --- Animated Payments Button (Conditional: Hidden for Pending) --- */}
+                          {!card.isPendingApproval && (
+                            <View style={styles.paymentsButton}>
+                                <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
+                                <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}>
+                                  <Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" />
+                                </Animated.View>
+                            </View>
+                          )}
                           {/* ----------------------------------------- */}
 
                         </View>
@@ -656,6 +700,14 @@ const styles = StyleSheet.create({
   ticketText: { fontSize: 14, color: Colors.mediumText },
   removalReason: { fontSize: 12, color: Colors.removedText, marginTop: 2 },
   completedText: { fontSize: 12, color: Colors.completedText, fontWeight: "bold", marginTop: 2 },
+  // UPDATED PENDING TEXT STYLE (from Mygroups.jsx's pendingApprovalText)
+  pendingApprovalText: {
+    fontSize: 12,
+    color: Colors.warningText,
+    fontWeight: '600',
+    marginTop: 5,
+    fontStyle: 'italic',
+  },
   progressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
   progressText: { fontSize: 14, color: Colors.mediumText },
   progressTextBold: { fontSize: 14, fontWeight: "bold" },

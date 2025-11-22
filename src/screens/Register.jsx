@@ -77,7 +77,8 @@ export default function Register() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [referralCode, setReferralCode] = useState(""); // State for referral code
+  const [referralCode, setReferralCode] = useState("");
+  const [showReferralInput, setShowReferralInput] = useState(false); // State to manage visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -143,7 +144,6 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      // Constructing the payload including the optional referral_code
       const payload = {
         phone_number: phoneNumber.replace(/\s/g, ""),
         full_name: fullName.trim(),
@@ -153,7 +153,6 @@ export default function Register() {
      
       const apiEndpoint = `${url}/user/send-register-otp`; 
       
-      // Console logs to show the data being sent
       console.log("Attempting to send OTP to:", apiEndpoint); 
       console.log("Sending OTP payload:", payload);
 
@@ -172,7 +171,7 @@ export default function Register() {
           mobileNumber: phoneNumber.replace(/\s/g, ""),
           fullName: fullName.trim(),
           password: password.trim(),
-          referralCode: referralCode.trim(), // Pass referral code to next screen
+          referralCode: referralCode.trim(),
         });
       } else {
         let errorMessage = "Failed to send OTP. Please try again.";
@@ -310,18 +309,51 @@ export default function Register() {
               </TouchableOpacity>
             </View>
             
-            {/* Input for Referral Code (Optional) */}
-            <TextInput
-              style={styles.input}
-              placeholder="Referral Number (Optional)"
-              placeholderTextColor="#78909C"
-              value={referralCode}
-              onChangeText={setReferralCode}
-              accessible
-              accessibilityLabel="Referral Code input"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            {/* Conditional Rendering for Referral Code */}
+            {showReferralInput ? (
+                // Block shown when the input is active
+                <View style={styles.referralInputGroup}>
+                    {/* NEW: Skip Link */}
+                    <TouchableOpacity
+                        onPress={() => {
+                            setShowReferralInput(false); // Hide the input
+                            setReferralCode(""); // Clear the input value
+                        }}
+                        style={styles.skipLinkContainer} 
+                        accessible
+                        accessibilityLabel="Skip referral code input"
+                    >
+                        <Text style={styles.skipLinkText}>
+                            Skip
+                        </Text>
+                    </TouchableOpacity>
+                    
+                    {/* Referral Input Field */}
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Referral Number (Optional)"
+                        placeholderTextColor="#78909C"
+                        value={referralCode}
+                        onChangeText={setReferralCode}
+                        accessible
+                        accessibilityLabel="Referral Code input"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                    />
+                </View>
+            ) : (
+                // Block shown when the link is active
+                <TouchableOpacity
+                    onPress={() => setShowReferralInput(true)}
+                    style={styles.referralLinkContainer}
+                    accessible
+                    accessibilityLabel="I have a referral code link"
+                >
+                    <Text style={styles.referralLinkText}>
+                        Have a referral code?
+                    </Text>
+                </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={styles.registerButton}
@@ -460,6 +492,7 @@ const styles = StyleSheet.create({
     width: "70%",
     alignItems: "center",
     marginBottom: 18,
+    marginTop: 10,
   },
   registerButtonText: {
     color: "white",
@@ -520,5 +553,36 @@ const styles = StyleSheet.create({
   toastImage: {
     width: 30,
     height: 30,
+  },
+  // Style for the initial 'Have a referral code?' link
+  referralLinkContainer: {
+    width: "90%",
+    alignItems: "flex-end",
+    marginBottom: 12,
+    paddingRight: 5,
+  },
+  referralLinkText: {
+    color: "#053B90",
+    fontSize: 14,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  // NEW styles for the active referral input group and skip link
+  referralInputGroup: {
+    width: "100%", 
+    alignItems: "center", 
+    // marginBottom is handled by the input's own marginBottom: 12
+  },
+  skipLinkContainer: {
+    width: "90%", 
+    alignItems: "flex-end", 
+    marginBottom: 5, 
+    paddingRight: 5, 
+  },
+  skipLinkText: {
+    color: "#053B90", // A distinct color for "Skip"
+    fontSize: 13,
+    fontWeight: "500",
+    textDecorationLine: "underline",
   },
 });

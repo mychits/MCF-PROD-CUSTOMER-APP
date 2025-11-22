@@ -42,6 +42,8 @@ const Colors = {
   completedText: "#27AE60",
   tableHeaderBlue: "#042D75",
   tableBorderColor: "#E0E0E0",
+  // ADDED: Warning color for pending status
+  warningText: "#F39C12", 
 };
 
 // --- MODIFIED FUNCTION: formatNumberIndianStyle ---
@@ -62,7 +64,7 @@ const formatNumberIndianStyle = (num) => {
     integerPart = integerPart.substring(1);
   }
   const lastThree = integerPart.slice(-3);
-  const otherNumbers = integerPart.slice(0, -3);
+  const otherNumbers = integerPart.slice(0, 0 - 3);
   const formattedOther = otherNumbers
     ? otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + ","
     : "";
@@ -83,6 +85,15 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
             <View style={accordionStyles.headerLeft}>
                 <Text style={accordionStyles.indexText}>{index + 1}.</Text>
                 <Text style={accordionStyles.groupNameText} numberOfLines={1}>{card.group_id?.group_name}</Text>
+                {/* Visual cue for pending approval in the index list */}
+                {card.isPendingApproval && (
+                    <Ionicons 
+                        name="hourglass-outline" 
+                        size={20} 
+                        color={Colors.warningText} 
+                        style={{ marginLeft: 10 }} 
+                    />
+                )}
             </View>
             <Ionicons
                 name={isExpanded ? "chevron-up" : "chevron-down"}
@@ -113,18 +124,30 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
                 {/* --- Existing Rows --- */}
                 <View style={accordionStyles.contentRow}>
                     <Text style={accordionStyles.contentLabel}>Ticket Number:</Text>
+                    {/* MODIFIED: Use the harmonized 'tickets' key */}
                     <Text style={accordionStyles.contentValue}>{card.tickets}</Text>
                 </View>
                 <View style={accordionStyles.contentRow}>
                     <Text style={accordionStyles.contentLabel}>Group Value:</Text>
                     <Text style={accordionStyles.contentValue}>₹ {formatNumberIndianStyle(card.group_id.group_value)}</Text>
                 </View>
+                {/* Pending text in accordion */}
+                {card.isPendingApproval && (
+                    <Text style={accordionStyles.pendingApprovalText}>
+                        Pending Approval by MyChits team.
+                    </Text>
+                )}
+                
                 <TouchableOpacity
-                    style={accordionStyles.navigateButton}
+                    style={[accordionStyles.navigateButton, card.isPendingApproval && { backgroundColor: Colors.mediumText }]}
                     onPress={() => onScrollToCard(index)} // Calls the scroll function
+                    // DISABLED if pending approval
+                    disabled={card.isPendingApproval}
                 >
-                    <Text style={accordionStyles.navigateButtonText}>View Detailed Card</Text>
-                    <Ionicons name="arrow-down" size={16} color="#fff" style={{ marginLeft: 5 }} />
+                    <Text style={accordionStyles.navigateButtonText}>
+                        {card.isPendingApproval ? "Approval Pending" : "View Detailed Card"}
+                    </Text>
+                    {!card.isPendingApproval && <Ionicons name="arrow-down" size={16} color="#fff" style={{ marginLeft: 5 }} />}
                 </TouchableOpacity>
             </View>
         )}
@@ -193,6 +216,7 @@ const Mygroups = ({ navigation }) => {
   }, [scaleAnim, slideAnim]);
   // ------------------------------------
 
+  // MODIFIED: Function to fetch and process both enrollment types
   const fetchTickets = useCallback(async () => {
     if (!userId) {
       setLoading(false);
@@ -200,13 +224,42 @@ const Mygroups = ({ navigation }) => {
       return;
     }
     try {
-      const response = await axios.get(`${url}/enroll/users/${userId}`);
-      setCardsData(response.data || []);
+      // Use the mobile endpoint which returns both pending and approved groups
+      const response = await axios.get(`${url}/enroll/mobile-enrolls/users/${userId}`);
+      
+      const responseData = response.data.data || [];
+      let allCards = [];
+
+      responseData.forEach(groupBlock => {
+        // Collect mobileAppEnrolls (Pending Approval)
+        if (groupBlock.mobileAppEnrolls && groupBlock.mobileAppEnrolls.length > 0) {
+            const mobileCards = groupBlock.mobileAppEnrolls.map(card => ({
+                ...card,
+                // Harmonize ticket key for consistency in Accordion and Card (enrollments uses 'tickets', mobile uses 'no_of_tickets')
+                tickets: card.no_of_tickets, 
+                isPendingApproval: true, 
+            }));
+            allCards.push(...mobileCards);
+        }
+        // Collect regular enrollments (Approved/Active)
+        if (groupBlock.enrollments && groupBlock.enrollments.length > 0) {
+            const approvedCards = groupBlock.enrollments.map(card => ({
+                ...card,
+                // Ensure approved cards have isPendingApproval: false
+                isPendingApproval: false,
+            }));
+            allCards.push(...approvedCards);
+        }
+      });
+
+      setCardsData(allCards);
+
     } catch (error) {
       console.error("Error fetching tickets:", error);
       setCardsData([]);
     }
   }, [userId]);
+
 
   const fetchAllOverview = useCallback(async () => {
     if (!userId) return;
@@ -279,12 +332,17 @@ const Mygroups = ({ navigation }) => {
   );
 
   const filteredCards = cardsData.filter((card) => card.group_id !== null);
-  const cardsToRender = filteredCards.filter(c => !c.deleted);
-  const activeCards = filteredCards.filter(c => !c.deleted);
+  // MODIFIED: Filter for cards that are NOT deleted AND are NOT pending approval.
+  const activeCards = filteredCards.filter(c => !c.deleted && !c.isPendingApproval);
+  // cardsToRender includes all non-deleted cards (pending or approved)
+  const cardsToRender = filteredCards.filter(c => !c.deleted); 
 
   const handleScrollToCard = (index) => {
     const cardId = `card-${index}`;
     const offset = cardLayouts.current[cardId];
+    
+    // Check if card is pending, if so, do not allow navigation
+    if (cardsToRender[index].isPendingApproval) return; 
 
     if (offset && scrollViewRef.current) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -302,8 +360,10 @@ const Mygroups = ({ navigation }) => {
         }, 3000);
 
     } else {
-        if (cardsToRender[index]?.group_id?._id) {
-            handleCardPress(cardsToRender[index].group_id._id, cardsToRender[index].tickets);
+        // MODIFIED: Use the harmonized 'tickets' key
+        const ticketKey = cardsToRender[index].tickets; 
+        if (cardsToRender[index]?.group_id?._id && ticketKey) {
+            handleCardPress(cardsToRender[index].group_id._id, ticketKey);
         }
     }
   };
@@ -374,7 +434,7 @@ const Mygroups = ({ navigation }) => {
               <View style={styles.enrolledGroupsCardContainer}>
                 <LinearGradient colors={["#6A1B9A", "#883EBF"]} style={styles.enrolledGroupsCard}>
                   <View>
-                    {/* Shows count of ACTIVE groups */}
+                    {/* Shows count of ACTIVE groups (excluding pending) */}
                     <Text style={styles.enrolledGroupsCount}>{activeCards.length}</Text>
                     <Text style={styles.enrolledGroupsLabel}>Active Groups</Text>
                   </View>
@@ -382,11 +442,10 @@ const Mygroups = ({ navigation }) => {
                 </LinearGradient>
               </View>
 
-              {/* --- Accordion List Component (Now uses filtered active cards) --- */}
+              {/* --- Accordion List Component (Now uses all non-deleted cards) --- */}
               {cardsToRender.length > 0 && (
                 <View style={accordionStyles.listContainer}>
-                    {/* Title updated to reflect only active enrollments are shown */}
-                    <Text style={accordionStyles.listTitle}>Active Enrollments Index</Text>
+                    <Text style={accordionStyles.listTitle}>All Enrollments Index</Text>
                     {cardsToRender.map((card, index) => (
                         <AccordionListItem
                             key={index}
@@ -418,12 +477,21 @@ const Mygroups = ({ navigation }) => {
                   {/* ******************************* */}
                 </View>
               ) : (cardsToRender.map((card, index) => {
+                  // MODIFIED: Use the harmonized 'tickets' key
+                  const ticketKey = card.tickets; 
+
                   const groupIdFromCard = card.group_id?._id || card.group_id;
-                  const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
-                  const individualPaidAmount = individualGroupReports[groupReportKey]?.totalPaid || 0;
-                  const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
+                  const groupReportKey = `${groupIdFromCard}-${ticketKey}`;
+                  
                   const isDeleted = card.deleted;
                   const isCompleted = card.completed;
+                  // NEW: Pending check
+                  const isPending = card.isPendingApproval; 
+
+                  // MODIFIED: Paid amount is 0 if pending
+                  const individualPaidAmount = isPending ? 0 : individualGroupReports[groupReportKey]?.totalPaid || 0;
+                  const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
+
 
                   // --- Date Formatting for Main Card ---
                   const startDate = card.group_id?.start_date
@@ -442,17 +510,24 @@ const Mygroups = ({ navigation }) => {
                     : 'N/A';
                   // ------------------------------------------
 
-                  const gradientColors = isDeleted
-                    ? ["#F5F5F5", "#E0E0E0"]
-                    : isCompleted
-                      ? ["#E8F6F3", "#27AE60"]
-                      : ["#E0F0FF", "#0C53B3"];
+                  let gradientColors;
+                  if (isDeleted) {
+                    gradientColors = ["#F5F5F5", "#E0E0E0"];
+                  } else if (isPending) {
+                    // NEW: Unique color for pending approval
+                    gradientColors = ["#FEF9E7", Colors.warningText]; 
+                  } else if (isCompleted) {
+                    gradientColors = ["#E8F6F3", Colors.completedText];
+                  } else {
+                    gradientColors = ["#E0F0FF", Colors.secondaryBlue];
+                  }
 
                   return (
                     <TouchableOpacity
                       key={index}
-                      onPress={() => handleCardPress(card.group_id._id, card.tickets)}
-                      disabled={isDeleted}
+                      onPress={() => handleCardPress(card.group_id._id, ticketKey)}
+                      // MODIFIED: Disable if deleted OR pending
+                      disabled={isDeleted || isPending} 
                       style={[
                         styles.cardTouchable,
                         index === highlightedCardIndex && styles.highlightedCard
@@ -466,16 +541,24 @@ const Mygroups = ({ navigation }) => {
                       <LinearGradient colors={gradientColors} style={styles.cardGradient}>
                         <View style={[styles.cardInner, { backgroundColor: isDeleted ? "#F0F0F0" : "#fff" }]}>
                           <View style={styles.cardHeader}>
-                            <View style={[styles.iconCircle, { backgroundColor: isDeleted ? "#BDC3C7" : isCompleted ? Colors.completedText : Colors.secondaryBlue }]}>
+                            <View style={[styles.iconCircle, { backgroundColor: isDeleted ? "#BDC3C7" : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.secondaryBlue }]}>
                               <MaterialCommunityIcons name="currency-inr" size={28} color="#fff" />
                             </View>
                             <View style={{ flex: 1 }}>
-                              <Text style={[styles.cardTitle, { color: isDeleted ? Colors.removedText : isCompleted ? Colors.completedText : Colors.darkText }]}>
+                              <Text style={[styles.cardTitle, { color: isDeleted ? Colors.removedText : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.darkText }]}>
                                 {card.group_id.group_name}
                               </Text>
-                              <Text style={styles.ticketText}>Ticket: {card.tickets}</Text>
+                              {/* MODIFIED: Use ticketKey */}
+                              <Text style={styles.ticketText}>Ticket: {ticketKey}</Text> 
                               {isDeleted && <Text style={styles.removalReason}>Removed: {card.removal_reason?.toUpperCase() !== "OTHERS" ? card.removal_reason : "Unknown"}</Text>}
                               {isCompleted && <Text style={styles.completedText}>Completed</Text>}
+                              {/* NEW: Pending Approval Text */}
+                              {isPending && (
+                                <Text style={styles.pendingApprovalText}>
+                                   Approval Pending
+                                </Text>
+                              )}
+                              {/* ---------------------------------- */}
                             </View>
                           </View>
 
@@ -498,7 +581,8 @@ const Mygroups = ({ navigation }) => {
                               <Text style={styles.progressTextBold}>{paidPercentage}%</Text>
                             </View>
                             <View style={styles.progressBar}>
-                              <View style={{ width: `${paidPercentage}%`, height: 8, borderRadius: 10, backgroundColor: Colors.accentColor }} />
+                              {/* MODIFIED: Change progress bar color if pending */}
+                              <View style={{ width: `${paidPercentage}%`, height: 8, borderRadius: 10, backgroundColor: isPending ? Colors.mediumText : Colors.accentColor }} /> 
                             </View>
                             <View style={styles.amountRow}>
                               <View style={styles.amountColumn}>
@@ -507,18 +591,22 @@ const Mygroups = ({ navigation }) => {
                               </View>
                               <View style={styles.amountColumn}>
                                 <Text style={styles.amountLabel}>Paid</Text>
-                                <Text style={[styles.amountValue, { color: Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text>
+                                {/* MODIFIED: Change paid amount color if pending */}
+                                <Text style={[styles.amountValue, { color: isPending ? Colors.mediumText : Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text>
                               </View>
                             </View>
                           </View>
 
-                          {/* --- Animated Payments Button with intensified animation --- */}
-                          <View style={styles.paymentsButton}>
-                              <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
-                              <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}>
-                                <Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" />
-                              </Animated.View>
-                          </View>
+                          {/* --- Animated Payments Button --- */}
+                          {/* MODIFIED: Conditionally render the button (remove if pending) */}
+                          {!isPending && (
+                            <View style={styles.paymentsButton}>
+                                <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
+                                <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}>
+                                  <Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" />
+                                </Animated.View>
+                            </View>
+                          )}
                           {/* ----------------------------------------- */}
 
                         </View>
@@ -611,6 +699,13 @@ const accordionStyles = StyleSheet.create({
         fontWeight: 'bold',
         color: Colors.darkText,
     },
+    // NEW: Style for pending approval text in Accordion
+    pendingApprovalText: {
+        fontSize: 12,
+        color: Colors.warningText,
+        fontWeight: '500',
+        marginTop: 5,
+    },
     navigateButton: {
         flexDirection: 'row',
         alignSelf: 'flex-start',
@@ -619,6 +714,7 @@ const accordionStyles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
+        alignItems: 'center',
     },
     navigateButtonText: {
         color: '#fff',
@@ -829,6 +925,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.darkText,
   },
+  // NEW: Style for pending approval text in the main card
+  pendingApprovalText: {
+    fontSize: 12,
+    color: Colors.warningText,
+    fontWeight: '600',
+    marginTop: 5,
+    fontStyle: 'italic',
+  }
 });
 
 export default Mygroups;

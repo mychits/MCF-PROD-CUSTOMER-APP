@@ -539,7 +539,7 @@ const EnrollForm = ({ navigation, route }) => {
               </Text>
 
               {/* START: MODIFIED INSTALLMENT DISPLAY */}
-              {/* Monthly Installment */}
+              {/* Monthly Installment (Always displayed) */}
               <View style={styles.infoItem}>
                 <MaterialIcons
                   name="calendar-month" 
@@ -555,38 +555,59 @@ const EnrollForm = ({ navigation, route }) => {
                 </Text>
               </View>
 
-              {/* Weekly Installment */}
-              <View style={styles.infoItem}>
-                <MaterialIcons
-                  name="calendar-view-week" 
-                  size={20}
-                  color={Colors.whiteAccent}
-                  style={styles.infoItemIcon}
-                />
-                <Text style={styles.infoItemText}>
-                  Weekly Installment:{" "}
-                  <Text style={styles.highlightedText}>
-                    ₹ {formatNumberIndianStyle(cardsData.weekly_installment)}
+              {/* Weekly Installment - ONLY display if > 0 */}
+              {cardsData.weekly_installment > 0 && (
+                <View style={styles.infoItem}>
+                  <MaterialIcons
+                    name="calendar-view-week" 
+                    size={20}
+                    color={Colors.whiteAccent}
+                    style={styles.infoItemIcon}
+                  />
+                  <Text style={styles.infoItemText}>
+                    Weekly Installment:{" "}
+                    <Text style={styles.highlightedText}>
+                      ₹ {formatNumberIndianStyle(cardsData.weekly_installment)}
+                    </Text>
                   </Text>
-                </Text>
-              </View>
+                </View>
+              )}
 
-              {/* Daily Installment */}
+              {/* Daily Installment - ONLY display if > 0 */}
+              {cardsData.daily_installment > 0 && (
+                <View style={styles.infoItem}>
+                  <MaterialIcons
+                    name="calendar-today" 
+                    size={20}
+                    color={Colors.whiteAccent}
+                    style={styles.infoItemIcon}
+                  />
+                  <Text style={styles.infoItemText}>
+                    Daily Installment:{" "}
+                    <Text style={styles.highlightedText}>
+                      ₹ {formatNumberIndianStyle(cardsData.daily_installment)}
+                    </Text>
+                  </Text>
+                </View>
+              )}
+              {/* END: MODIFIED INSTALLMENT DISPLAY */}
+
+              {/* START: GROUP MEMBERS DETAIL (Added in previous step) */}
               <View style={styles.infoItem}>
                 <MaterialIcons
-                  name="calendar-today" 
+                  name="group" 
                   size={20}
                   color={Colors.whiteAccent}
                   style={styles.infoItemIcon}
                 />
                 <Text style={styles.infoItemText}>
-                  Daily Installment:{" "}
+                  Total Members:{" "}
                   <Text style={styles.highlightedText}>
-                    ₹ {formatNumberIndianStyle(cardsData.daily_installment)}
+                    {cardsData.group_members || 'N/A'} 
                   </Text>
                 </Text>
               </View>
-              {/* END: MODIFIED INSTALLMENT DISPLAY */}
+              {/* END: GROUP MEMBERS DETAIL */}
 
               <View style={styles.infoItem}>
                 <MaterialIcons
