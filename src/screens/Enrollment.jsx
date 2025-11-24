@@ -482,7 +482,7 @@ const Enrollment = ({ route, navigation }) => {
                 </View>
                 
                 {/* START: INSTALLMENT DETAILS - MODIFIED TO SHOW ONLY MONTHLY INSTALLMENT WITHOUT TOGGLE */}
-                <View style={[styles.installmentDetailsStandalone, { borderColor: colors.secondary, backgroundColor: colors.primary }]}>
+                <View style={[styles.installmentDetailsStandalone, {  backgroundColor: colors.primary }]}>
                     {/* Passing 'colors' to InstallmentRow for consistent styling */}
                     <InstallmentRow amount={monthlyInstallment} label="Monthly Installment" timeUnit="month" colors={colors} />
                 </View>

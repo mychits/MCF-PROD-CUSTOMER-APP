@@ -9,17 +9,46 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  Modal, 
-  Dimensions, 
+  Modal,
+  Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { AntDesign, MaterialIcons, Ionicons } from "@expo/vector-icons"; 
+// FIX 1: Added MaterialCommunityIcons to the import list
+import { AntDesign, MaterialIcons, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import axios from "axios";
 import url from "../data/url";
 import Header from "../components/layouts/Header";
 import { NetworkContext } from "../context/NetworkProvider";
 import Toast from "react-native-toast-message";
 import { ContextProvider } from "../context/UserProvider";
+
+// Helper function to format dates (Copied from AuctionList logic for consistency)
+const formatDate = (dateString) => {
+  if (!dateString) return "N/A";
+  try {
+    // FIX 2: Enhanced date parsing logic for better compatibility
+    let date;
+    if (typeof dateString === 'string') {
+      // Try parsing as ISO format first (which handles both YYYY-MM-DD and full datetime)
+      date = new Date(dateString);
+    } else {
+      // Fallback for unexpected formats, though typically unnecessary for API dates
+      date = new Date(dateString);
+    }
+
+    // Check if the date object is valid
+    if (!isNaN(date.getTime())) {
+      const options = { year: "numeric", month: "short", day: "numeric" };
+      // Format: e.g., "10-Dec-2025" (matching image style)
+      const formatted = date.toLocaleDateString('en-GB', options);
+      // Clean up the format to match your desired style (e.g., 10-Dec-2025)
+      return formatted.replace(/ /g, '-').replace(',', '');
+    }
+  } catch (error) {
+    console.error("Error parsing date:", dateString, error);
+  }
+  return "N/A";
+};
 
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) {
@@ -66,6 +95,103 @@ const Colors = {
   linkBlue: "#007BFF",
   warningOrange: "#FF9800",
   primaryText: "#343A40",
+  // ADDED: Colors for consistency with AuctionList
+  textMedium: "#757575",
+  lightDivider: "#EEEEEE",
+  error: "#E74C3C",
+  // NEW COLOR: To mimic the light background of the image card
+  chitBackground: "#FFFFFF",
+  chitLabel: "#757575", // Lighter label text
+  chitValue: "#343A40", // Darker value text
+  chitLink: "#DC3545", // Red link color from image
+  // ADDED FOR NEW DESIGN
+  accentBlue: "#17A2B8", // A nice complementary blue
+  shadowBlue: "rgba(5, 59, 144, 0.2)",
+};
+
+// NEW: Component for a single detail item in the Chit Details Grid
+const ChitDetailItem = ({ label, value, isLink = false, linkIcon = null, index, totalItems }) => {
+  const isRightItem = index % 2 !== 0; // Item index 1, 3, 5...
+  const isLastRow = index >= totalItems - (totalItems % 2 === 0 ? 2 : 1); // For 7 items, it's 6. For 8 items, it's 6, 7.
+
+  // Apply conditional styling for borders to create a clean grid
+  const itemStyle = [
+    styles.detailItem,
+    isRightItem && styles.detailItemNoRightBorder,
+    isLastRow && styles.detailItemNoBottomBorder,
+  ];
+
+  return (
+    <View style={itemStyle}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <View style={styles.detailValueContainer}>
+        <Text style={[
+          styles.detailValue,
+          isLink && styles.detailValueLink,
+          // Applied a larger text style to currency values for emphasis
+          (label === 'Monthly Installment' || label.includes('Value')) && styles.detailValueCurrency
+        ]}>
+          {value}
+        </Text>
+        {/* Link Icon for potential future link items */}
+        {isLink && linkIcon}
+      </View>
+    </View>
+  );
+};
+
+// NEW: Main component to display the Chit Details Grid, replacing the old card logic
+const ChitDetailsGrid = ({ data }) => {
+  // Determine the values based on available data, defaulting to 'N/A' or '0' where appropriate.
+  const chitValue = data.group_value ? `₹ ${formatNumberIndianStyle(data.group_value)}` : 'N/A';
+  // The unit '/Month' is now concatenated here
+  const monthlyInstallmentValue = data.monthly_installment ? `₹ ${formatNumberIndianStyle(data.monthly_installment)} /Month` : 'N/A';
+  const firstAuctionDate = data.group_first_auction_date ? formatDate(data.group_first_auction_date) : 'N/A';
+  const duration = data.group_duration || 'N/A';
+  const groupName = data.group_name || 'N/A';
+  const groupMembers = data.group_members || 'N/A';
+  const startDate = data.start_date ? formatDate(data.start_date) : 'N/A';
+  const endDate = data.end_date ? formatDate(data.end_date) : 'N/A';
+
+  const details = [
+    { label: "Monthly Installment", value: monthlyInstallmentValue },
+    { label: "First Auction Date", value: firstAuctionDate },
+    { label: "Duration", value: `${duration} Months` },
+    { label: "Group Name", value: groupName },
+    { label: "Group Members", value: groupMembers },
+    { label: "Start Date", value: startDate },
+    { label: "End Date", value: endDate },
+  ];
+
+  const totalItems = details.length;
+
+  return (
+    <View style={styles.chitDetailsCard}>
+      {/* Header: Chit Value (Matches the prominent style in the image) */}
+      <View style={styles.chitValueHeader}>
+        <Text style={styles.chitValueLabel}>Chit Value</Text>
+        <Text style={styles.chitValueHeaderText}>{chitValue}</Text>
+      
+      </View>
+
+      {/* Grid Container */}
+      <View style={styles.chitDetailsGridContainer}>
+        {details.map((item, index) => (
+          <ChitDetailItem
+            key={index}
+            label={item.label}
+            value={item.value}
+            index={index}
+            totalItems={totalItems}
+          />
+        ))}
+        {/* Add an empty item if the count is odd to maintain layout integrity */}
+        {totalItems % 2 !== 0 && (
+          <View style={[styles.detailItem, styles.detailItemEmpty, styles.detailItemNoRightBorder, styles.detailItemNoBottomBorder]} />
+        )}
+      </View>
+    </View>
+  );
 };
 
 
@@ -74,15 +200,15 @@ const EnrollForm = ({ navigation, route }) => {
   const userId = appUser.userId || {};
   const { groupId } = route.params || {};
   const [ticketCount, setTicketCount] = useState(1); // Default to 1 ticket
-  const [termsAccepted, setTermsAccepted] = useState(false); 
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [cardsData, setCardsData] = useState(null);
   const [availableTickets, setAvailableTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [termsRead, setTermsRead] = useState(false);
-  
-  // Custom Modal State 
+
+  // Custom Modal State
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
 
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
@@ -197,7 +323,7 @@ const EnrollForm = ({ navigation, route }) => {
       user_id: userId,
       no_of_tickets: ticketsCountInt,
       // tickets: availableTickets[0], // NOTE: Commented out original line
-      chit_asking_month: Number(cardsData?.group_duration) || 0,
+      chit_asking_month: 0,
     };
 
     console.log("Payload being sent:", payload);
@@ -217,14 +343,14 @@ const EnrollForm = ({ navigation, route }) => {
         position: "bottom",
         visibilityTime: 3000,
       });
-      
+
       // ✅ FIX: Pass the tickets count here
       navigation.navigate("EnrollConfirm", {
         group_name: cardsData?.group_name,
         tickets: ticketsCountInt, // <-- CORRECTED: Pass the ticket count
         userId: userId,
       });
-      
+
     } catch (err) {
       console.error("Error enrolling user:", err);
       let errorMessage =
@@ -298,7 +424,7 @@ const EnrollForm = ({ navigation, route }) => {
       });
       return;
     }
-    
+
     // Show the confirmation modal instead of calling performEnrollment directly
     setIsConfirmModalVisible(true);
 
@@ -306,7 +432,7 @@ const EnrollForm = ({ navigation, route }) => {
     ticketCount,
     termsAccepted,
     availableTickets,
-    setIsConfirmModalVisible, 
+    setIsConfirmModalVisible,
   ]);
 
   const handleIncrementTicket = () => {
@@ -334,7 +460,8 @@ const EnrollForm = ({ navigation, route }) => {
   const renderConfirmModal = () => {
     // Re-use data variables from previous implementation
     const groupName = cardsData?.group_name || "the group";
-    const installmentAmount = formatNumberIndianStyle(cardsData?.group_install);
+    // Using dynamic group_install field
+    const installmentAmount = cardsData?.group_install ? formatNumberIndianStyle(cardsData.group_install) : 'N/A';
     const durationMonths = cardsData?.group_duration || "N/A";
     const tickets = ticketCount;
     const ticketsText = `${tickets} ticket${tickets > 1 ? "s" : ""}`;
@@ -347,69 +474,69 @@ const EnrollForm = ({ navigation, route }) => {
 
 
     return (
-        <Modal
-            animationType="slide" 
-            transparent={true}
-            visible={isConfirmModalVisible} 
-            onRequestClose={() => {
-                setIsConfirmModalVisible(false);
-            }}
-        >
-            <View style={styles.modalOverlay}>
-                <View style={styles.styledModalContent}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isConfirmModalVisible}
+        onRequestClose={() => {
+          setIsConfirmModalVisible(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.styledModalContent}>
 
-                    {/* START: ANIMATION/AVATAR PLACEHOLDER (New JSX structure) */}
-                    <View style={styles.modalAnimationPlaceholder}>
-                        <Ionicons name="people-circle" size={80} color="#053B90" />
-                    </View>
-                    {/* END: ANIMATION/AVATAR PLACEHOLDER */}
-                    
-                    <Text style={styles.styledModalTitle}>
-                        Confirm Enrollment
-                    </Text>
-                    <Text style={styles.styledModalMessage}>
-                        {confirmationText}
-                    </Text>
-                    <Text style={styles.styledModalAgreement}>
-                        By proceeding, you agree to the group terms and conditions.
-                    </Text>
-                    <View style={styles.styledModalButtonContainer}>
-                        <TouchableOpacity
-                            style={[styles.styledModalButton, styles.styledModalCancelButton]}
-                            onPress={() => {
-                                setIsConfirmModalVisible(false); 
-                            }}
-                            disabled={isSubmitting} 
-                        >
-                            <Text style={styles.styledModalCancelButtonText}>
-                                Cancel
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.styledModalButton, 
-                                styles.styledModalConfirmButton,
-                                isSubmitting ? styles.styledModalConfirmButtonDisabled : {} 
-                            ]}
-                            onPress={() => {
-                                setIsConfirmModalVisible(false);
-                                const ticketsCountInt = parseInt(ticketCount, 10);
-                                performEnrollment(ticketsCountInt); 
-                            }}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <ActivityIndicator size="small" color={Colors.white} />
-                            ) : (
-                                <Text style={styles.styledModalConfirmButtonText}>
-                                    Agree & Join
-                                </Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                </View>
+            {/* START: ANIMATION/AVATAR PLACEHOLDER (New JSX structure) */}
+            <View style={styles.modalAnimationPlaceholder}>
+              <Ionicons name="people-circle" size={80} color="#053B90" />
             </View>
-        </Modal>
+            {/* END: ANIMATION/AVATAR PLACEHOLDER */}
+
+            <Text style={styles.styledModalTitle}>
+              Confirm Enrollment
+            </Text>
+            <Text style={styles.styledModalMessage}>
+              {confirmationText}
+            </Text>
+            <Text style={styles.styledModalAgreement}>
+              By proceeding, you agree to the group terms and conditions.
+            </Text>
+            <View style={styles.styledModalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.styledModalButton, styles.styledModalCancelButton]}
+                onPress={() => {
+                  setIsConfirmModalVisible(false);
+                }}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.styledModalCancelButtonText}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.styledModalButton,
+                  styles.styledModalConfirmButton,
+                  isSubmitting ? styles.styledModalConfirmButtonDisabled : {}
+                ]}
+                onPress={() => {
+                  setIsConfirmModalVisible(false);
+                  const ticketsCountInt = parseInt(ticketCount, 10);
+                  performEnrollment(ticketsCountInt);
+                }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color={Colors.white} />
+                ) : (
+                  <Text style={styles.styledModalConfirmButtonText}>
+                    Agree & Join
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     );
   };
   // --- END CUSTOM CONFIRMATION MODAL COMPONENT ---
@@ -426,8 +553,8 @@ const EnrollForm = ({ navigation, route }) => {
       </SafeAreaView>
     );
   }
-  
-  // ... (Error handling returns) ... 
+
+  // ... (Error handling returns) ...
 
   if (!isConnected || !isInternetReachable) {
     return (
@@ -510,146 +637,21 @@ const EnrollForm = ({ navigation, route }) => {
 
       <View style={styles.mainContentWrapper}>
         <View style={styles.contentCard}>
-          <Text style={styles.groupInfoTitle}>Group Information</Text>
+          <Text style={styles.groupInfoTitle}>Group Enrollment Details</Text>
+          
+          {/* SCROLLABLE CONTENT AREA - Now includes the button and terms */}
           <ScrollView
             contentContainerStyle={styles.scrollContentContainer}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
           >
-            <LinearGradient
-              key={cardsData._id}
-              colors={Colors.groupCardGradient}
-              style={styles.groupDetailCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.valueDisplayContainer}>
-                <LinearGradient
-                  colors={["#4287f5", "#2a64c4"]} 
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.valueGradientBackground}
-                >
-                  <Text style={styles.groupValueTextEnhanced}>
-                    ₹ {formatNumberIndianStyle(cardsData.group_value)}
-                  </Text>
-                </LinearGradient>
-              </View>
-              <Text style={styles.highlightedGroupName}>
-                {cardsData.group_name}
-              </Text>
 
-              {/* START: MODIFIED INSTALLMENT DISPLAY */}
-              {/* Monthly Installment (Always displayed) */}
-              <View style={styles.infoItem}>
-                <MaterialIcons
-                  name="calendar-month" 
-                  size={20}
-                  color={Colors.whiteAccent}
-                  style={styles.infoItemIcon}
-                />
-                <Text style={styles.infoItemText}>
-                  Monthly Installment:{" "}
-                  <Text style={styles.highlightedText}>
-                    ₹ {formatNumberIndianStyle(cardsData.monthly_installment)}
-                  </Text>
-                </Text>
-              </View>
+            {/* --- NEW CHIT DETAILS GRID INTEGRATION --- */}
+            {cardsData && (
+              <ChitDetailsGrid data={cardsData} />
+            )}
+            {/* ------------------------------------------- */}
 
-              
-
-              {/* END: MODIFIED INSTALLMENT DISPLAY */}
-
-              {/* START: GROUP MEMBERS DETAIL (Added in previous step) */}
-              <View style={styles.infoItem}>
-                <MaterialIcons
-                  name="group" 
-                  size={20}
-                  color={Colors.whiteAccent}
-                  style={styles.infoItemIcon}
-                />
-                <Text style={styles.infoItemText}>
-                  Total Members:{" "}
-                  <Text style={styles.highlightedText}>
-                    {cardsData.group_members || 'N/A'} 
-                  </Text>
-                </Text>
-              </View>
-              {/* END: GROUP MEMBERS DETAIL */}
-
-              <View style={styles.infoItem}>
-                <MaterialIcons
-                  name="event-seat"
-                  size={20}
-                  color={Colors.whiteAccent}
-                  style={styles.infoItemIcon}
-                />
-                <Text style={styles.infoItemText}>
-                  <Text style={styles.highlightedText}>
-                    {cardsData.app_display_vacany_seat || availableTickets.length} Seats    
-                  </Text>{" "}
-                  are vacant
-                </Text>
-              </View>
-
-              <View style={styles.infoItem}>
-                <MaterialIcons
-                  name="timer"
-                  size={20}
-                  color={Colors.whiteAccent}
-                  style={styles.infoItemIcon}
-                />
-                <Text style={styles.infoItemText}>
-                  Duration:{" "}
-                  <Text style={styles.highlightedText}>
-                    {cardsData.group_duration} Installments
-                  </Text>
-                </Text>
-              </View>
-
-              <View style={styles.dateInfoContainer}>
-                <View style={styles.dateItem}>
-                  <MaterialIcons
-                    name="play-circle-outline"
-                    size={18}
-                    color={Colors.whiteAccent}
-                  />
-                  <Text style={styles.dateText}>
-                    Starts:{" "}
-                    {cardsData.start_date
-                      ? new Date(cardsData.start_date).toLocaleDateString(
-                        "en-GB",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        }
-                      )
-                      : "N/A"}
-                  </Text>
-                </View>
-                <View style={styles.dateItem}>
-                  <MaterialIcons
-                    name="event-busy"
-                    size={18}
-                    color={Colors.whiteAccent}
-                  />
-                  <Text style={styles.dateText}>
-                    Ends:{" "}
-                    {cardsData.end_date
-                      ? new Date(cardsData.end_date).toLocaleDateString(
-                        "en-GB",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        }
-                      )
-                      : "N/A"}
-                  </Text>
-                </View>
-              </View>
-            </LinearGradient>
-
+            {/* TICKET SELECTION */}
             <View style={styles.ticketSelectionBox}>
               <Text style={styles.ticketSelectionBoxTitle}>Select Tickets</Text>
 
@@ -668,7 +670,7 @@ const EnrollForm = ({ navigation, route }) => {
                     onPress={handleDecrementTicket}
                     disabled={ticketCount <= 1 || availableTickets.length === 0}
                   >
-                    <AntDesign name="minus" size={20} color={ticketCount <= 1 || availableTickets.length === 0 ? Colors.primary : Colors.primary} />
+                    <AntDesign name="minus" size={20} color={ticketCount <= 1 || availableTickets.length === 0 ? Colors.mediumGray : Colors.primary} />
                   </TouchableOpacity>
 
                   {/* Ticket Count Display */}
@@ -689,7 +691,7 @@ const EnrollForm = ({ navigation, route }) => {
                       ticketCount === availableTickets.length || availableTickets.length === 0
                     }
                   >
-                    <AntDesign name="plus" size={20} color={ticketCount === availableTickets.length || availableTickets.length === 0 ? Colors.primary : Colors.primary} />
+                    <AntDesign name="plus" size={20} color={ticketCount === availableTickets.length || availableTickets.length === 0 ? Colors.mediumGray : Colors.primary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -701,12 +703,15 @@ const EnrollForm = ({ navigation, route }) => {
                   <Text style={styles.summaryBoxLabel}>Selected Tickets</Text>
                   <Text style={styles.summaryBoxCountPrimary}>{ticketCount}</Text>
                 </View>
-
-
               </View>
               {/* END: Combined Summary Row */}
             </View>
-
+            
+            {/* * MODIFIED SECTION: 
+              * The content that was previously in bottomFixedContainer is now placed 
+              * directly inside the ScrollView, making it scrollable. 
+            */}
+            
             <View style={styles.checkboxSection}>
               <TouchableOpacity
                 style={styles.checkboxContainer}
@@ -755,6 +760,7 @@ const EnrollForm = ({ navigation, route }) => {
             <TouchableOpacity
               style={[
                 styles.enrollButton,
+                styles.enrollButtonInScroll, // Use the new style for extra spacing
                 isSubmitting ||
                   availableTickets.length === 0 ||
                   ticketCount === 0 ||
@@ -776,7 +782,15 @@ const EnrollForm = ({ navigation, route }) => {
                 <Text style={styles.enrollButtonText}>Enroll Now</Text>
               )}
             </TouchableOpacity>
+            
+            {/* Added extra space at the bottom of the scroll view */}
+            <View style={styles.bottomSpacer} /> 
+
           </ScrollView>
+          {/* END OF SCROLLABLE CONTENT AREA */}
+          
+          {/* REMOVED: The fixed bottom section (bottomFixedContainer) is gone */}
+          
         </View>
       </View >
       {renderConfirmModal()}
@@ -788,8 +802,8 @@ const EnrollForm = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   // ADDED: The style for the full screen with primary background (matching Enrollment.jsx)
-  safeArea: { 
-  flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  safeArea: {
+    flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   fullScreenContainer: {
     flex: 1,
@@ -803,7 +817,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
     paddingHorizontal: 5, // Reduced from 9
-    paddingBottom: 5, // Reduced from 10
+    paddingBottom: 5, // MODIFIED: Added small bottom padding back 
   },
   contentCard: {
     flex: 1,
@@ -818,119 +832,55 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
+  // REMOVED/DEPRECATED: bottomFixedContainer style is removed as it's no longer fixed
+  // bottomFixedContainer: {
+  //   backgroundColor: Colors.white, 
+  //   paddingTop: 10,
+  //   borderTopLeftRadius: 15,
+  //   borderTopRightRadius: 15,
+  //   paddingHorizontal: 8,
+  //   shadowColor: Colors.black,
+  //   shadowOffset: { width: 0, height: -2 },
+  //   shadowOpacity: 0.1,
+  //   shadowRadius: 3,
+  //   elevation: 10,
+  // },
+  // FIX: Added spacer for bottom margin
+  bottomSpacer: {
+    height: 50, // **MODIFIED: Increased from 10 to 30 for more space**
+    backgroundColor: Colors.primaryBackground, // Use card background color for blending
+  },
   scrollContentContainer: {
     paddingHorizontal: 3, // Reduced from 5
-    paddingBottom: 15, // Reduced from 20
+    paddingBottom: 0, // IMPORTANT: Removed bottom padding here as the spacer handles it now
   },
   groupInfoTitle: {
-    fontSize: 18, // Reduced from 20
+    fontSize: 18, // Increased for visibility
     fontWeight: "bold",
-    color: Colors.primaryText,
-    marginBottom: 15, // Reduced from 20
+    color: Colors.primary, // Used primary color for emphasis
+    marginBottom: 5, 
     textAlign: "center",
   },
-  groupDetailCard: {
-    borderRadius: 15,
-    padding: 15, // Reduced from 20
-    marginBottom: 20, // Reduced from 25
-    alignItems: "flex-start",
-  },
-
-  valueDisplayContainer: {
-    alignItems: "center",
-    marginBottom: 15, // Reduced from 20
-    width: "100%",
-  },
-  valueLabelLarge: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.white,
-    marginBottom: 8,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  valueGradientBackground: {
-    borderRadius: 15,
-    paddingVertical: 10, // Reduced from 12
-    paddingHorizontal: 20, // Reduced from 25
-    minWidth: "70%",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#2196F3",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 15,
-  },
-  groupValueTextEnhanced: {
-    fontSize: 20, // Reduced from 34
-    fontWeight: "bold",
-    color: Colors.white,
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
-  },
-
-  highlightedGroupName: {
-    fontSize: 18, // Reduced from 20
-    fontWeight: "bold",
-    color: Colors.white,
-    marginBottom: 10, // Reduced from 15
-    textAlign: "center",
-    width: "100%",
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8, // Reduced from 10
-  },
-  infoItemIcon: {
-    marginRight: 8, // Reduced from 10
-  },
-  infoItemText: {
-    fontSize: 12,
-    color: Colors.whiteAccent,
-  },
-  highlightedText: {
-    fontWeight: "bold",
-    color: Colors.white,
-  },
-  dateInfoContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginTop: 10, // Reduced from 15
-    paddingTop: 8, // Reduced from 10
-    borderTopWidth: 0.5,
-    borderTopColor: "rgba(255,255,255,0.3)",
-  },
-  dateItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  dateText: {
-    fontSize: 11,
-    color: Colors.whiteAccent,
-    marginLeft: 5,
-  },
+  
+  // MODIFIED: Ticket Selection Box for better visibility/design
   ticketSelectionBox: {
-    backgroundColor: Colors.primaryBackground,
-    borderRadius: 12,
-    padding: 12, // Reduced from 15
-    marginHorizontal: 5, // Reduced from 8
-    marginBottom: 5, // Reduced from 20
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 3,
-    borderWidth: 0,
+    backgroundColor: Colors.white, // Changed background to white
+    borderRadius: 15, // Increased border radius
+    padding: 15,
+    marginHorizontal: 5,
+    marginBottom: 20, // Increased margin
+    shadowColor: Colors.shadowBlue,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3, 
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 0, // Removed border for a cleaner look
   },
   ticketSelectionBoxTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: Colors.primaryText,
-    marginBottom: 10,
+    marginBottom: 15,
     textAlign: "center",
   },
 
@@ -946,44 +896,42 @@ const styles = StyleSheet.create({
   stepperContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.white, // White background for clarity
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.mediumGray,
-    overflow: "hidden", // To make sure borders/shadows look clean
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    backgroundColor: Colors.lightGray, // Changed to lighter background
+    borderRadius: 8, // Slightly reduced radius
+    borderWidth: 0,
+    overflow: "hidden",
+    elevation: 0, // Removed inner shadow
   },
   stepperButton: {
-    backgroundColor: Colors.lightGray, // Light background for buttons
+    backgroundColor: Colors.white, // White background for buttons
     padding: 10,
-    width: 45,
-    height: 45,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 8,
+    marginHorizontal: 5, // Spacing between buttons and count
+    borderWidth: 1,
+    borderColor: Colors.primary, // Primary color border
   },
   stepperButtonDisabled: {
     backgroundColor: Colors.mediumGray,
-    opacity: 0.6,
+    opacity: 0.8,
+    borderColor: Colors.mediumGray,
   },
   ticketCountDisplay: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.primaryBackground, // Light blue background for count
     paddingVertical: 6,
     paddingHorizontal: 15,
     minWidth: 50,
     alignItems: "center",
     justifyContent: "center",
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: Colors.mediumGray,
+    borderRadius: 4,
   },
   ticketCountText: {
-    fontSize: 20,
+    fontSize: 22, // Slightly larger count text
     fontWeight: "bold",
-    color: Colors.primaryText,
+    color: Colors.primary, // Primary blue color
   },
   quantityLabel: {
     fontSize: 16,
@@ -1001,15 +949,14 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   summaryBoxPrimary: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.primaryDark,
-    width: '90%', // Occupy most of the width
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: Colors.accentBlue, // Use a bright accent blue for tickets
+    width: "100%",
     borderRadius: 10,
     paddingHorizontal: 15,
-    paddingVertical: 10, // Reduced vertical padding
-    // Removed marginBottom: 2
+    paddingVertical: 12, // Increased vertical padding
     shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -1017,52 +964,37 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   summaryBoxLabel: {
-    fontSize: 14,
+    fontSize: 16, // Larger label
     fontWeight: "600",
     color: Colors.whiteAccent,
   },
   summaryBoxCountPrimary: {
-    fontSize: 20,
+    fontSize: 22, // Larger count
     fontWeight: "bold",
     color: Colors.white,
   },
 
-  // END: COMBINED SUMMARY ROW STYLES
+  // END: TICKET SELECTION ROW STYLES
 
   boldText: {
     fontWeight: "bold",
     color: Colors.primaryDark,
   },
   checkboxSection: {
-    marginTop: 5, // Reduced from 10
-    marginBottom: 15, // Reduced from 20
+    marginTop: 15, // MODIFIED: Increased top margin for separation
+    marginBottom: 15, // MODIFIED: Increased bottom margin 
     paddingHorizontal: 10,
-  },
-  readTermsPrompt: {
-    backgroundColor: Colors.warning,
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 15,
-    borderLeftWidth: 5,
-    borderLeftColor: Colors.warningOrange,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  readTermsText: {
-    fontSize: 15,
-    color: Colors.black,
-    flex: 1,
-    marginLeft: 0,
+    backgroundColor: 'transparent', // Ensure it doesn't add background color
   },
   linkText: {
     color: Colors.linkBlue,
     fontWeight: "bold",
-    fontSize: 12,
+    fontSize: 13, // Slightly larger
     textDecorationLine: "underline",
   },
   checkboxContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start", // Changed to align to start for multi-line text
     marginBottom: 10, // Reduced from 15
   },
   checkboxLabel: {
@@ -1070,20 +1002,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.primaryText,
     flex: 1,
+    lineHeight: 20,
   },
   enrollButton: {
     backgroundColor: Colors.secondary,
-    paddingVertical: 10, // Reduced from 12
-    borderRadius: 15,
+    paddingVertical: 15, // Increased padding for a better touch target
+    borderRadius: 12, // Slightly reduced radius for a modern look
     alignItems: "center",
     justifyContent: "center",
     shadowColor: Colors.secondary,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4, // Increased shadow for better pop
     shadowRadius: 8,
-    elevation: 10,
+    elevation: 12,
     marginHorizontal: 10,
-    marginTop: -10, // Reduced from -15
+  },
+  enrollButtonInScroll: {
+    marginTop: 5, // Keep a small margin
+    marginBottom: 0, // Managed by bottomSpacer
   },
   enrollButtonDisabled: {
     backgroundColor: Colors.disabledGray,
@@ -1093,9 +1029,9 @@ const styles = StyleSheet.create({
   },
   enrollButtonText: {
     color: Colors.white,
-    fontSize: 16, // Reduced from 18
+    fontSize: 18, // Larger font
     fontWeight: "bold",
-    letterSpacing: 0,
+    letterSpacing: 0.5,
   },
   centeredFlexContainer: {
     flex: 1,
@@ -1105,16 +1041,10 @@ const styles = StyleSheet.create({
   },
   loaderContainer: {
     // MODIFIED: Ensure flex: 1 for full screen coverage under the header
-    flex: 1, 
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: Colors.white, // Use white/light color for the loader background
-  },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 18,
-    color: Colors.darkGray,
-    textAlign: "center",
   },
   messageContainer: {
     flex: 1,
@@ -1148,11 +1078,11 @@ const styles = StyleSheet.create({
   },
 
   // --- NEW MODAL STYLES (FROM USER SNIPPET) ---
-  modalOverlay: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    backgroundColor: 'rgba(0,0,0,0.6)' 
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)'
   },
   styledModalContent: {
     backgroundColor: Colors.white,
@@ -1170,8 +1100,8 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   modalAnimationPlaceholder: {
-    width: 100, 
-    height: 100, 
+    width: 100,
+    height: 100,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
@@ -1180,12 +1110,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#053B90',
   },
-  styledModalTitle: { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
-    marginBottom: 15, 
-    textAlign: 'center', 
-    color: Colors.primaryText 
+  styledModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+    color: Colors.primaryText
   },
   styledModalMessage: {
     fontSize: 14,
@@ -1244,6 +1174,101 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 16,
     fontWeight: "bold",
+  },
+
+  // --- NEW CHIT DETAILS GRID STYLES (Stylized for better design) ---
+  chitDetailsCard: {
+    width: '98%', // Slightly reduced width
+    alignSelf: 'center',
+    backgroundColor: Colors.chitBackground,
+    borderRadius: 15,
+    marginVertical: 15,
+    overflow: 'hidden',
+    shadowColor: Colors.shadowBlue,
+    shadowOffset: { width: 0, height: 8 }, // Deeper shadow
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
+    borderWidth: 1, // Added a subtle border
+    borderColor: Colors.mediumGray,
+  },
+  chitValueHeader: {
+    paddingVertical: 20,
+    backgroundColor: Colors.primary, // Primary blue for header
+    alignItems: 'center',
+    // Removed bottom border to let the card edge define the separation
+  },
+  chitValueLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.whiteAccent,
+    marginBottom: 5,
+    textTransform: 'uppercase',
+  },
+  chitValueHeaderText: {
+    fontSize: 28, // Larger value text
+    fontWeight: 'bold',
+    color: Colors.white,
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  groupNameText: {
+    fontSize: 16,
+    color: Colors.whiteAccent,
+    fontWeight: '600',
+    marginTop: 5,
+  },
+  chitDetailsGridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    backgroundColor: Colors.white,
+    paddingHorizontal: 0,
+    borderTopWidth: 5, // Thick separator
+    borderTopColor: Colors.primaryBackground, 
+  },
+  detailItem: {
+    width: '50%', // Two items per row
+    paddingHorizontal: 15,
+    paddingVertical: 14, // Increased padding
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightDivider,
+    borderRightWidth: 1,
+    borderRightColor: Colors.lightDivider,
+    backgroundColor: Colors.white,
+  },
+  detailItemNoRightBorder: {
+    borderRightWidth: 0,
+  },
+  detailItemNoBottomBorder: {
+    borderBottomWidth: 0,
+  },
+  detailItemEmpty: {
+    backgroundColor: Colors.lightGray, // Subtle background for empty slot
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: Colors.chitLabel,
+    fontWeight: '500',
+    marginBottom: 2,
+    textTransform: 'uppercase', // Uppercase labels
+  },
+  detailValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.chitValue,
+  },
+  detailValueCurrency: {
+    fontSize: 16, // Highlight currency values
+    fontWeight: 'bold',
+    color: Colors.primaryText,
+  },
+  detailValueLink: {
+    color: Colors.chitLink,
+    textDecorationLine: 'underline',
   },
 });
 
