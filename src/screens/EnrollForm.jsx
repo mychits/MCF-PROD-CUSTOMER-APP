@@ -158,11 +158,11 @@ const ChitDetailsGrid = ({ data }) => {
       console.log("Using auction[0].commencement_date as commencement date fallback.");
   }
 
-  // Fallback 2 (Old Fallback 1): Use group's start_date
-  if (!rawCommencementDate && data.start_date) {
-      rawCommencementDate = data.start_date;
-      console.log("Using start_date as commencement date fallback.");
-  }
+  // Fallback 2 (Old Fallback 1) - REMOVED: Do not use group's start_date as a fallback for 'First Auction Date'
+  // if (!rawCommencementDate && data.start_date) {
+  //     rawCommencementDate = data.start_date;
+  //     console.log("Using start_date as commencement date fallback.");
+  // }
 
   // Fallback 3 (Old Fallback 2): Use the date of the very first auction (auction_date)
   if (!rawCommencementDate && firstAuction?.auction_date) {
@@ -179,7 +179,7 @@ const ChitDetailsGrid = ({ data }) => {
 
   const commencementDateValue = rawCommencementDate
     ? formatDate(rawCommencementDate) // Format the field we successfully found
-    : 'N/A'; // Final fallback if no date field is present
+    : 'Pending'; // <--- MODIFIED: Final fallback is now 'Pending'
   // 🎯 MODIFICATION END
 
   const duration = data.group_duration || 'N/A';
@@ -190,8 +190,8 @@ const ChitDetailsGrid = ({ data }) => {
 
   const details = [
     { label: "Monthly Installment", value: monthlyInstallmentValue },
-    // 🎯 MODIFIED: Use the correct label "Commencement Date" and the robustly calculated value
-    { label: "Commencement Date", value: commencementDateValue }, 
+    // 🎯 MODIFIED: Use the correct label "First Auction Date" and the robustly calculated value
+    { label: "First Auction Date", value: commencementDateValue }, 
     { label: "Duration", value: `${duration} Months` },
     { label: "Group Name", value: groupName },
     { label: "Group Members", value: groupMembers },
