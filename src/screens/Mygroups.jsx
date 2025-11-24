@@ -391,6 +391,7 @@ const Mygroups = ({ navigation }) => {
 
   // *** MODIFIED: Enroll Navigation Handler ***
   const handleEnrollNow = () => {
+    // This navigation directs to the Enrollment screen via the BottomTab Navigator
     navigation.navigate("BottomTab", { screen: "Enrollment" });
   };
 
@@ -466,14 +467,6 @@ const Mygroups = ({ navigation }) => {
                   <Image source={NoGroupImage} style={styles.noGroupImage} resizeMode="contain" />
                   <Text style={styles.noGroupText}>No active groups found for this user.</Text>
 
-                  {/* *** Enroll Now Button *** */}
-                  <TouchableOpacity 
-                    style={styles.enrollNowButton} 
-                    onPress={handleEnrollNow}
-                  >
-                    <Text style={styles.enrollNowButtonText}>Enroll Now</Text>
-                    <Ionicons name="arrow-forward-circle-outline" size={22} color="#fff" style={{ marginLeft: 8 }} />
-                  </TouchableOpacity>
                   {/* ******************************* */}
                 </View>
               ) : (cardsToRender.map((card, index) => {
@@ -813,7 +806,7 @@ const styles = StyleSheet.create({
   },
   enrolledGroupsLabel: {
     color: "#E0E0E0",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
   },
@@ -848,10 +841,10 @@ const styles = StyleSheet.create({
   },
 
   // *** MODIFIED: marginTop reduced from 50 to 30 to move content up ***
-  noGroupWrapper: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30, marginTop: 30 },
+  noGroupWrapper: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30, marginTop: -20 },
   
-  noGroupImage: { width: 180, height: 180, marginBottom: 10 },
-  noGroupText: { fontSize: 20, fontWeight: "bold", color: Colors.darkText, textAlign: "center", marginBottom: 20 },
+  noGroupImage: { width: 180, height: 180, marginBottom: -10 },
+  noGroupText: { fontSize: 16, fontWeight: "bold", color: Colors.darkText, textAlign: "center", marginBottom: 20 },
   
   enrollNowButton: {
     flexDirection: 'row',

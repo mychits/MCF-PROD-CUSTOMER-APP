@@ -39,9 +39,9 @@ const formatDate = (dateString) => {
     // Check if the date object is valid
     if (!isNaN(date.getTime())) {
       const options = { year: "numeric", month: "short", day: "numeric" };
-      // Format: e.g., "10-Dec-2025" (matching image style)
+      // Format: e.g., "31-May-2025" (matching image style)
       const formatted = date.toLocaleDateString('en-GB', options);
-      // Clean up the format to match your desired style (e.g., 10-Dec-2025)
+      // Clean up the format to match your desired style (e.g., 31-May-2025)
       return formatted.replace(/ /g, '-').replace(',', '');
     }
   } catch (error) {
@@ -146,7 +146,42 @@ const ChitDetailsGrid = ({ data }) => {
   const chitValue = data.group_value ? `₹ ${formatNumberIndianStyle(data.group_value)}` : 'N/A';
   // The unit '/Month' is now concatenated here
   const monthlyInstallmentValue = data.monthly_installment ? `₹ ${formatNumberIndianStyle(data.monthly_installment)} /Month` : 'N/A';
-  const firstAuctionDate = data.group_first_auction_date ? formatDate(data.group_first_auction_date) : 'N/A';
+  
+  // 🎯 MODIFICATION START: Cascading logic to reliably find the commencement date
+  let rawCommencementDate = data.group_commencement_date;
+
+  // Fallback 1 (New Priority): Check for the specific 'commencement_date' inside the first auction object
+  const firstAuction = data.auction && Array.isArray(data.auction) && data.auction.length > 0 ? data.auction[0] : null;
+
+  if (!rawCommencementDate && firstAuction?.commencement_date) {
+      rawCommencementDate = firstAuction.commencement_date;
+      console.log("Using auction[0].commencement_date as commencement date fallback.");
+  }
+
+  // Fallback 2 (Old Fallback 1): Use group's start_date
+  if (!rawCommencementDate && data.start_date) {
+      rawCommencementDate = data.start_date;
+      console.log("Using start_date as commencement date fallback.");
+  }
+
+  // Fallback 3 (Old Fallback 2): Use the date of the very first auction (auction_date)
+  if (!rawCommencementDate && firstAuction?.auction_date) {
+      rawCommencementDate = firstAuction.auction_date;
+      console.log("Using first auction date (auction_date) as commencement date fallback.");
+  }
+
+  // Fallback 4 (Old Fallback 3): Use group_first_auction_date
+  if (!rawCommencementDate && data.group_first_auction_date) {
+      rawCommencementDate = data.group_first_auction_date;
+      console.log("Using group_first_auction_date as commencement date fallback.");
+  }
+
+
+  const commencementDateValue = rawCommencementDate
+    ? formatDate(rawCommencementDate) // Format the field we successfully found
+    : 'N/A'; // Final fallback if no date field is present
+  // 🎯 MODIFICATION END
+
   const duration = data.group_duration || 'N/A';
   const groupName = data.group_name || 'N/A';
   const groupMembers = data.group_members || 'N/A';
@@ -155,7 +190,8 @@ const ChitDetailsGrid = ({ data }) => {
 
   const details = [
     { label: "Monthly Installment", value: monthlyInstallmentValue },
-    { label: "First Auction Date", value: firstAuctionDate },
+    // 🎯 MODIFIED: Use the correct label "Commencement Date" and the robustly calculated value
+    { label: "Commencement Date", value: commencementDateValue }, 
     { label: "Duration", value: `${duration} Months` },
     { label: "Group Name", value: groupName },
     { label: "Group Members", value: groupMembers },
@@ -244,12 +280,35 @@ const EnrollForm = ({ navigation, route }) => {
     setLoading(true);
     setError(null);
     try {
+      // FIX 1: Updated the API route as requested
+      const groupApiUrl = `${url}/group/${groupId}`; 
+      
+      // ✅ Console log for the group fetch API URL
+      console.log("Fetching Group Details from URL:", groupApiUrl); 
+      
       const groupResponse = await fetch(
-        `${url}/group/get-by-id-group/${groupId}`
+        groupApiUrl
       );
+      
+      // ✅ Console log the group fetch response status
+      console.log("Group Details Response Status:", groupResponse.status);
+
       if (groupResponse.ok) {
-        const data = await groupResponse.json();
-        setCardsData(data);
+        // FIX 2: Handle the nested response structure (data -> [group object])
+        const responseBody = await groupResponse.json();
+        
+        // ✅ CORRECTED LOG: Log raw response body as a string to show full details of nested arrays like 'auction'
+        console.log("Group Details Raw Response Body:", JSON.stringify(responseBody, null, 2)); 
+        
+        const groupData = (responseBody.data && Array.isArray(responseBody.data) && responseBody.data.length > 0)
+          ? responseBody.data[0]
+          : responseBody; // Fallback to the whole body if structure is unexpected
+        
+        // ✅ CORRECTED LOG: Deep log the parsed group data to fully expand nested arrays (like 'auction')
+        // Using JSON.parse(JSON.stringify) to ensure deep cloning and logging of nested arrays.
+        console.log("Parsed Group Data (Deep Log):", JSON.parse(JSON.stringify(groupData))); 
+        
+        setCardsData(groupData);
       } else {
         const errorData = await groupResponse.json();
         console.error(
@@ -264,9 +323,18 @@ const EnrollForm = ({ navigation, route }) => {
         setCardsData(null);
       }
 
+      const ticketsApiUrl = `${url}/enroll/get-next-tickets/${groupId}`;
+      
+      // ✅ Console log for the tickets fetch API URL
+      console.log("Fetching Available Tickets from URL:", ticketsApiUrl);
+
       const ticketsResponse = await axios.post(
-        `${url}/enroll/get-next-tickets/${groupId}`
+        ticketsApiUrl
       );
+      
+      // ✅ Console log the tickets fetch response data
+      console.log("Available Tickets Response Data:", ticketsResponse.data);
+
       const fetchedTickets = Array.isArray(
         ticketsResponse.data.availableTickets
       )
@@ -816,16 +884,16 @@ const styles = StyleSheet.create({
   mainContentWrapper: {
     flex: 1,
     justifyContent: "space-between",
-    paddingHorizontal: 5, // Reduced from 9
-    paddingBottom: 5, // MODIFIED: Added small bottom padding back 
+    paddingHorizontal: 3, // MODIFIED: Reduced from 5
+    paddingBottom: 3, // MODIFIED: Reduced from 5
   },
   contentCard: {
     flex: 1,
     backgroundColor: Colors.primaryBackground,
     borderRadius: 15,
-    marginTop: 5, // Reduced from 10
-    paddingVertical: 10, // Reduced from 15
-    paddingHorizontal: 8, // Reduced from 10
+    marginTop: 3, // MODIFIED: Reduced from 5
+    paddingVertical: 8, // MODIFIED: Reduced from 10
+    paddingHorizontal: 5, // MODIFIED: Reduced from 8
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -847,11 +915,11 @@ const styles = StyleSheet.create({
   // },
   // FIX: Added spacer for bottom margin
   bottomSpacer: {
-    height: 50, // **MODIFIED: Increased from 10 to 30 for more space**
+    height: 60, // MODIFIED: Increased from 30 to 60 for more space after the button
     backgroundColor: Colors.primaryBackground, // Use card background color for blending
   },
   scrollContentContainer: {
-    paddingHorizontal: 3, // Reduced from 5
+    paddingHorizontal: 0, // MODIFIED: Reduced from 3 to 0
     paddingBottom: 0, // IMPORTANT: Removed bottom padding here as the spacer handles it now
   },
   groupInfoTitle: {
@@ -868,7 +936,7 @@ const styles = StyleSheet.create({
     borderRadius: 15, // Increased border radius
     padding: 15,
     marginHorizontal: 5,
-    marginBottom: 20, // Increased margin
+    marginBottom: 15, // MODIFIED: Reduced from 20 to 15
     shadowColor: Colors.shadowBlue,
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.3, 
@@ -880,7 +948,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: Colors.primaryText,
-    marginBottom: 15,
+    marginBottom: 10, // MODIFIED: Reduced from 15 to 10
     textAlign: "center",
   },
 
@@ -890,7 +958,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between", // Distribute space between label and stepper
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 10, // MODIFIED: Reduced from 15 to 10
     paddingHorizontal: 0,
   },
   stepperContainer: {
@@ -945,7 +1013,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 0, // Removed vertical padding
-    marginBottom: 10, // Slightly reduced margin for compactness
+    marginBottom: 5, // MODIFIED: Reduced from 10 to 5 for compactness
     width: '100%',
   },
   summaryBoxPrimary: {
@@ -981,8 +1049,8 @@ const styles = StyleSheet.create({
     color: Colors.primaryDark,
   },
   checkboxSection: {
-    marginTop: 15, // MODIFIED: Increased top margin for separation
-    marginBottom: 15, // MODIFIED: Increased bottom margin 
+    marginTop: 10, // MODIFIED: Reduced from 15 to 10
+    marginBottom: 10, // MODIFIED: Reduced from 15 to 10
     paddingHorizontal: 10,
     backgroundColor: 'transparent', // Ensure it doesn't add background color
   },
@@ -1018,7 +1086,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   enrollButtonInScroll: {
-    marginTop: 5, // Keep a small margin
+    marginTop: 2, // MODIFIED: Reduced from 5 to 2
     marginBottom: 0, // Managed by bottomSpacer
   },
   enrollButtonDisabled: {
@@ -1182,7 +1250,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: Colors.chitBackground,
     borderRadius: 15,
-    marginVertical: 15,
+    marginVertical: 10, // MODIFIED: Reduced from 15 to 10
     overflow: 'hidden',
     shadowColor: Colors.shadowBlue,
     shadowOffset: { width: 0, height: 8 }, // Deeper shadow
@@ -1193,7 +1261,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.mediumGray,
   },
   chitValueHeader: {
-    paddingVertical: 20,
+    paddingVertical: 15, // MODIFIED: Reduced from 20 to 15
     backgroundColor: Colors.primary, // Primary blue for header
     alignItems: 'center',
     // Removed bottom border to let the card edge define the separation
@@ -1223,13 +1291,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     backgroundColor: Colors.white,
     paddingHorizontal: 0,
-    borderTopWidth: 5, // Thick separator
+    borderTopWidth: 3, // MODIFIED: Reduced from 5 to 3
     borderTopColor: Colors.primaryBackground, 
   },
   detailItem: {
     width: '50%', // Two items per row
     paddingHorizontal: 15,
-    paddingVertical: 14, // Increased padding
+    paddingVertical: 10, // MODIFIED: Reduced from 14 to 10
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightDivider,
     borderRightWidth: 1,
@@ -1246,7 +1314,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lightGray, // Subtle background for empty slot
   },
   detailLabel: {
-    fontSize: 13,
+    fontSize: 11, // MODIFIED: Reduced from 12 to 11 for compactness
     color: Colors.chitLabel,
     fontWeight: '500',
     marginBottom: 2,
