@@ -846,7 +846,7 @@ const Home = ({ route, navigation }) => {
                         {/* MODIFICATION: Rewards onPress changed to an empty function */}
                         <TouchableOpacity
                             style={styles.blueGridItem}
-                            onPress={() => console.log('Rewards button disabled by user request.')}
+                     onPress={() => navigation.navigate('RewardsScreen', { userId: userId, featureTitle: 'Rewards' })}
                         >
                             <View style={styles.iconCircleBlue}>
                                 <MaterialIcons name="emoji-events" size={30} color="#053B90" />
