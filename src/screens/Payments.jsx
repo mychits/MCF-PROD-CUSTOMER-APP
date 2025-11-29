@@ -482,7 +482,7 @@ const Payments = ({ navigation }) => {
                             </View>
                             <View style={{ flex: 1 }}>
                               <Text style={[styles.cardTitle, { color: isDeleted ? Colors.removedText : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.darkText }]}>
-                                {card.group_id.group_name}
+                                {card.group_id?.group_name}
                               </Text>
                               <Text style={styles.ticketText}>Ticket: {card.tickets}</Text>
                               {isDeleted && <Text style={styles.removalReason}>Reason: {card.removal_reason?.toUpperCase() !== "OTHERS" ? card.removal_reason : "Unknown"}</Text>}

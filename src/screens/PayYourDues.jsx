@@ -271,7 +271,7 @@ const PayYourDues = ({ navigation, route }) => {
 
   const filteredCardsToDisplay = cardsData.filter((card) => {
     const isLoanGroup = card.group_id?.group_name
-      ? card.group_id.group_name.toLowerCase().includes("loan")
+      ? card.group_id?.group_name.toLowerCase().includes("loan")
       : false;
 
     return card.group_id !== null && !isLoanGroup;
@@ -475,7 +475,7 @@ const PayYourDues = ({ navigation, route }) => {
                     >
                       <View style={styles.cardHeader}>
                         <Text style={styles.groupCardNameEnhanced}>
-                          {card.group_id.group_name}
+                          {card.group_id?.group_name}
                         </Text>
                         <Text style={styles.groupCardTicketEnhanced}>
                           Ticket: {card.tickets}
@@ -534,7 +534,7 @@ const PayYourDues = ({ navigation, route }) => {
                                 card.group_id._id,
                                 card.tickets,
                                 Math.abs(balance),
-                                card.group_id.group_name
+                                card.group_id?.group_name
                               )
                             }
                             style={styles.payNowButton}

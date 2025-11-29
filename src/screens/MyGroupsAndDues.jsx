@@ -90,7 +90,7 @@ const MyGroupsAndDues = ({ navigation }) => {
           .map(ticketDetail => ({
             _id: ticketDetail.group_id._id, // Use group_id's _id as the primary group identifier
             ticketId: ticketDetail._id, // Store the ticket ID for navigation to EnrollGroup.jsx
-            chitGroupName: ticketDetail.group_id.group_name,
+            chitGroupName: ticketDetail.group_id?.group_name,
             chitValue: ticketDetail.group_id.chitValue,
             numberOfMembers: ticketDetail.group_id.numberOfMembers,
             nextPaymentDate: ticketDetail.next_payment_date,

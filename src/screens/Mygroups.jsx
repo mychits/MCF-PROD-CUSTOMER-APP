@@ -539,7 +539,7 @@ const Mygroups = ({ navigation }) => {
                             </View>
                             <View style={{ flex: 1 }}>
                               <Text style={[styles.cardTitle, { color: isDeleted ? Colors.removedText : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.darkText }]}>
-                                {card.group_id.group_name}
+                                {card.group_id?.group_name}
                               </Text>
                               {/* MODIFIED: Use ticketKey */}
                               <Text style={styles.ticketText}>Ticket: {ticketKey}</Text> 
