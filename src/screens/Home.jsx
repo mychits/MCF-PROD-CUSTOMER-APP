@@ -185,7 +185,22 @@ const Home = ({ route, navigation }) => {
     const sideMenuItems = [
         { title: "Chat with MyChit", icon: "chatbubbles-outline", onPress: handleWhatsAppPress },
         { title: "Get Help", icon: "help-circle-outline", link: "Help" },
-        { title: "Earn Rewards", icon: "gift-outline", link: "FeatureComingSoon", featureTitle: "Rewards" },
+        // START OF MODIFICATION TO PREVENT NAVIGATION ON 'EARN REWARDS'
+        { 
+            title: "Earn Rewards", 
+            icon: "gift-outline", 
+            featureTitle: "Rewards",
+            onPress: () => {
+                Toast.show({
+                    type: 'info',
+                    text1: 'Feature Coming Soon',
+                    text2: 'Rewards feature is under development.',
+                    position: 'bottom',
+                    visibilityTime: 4000,
+                });
+            }
+        },
+        // END OF MODIFICATION
         // START OF MODIFICATION: Added My Profile to Side Menu
         { title: "My Profile", icon: "person-outline", link: "ProfileScreen" },
         // END OF MODIFICATION
@@ -843,10 +858,18 @@ const Home = ({ route, navigation }) => {
                         columnWrapperStyle={styles.row}
                     />
                     <View style={styles.blueContainer}>
-                        {/* MODIFICATION: Rewards onPress changed to an empty function */}
+                        {/* MODIFICATION: Rewards onPress changed to show a Toast instead of navigating to RewardsScreen */}
                         <TouchableOpacity
                             style={styles.blueGridItem}
-                     onPress={() => navigation.navigate('RewardsScreen', { userId: userId, featureTitle: 'Rewards' })}
+                            onPress={() => {
+                                Toast.show({
+                                    type: 'info',
+                                    text1: 'Feature Coming Soon',
+                                    text2: 'Rewards feature is under development.',
+                                    position: 'bottom',
+                                    visibilityTime: 4000,
+                                });
+                            }}
                         >
                             <View style={styles.iconCircleBlue}>
                                 <MaterialIcons name="emoji-events" size={30} color="#053B90" />
@@ -1558,4 +1581,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default Home;     
+export default Home;
