@@ -555,7 +555,8 @@ const Home = ({ route, navigation }) => {
     ];
 
     const mychitsAdvantages = [
-        { icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00', },
+        { icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00',  action: 'navigate',
+            targetScreen: 'Enrollment'},
         {
             icon: 'gavel',
             text1: 'In app ',
@@ -581,7 +582,8 @@ const Home = ({ route, navigation }) => {
             phoneNumber: '+919483900777'
         },
         { icon: 'verified', text1: 'Fully Compliant as', text2: 'per Chit Act 1998', iconColor: '#3F51B5' },
-        { icon: 'groups', text1: 'Chit Plans for', text2: 'everyone', iconColor: '#4CAF50' },
+        { icon: 'groups', text1: 'Chit Plans for', text2: 'everyone', iconColor: '#4CAF50' , action: 'navigate',
+            targetScreen: 'Enrollment'},
     ];
 
     const customerReviews = [
