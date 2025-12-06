@@ -82,6 +82,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  // NEW: State to hold approval status
+  const [userApprovalStatus, setUserApprovalStatus] = useState(null);
 
   const toastRef = useRef();
 
@@ -117,6 +119,74 @@ export default function Login() {
       toastRef.current.show(message, imgSrc);
     }
   };
+
+  // UPDATED: Function to fetch user details and navigate
+  const fetchUserDetails = async (userId) => {
+    try {
+      // The API route from the user's image, using GET
+      const userDetailUrl = `${url}/user/get-user-by-id/${userId}`; 
+      console.log("Attempting to fetch user details to:", userDetailUrl);
+
+      const response = await fetch(userDetailUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        const approvalStatus = data.approval_status; // Assuming the key is 'approval_status'
+        setUserApprovalStatus(approvalStatus);
+
+        showAppToast("User details fetched!", require("../../assets/Group400.png"));
+        
+        // CONSOLE LOG FOR STATUS CHECK
+        const statusDescription = approvalStatus === null ? 'null' : approvalStatus === '' ? 'empty string' : approvalStatus === undefined ? 'undefined' : `'${approvalStatus}'`;
+        console.log(`[Login] Fetched approval_status: ${statusDescription}`);
+
+        // NEW NAVIGATION LOGIC: 
+        // If approvalStatus is explicitly 'false', go to Dashboard.
+        // Otherwise (true, null, empty, undefined), go to Home (BottomTab).
+        if (approvalStatus === 'false') {
+          console.log("[Login] approval_status is 'false'. Directing to Dashboard.");
+          navigation.replace("Dashboard", { userId });
+        } else {
+          console.log("[Login] approval_status is not 'false' (i.e., 'true', null, or empty). Directing to Home (BottomTab).");
+          navigation.replace("BottomTab", { userId });
+        }
+
+      } else {
+        // Handle error in fetching user details, default to Home (since null/empty is now Home)
+        let errorMessage = "Login successful, but failed to fetch approval status. Navigating to Home.";
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = `Login successful, but failed to fetch approval status: ${errorData.message}. Navigating to Home.`;
+          console.error("User details fetch error (JSON response):", errorData);
+        } else {
+          const errorText = await response.text();
+          console.error("User details fetch error (non-JSON response):", response.status, errorText);
+          errorMessage = `Login successful, but server error during status check (${response.status}). Navigating to Home.`;
+        }
+        console.log("[Login] Error fetching status. Defaulting to Home (BottomTab).");
+        showAppToast(errorMessage, require("../../assets/Group400.png"));
+        navigation.replace("BottomTab", { userId });
+      }
+    } catch (error) {
+      console.error("Network or unexpected error fetching user details:", error);
+      console.log("[Login] Network error. Defaulting to Home (BottomTab).");
+      showAppToast(
+        "Login successful, but an unexpected error occurred while checking approval status. Navigating to Home.",
+        require("../../assets/Group400.png")
+      );
+      // Fallback navigation
+      navigation.replace("BottomTab", { userId });
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleLogin = async () => {
     if (!isConnected || !isInternetReachable) {
@@ -169,8 +239,12 @@ export default function Login() {
           data.message || "Login Successful!",
           require("../../assets/Group400.png")
         );
-        setAppUser((prev) => ({ ...prev, userId: data.userId }));
-        navigation.replace("BottomTab", { userId: data.userId });
+        const loggedInUserId = data.userId;
+        setAppUser((prev) => ({ ...prev, userId: loggedInUserId }));
+        
+        // NEW: Proceed to fetch user details and navigate
+        await fetchUserDetails(loggedInUserId);
+        
       } else {
         let errorMessage = "An unexpected error occurred. Please try again.";
         if (contentType && contentType.includes("application/json")) {
@@ -183,6 +257,7 @@ export default function Login() {
             errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route or server logs.`;
         }
         showAppToast(errorMessage, require("../../assets/Group400.png"));
+        setLoading(false); // Make sure loading is false on failure
       }
     } catch (error) {
       console.error("Login error (network or unexpected):", error);
@@ -190,8 +265,7 @@ export default function Login() {
         "Login failed. Please check your network connection and try again.",
         require("../../assets/Group400.png")
       );
-    } finally {
-      setLoading(false);
+      setLoading(false); // Make sure loading is false on failure
     }
   };
 

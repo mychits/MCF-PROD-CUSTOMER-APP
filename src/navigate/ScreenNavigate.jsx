@@ -30,6 +30,7 @@ import Enrollment from "../screens/Enrollment";
 import MyLoan from "../screens/MyLoan.jsx";
 import OffersScreen from "../screens/OffersScreen.jsx"; ``
 import RewardsScreen from "../screens/RewardsScreen.jsx";
+import Dashboard from "../screens/Dashboard.jsx";
 
 
 import About from "../screens/About";
@@ -320,6 +321,11 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="TermsConditions"
             component={TermsConditions}
+            options={{ headerShown: false }}
+          />
+             <Stack.Screen
+            name="Dashboard"
+            component={Dashboard}
             options={{ headerShown: false }}
           />
           <Stack.Screen

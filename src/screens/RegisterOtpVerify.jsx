@@ -160,6 +160,75 @@ const RegisterOtpVerify = ({ route }) => {
     }
   };
 
+  // UPDATED: Function to fetch user details and navigate based on approval_status
+  const fetchUserDetailsAndNavigate = async (userId) => {
+    try {
+      const userDetailUrl = `${url}/user/get-user-by-id/${userId}`; 
+      console.log("Attempting to fetch user details to:", userDetailUrl);
+
+      const response = await fetch(userDetailUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        const approvalStatus = data.approval_status; 
+
+        showAppToast("Registration successful! Checking approval status...", require("../../assets/Group400.png"));
+        
+        // CONSOLE LOG FOR STATUS CHECK
+        const statusDescription = approvalStatus === null ? 'null' : approvalStatus === '' ? 'empty string' : approvalStatus === undefined ? 'undefined' : `'${approvalStatus}'`;
+        console.log(`[RegisterOtpVerify] Fetched approval_status after registration: ${statusDescription}`);
+
+        // NEW NAVIGATION LOGIC: 
+        // If approvalStatus is explicitly 'false', go to Dashboard.
+        // Otherwise (true, null, empty, undefined), go to Home (BottomTab).
+        setTimeout(() => {
+          if (approvalStatus === 'false') {
+            console.log("[RegisterOtpVerify] approval_status is 'false'. Directing to Dashboard.");
+            navigation.replace("Dashboard", { userId });
+          } else {
+            console.log("[RegisterOtpVerify] approval_status is not 'false' (i.e., 'true', null, or empty). Directing to Home (BottomTab).");
+            // This handles 'true', null, empty, or any other value by navigating to Home
+            navigation.replace("BottomTab", { userId });
+          }
+        }, 2000); // Wait for the "Registration Successful" toast to display
+
+      } else {
+        // Handle error in fetching user details, default to Home (since null/empty is now Home)
+        let errorMessage = "Registration successful, but failed to fetch approval status. Navigating to Home.";
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = `Registration successful, but failed to fetch approval status: ${errorData.message}. Navigating to Home.`;
+          console.error("User details fetch error (JSON response):", errorData);
+        } else {
+          const errorText = await response.text();
+          console.error("User details fetch error (non-JSON response):", response.status, errorText);
+          errorMessage = `Registration successful, but server error during status check (${response.status}). Navigating to Home.`;
+        }
+        console.log("[RegisterOtpVerify] Error fetching status. Defaulting to Home (BottomTab).");
+        showAppToast(errorMessage);
+        setTimeout(() => {
+          navigation.replace("BottomTab", { userId });
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Network or unexpected error fetching user details after registration:", error);
+      console.log("[RegisterOtpVerify] Network error. Defaulting to Home (BottomTab).");
+      showAppToast(
+        "Registration successful, but an unexpected error occurred while checking approval status. Navigating to Home."
+      );
+      // Fallback navigation
+      setTimeout(() => {
+        navigation.replace("BottomTab", { userId });
+      }, 2000);
+    }
+  };
+
   const handleVerifyOtp = async () => {
     const fullOtp = otp.join("");
     // Change 3: Validate for 4-digit OTP
@@ -217,10 +286,13 @@ const RegisterOtpVerify = ({ route }) => {
             if (registerResponse.ok && registerContentType && registerContentType.includes("application/json")) {
               const registerData = await registerResponse.json();
               showAppToast("Registration Successful!");
-              setTimeout(() => {
-                setAppUser((prev) => ({ ...prev, userId: registerData.user?._id }));
-                navigation.navigate("BottomTab", { userId: registerData.user?._id });
-              }, 2000);
+              
+              const registeredUserId = registerData.user?._id;
+              setAppUser((prev) => ({ ...prev, userId: registeredUserId }));
+              
+              // NEW: Proceed to fetch user details and navigate
+              await fetchUserDetailsAndNavigate(registeredUserId);
+
             } else {
               let registerErrorMessage = "Registration failed. Please try again.";
               if (registerContentType && registerContentType.includes("application/json")) {
@@ -233,11 +305,13 @@ const RegisterOtpVerify = ({ route }) => {
                 registerErrorMessage = `Server Error (${registerResponse.status}) during registration: ${errorText.substring(0, 100)}...`;
               }
               showAppToast(registerErrorMessage);
+              setLoading(false); // Stop loading here if registration fails
             }
         } else {
           // New logic for when OTP is incorrect (success: false)
           showAppToast(data.message || "OTP is incorrect. Please try again.");
           console.error("OTP verification error:", data);
+          setLoading(false); // Stop loading here if verification fails
         }
         
 
@@ -253,12 +327,12 @@ const RegisterOtpVerify = ({ route }) => {
           errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route.`;
         }
         showAppToast(errorMessage);
+        setLoading(false); // Stop loading here if verification fails
       }
     } catch (error) {
       console.error("Network or unexpected error during OTP verification/registration:", error);
       showAppToast("An unexpected error occurred. Please check your network and try again.");
-    } finally {
-      setLoading(false);
+      setLoading(false); // Stop loading here on caught error
     }
   };
 
@@ -299,7 +373,7 @@ const RegisterOtpVerify = ({ route }) => {
           } else {
             const errorText = await response.text();
             console.error("OTP resend error (non-JSON response):", response.status, errorText);
-            errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route.`;
+            errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}...`;
           }
           showAppToast(errorMessage);
         }
