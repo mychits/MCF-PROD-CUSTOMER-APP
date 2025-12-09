@@ -255,19 +255,25 @@ const Home = ({ navigation }) => {
     const [selectedImage, setSelectedImage] = useState(null);
     const scrollRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-
-    // Auto-Scrolling Logic (Unchanged)
     useEffect(() => {
         let intervalId;
         const autoScroll = () => {
-            const nextIndex = (currentIndex + 1) % SCROLL_IMAGES.length;
-            const offset = nextIndex * SCROLL_ITEM_WIDTH;
-            scrollRef.current?.scrollTo({ x: offset, animated: true });
-            setCurrentIndex(nextIndex);
+            setCurrentIndex(prevIndex => {
+                const nextIndex = (prevIndex + 1) % SCROLL_IMAGES.length;
+                const offset = nextIndex * SCROLL_ITEM_WIDTH;
+                scrollRef.current?.scrollTo({ x: offset, animated: true });
+                return nextIndex;
+            });
         };
-        intervalId = setInterval(autoScroll, 1500);
+        intervalId = setInterval(autoScroll, 3000); 
         return () => clearInterval(intervalId);
-    }, [currentIndex]);
+    }, []); 
+    const handleScroll = (event) => {
+        const contentOffsetX = event.nativeEvent.contentOffset.x;
+        // Calculate the closest index: Round (Offset / Item Width)
+        const newIndex = Math.round(contentOffsetX / SCROLL_ITEM_WIDTH); 
+        setCurrentIndex(newIndex);
+    };
 
     // Handler to open the modal
     const handleImagePress = (imgSource) => {
@@ -309,10 +315,11 @@ const Home = ({ navigation }) => {
     const ReviewCard = ({ item }) => (
         <View style={styles.reviewCard}>
             <View style={styles.reviewHeader}>
+                {/* Ensure header text is bold and primary color for hierarchy */}
                 <Text style={styles.reviewName}>{item.name}</Text>
                 <Text style={styles.reviewLocation}>{item.location}</Text>
             </View>
-            {/* APPLYING baseText HERE */}
+            {/* APPLYING baseText HERE for stylish, readable body text */}
             <Text style={[styles.reviewText, styles.baseText]}>{item.review}</Text>
             <StarRating rating={item.rating} />
         </View>
@@ -327,6 +334,7 @@ const Home = ({ navigation }) => {
             <View style={[styles.iconCircle, { backgroundColor: SECONDARY_COLOR }]}>
                 <Feather name={iconName} size={24} color="#fff" />
             </View>
+            {/* Ensuring text uses PRIMARY_COLOR and the correct font style */}
             <Text style={styles.dashboardCardText}>{text}</Text>
         </TouchableOpacity>
     );
@@ -369,12 +377,35 @@ const Home = ({ navigation }) => {
                 <MaterialIcons name={icon} size={28} color={iconColor} />
             </View>
             <View style={styles.benefitTextContent}>
+                {/* Heading uses strong color for hierarchy */}
                 <Text style={styles.benefitHeading}>{heading}</Text>
-                {/* The description text is not styled with baseText as it has a specific style */}
+                {/* Description uses readable, lighter color */}
                 <Text style={styles.benefitDescription}>{description}</Text>
             </View>
         </View>
     );
+    
+    // ⭐ NEW PAGINATION DOTS COMPONENT - MODIFIED TO SHOW ONLY 6 DOTS
+    const PaginationDots = () => {
+        // Limit the array to the first 6 elements to render only 6 dots
+        const limitedScrollImages = SCROLL_IMAGES.slice(0, 6); 
+        
+        return (
+            <View style={styles.paginationContainer}>
+                {limitedScrollImages.map((_, index) => (
+                    <View
+                        key={index}
+                        // Use modulo operator (%) to map the full 18-image index (currentIndex) 
+                        // back to the 6 dots, ensuring the active dot cycles correctly.
+                        style={[
+                            styles.paginationDot,
+                            index === currentIndex % limitedScrollImages.length ? styles.activeDot : styles.inactiveDot,
+                        ]}
+                    />
+                ))}
+            </View>
+        );
+    };
 
 
     return (
@@ -403,6 +434,10 @@ const Home = ({ navigation }) => {
                         horizontal 
                         showsHorizontalScrollIndicator={false} 
                         contentContainerStyle={styles.scrollImageContainerClean}
+                        // Added for dot synchronization
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16} // Update scroll position frequently
+                        pagingEnabled // Optional: Makes snapping to the next item easier
                     >
                         {SCROLL_IMAGES.map((img, index) => (
                             <TouchableOpacity 
@@ -414,6 +449,9 @@ const Home = ({ navigation }) => {
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
+                    
+                    {/* ⭐ NEW: Pagination Dots Component */}
+                    <PaginationDots />
                 </View>
                 
                 {/* ⭐ NEW SECTION: Benefits & License Link */}
@@ -474,7 +512,7 @@ const Home = ({ navigation }) => {
                                     <MaterialIcons name={item.icon} size={28} color={item.iconColor} />
                                 </View>
                                 {/* Using one text block with bolding for space saving */}
-                                {/* APPLYING baseText HERE */}
+                                {/* APPLYING baseText HERE for stylish, readable body text */}
                                 <Text style={[styles.advantageText, styles.baseText]}>
                                     <Text style={{fontWeight: '700'}}>{item.text1}</Text>
                                     <Text>{item.text2}</Text>
@@ -532,9 +570,10 @@ const styles = StyleSheet.create({
         backgroundColor: BACKGROUND_COLOR, // Ensure the entire screen background is white
     },
     baseText: {
-        color: '#444444', // Dark grey for improved readability
-        fontSize: 12,      // Moderate base font size
-        fontWeight: '400', // Regular weight for body text
+        // Dark grey for improved readability/stylishness
+        color: '#444444', 
+        fontSize: 12,      
+        fontWeight: '400', 
     },
     // --- EXISTING STYLES ---
     container: {
@@ -614,7 +653,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         textAlign: 'center',
     },
-    // --- DASHBOARD CARDS STYLES (UNCHANGED) ---
+    // --- DASHBOARD CARDS STYLES (Border & Text Enhanced) ---
     sectionPadding: {
         paddingHorizontal: 15,
     },
@@ -629,13 +668,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         borderRadius: 12, 
         backgroundColor: CARD_LIGHT_BG, 
-        borderWidth: 1, 
-        borderColor: PRIMARY_COLOR + '30',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        borderWidth: 2, // Thicker border
+        borderColor: PRIMARY_COLOR + '50', // More visible primary border
+        shadowColor: PRIMARY_COLOR,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 3,
     },
     iconCircle: {
         width: 50, 
@@ -649,10 +688,10 @@ const styles = StyleSheet.create({
     dashboardCardText: {
         fontSize: 14, 
         fontWeight: '600',
-        color: PRIMARY_COLOR,
+        color: PRIMARY_COLOR, // Ensure strong text color
         textAlign: 'center',
     },
-    // --- ADVANTAGE STYLES (Enhanced Styling using LIGHT_ACCENT_COLOR) ---
+    // --- ADVANTAGE STYLES (Border Enhanced) ---
     advantageRow: {
         justifyContent: 'space-between',
         marginBottom: 10,
@@ -663,18 +702,17 @@ const styles = StyleSheet.create({
         paddingVertical: 10, 
         paddingHorizontal: 5,
         borderRadius: 10, 
-        borderWidth:1,
-        borderColor:"#B3E5FC",
+        
+        // ⭐ STYLIST BORDER COLOR: Defined border using a primary tint
+        borderWidth: 1.5,
+        borderColor: PRIMARY_COLOR + '40', // Semi-transparent Primary Color border
         
         // ⭐ ENHANCED STYLING: Smoother background and subtle shadow instead of border
-        backgroundColor: LIGHT_ACCENT_COLOR + '90', // Use LIGHT_ACCENT_COLOR as soft background
+        backgroundColor: LIGHT_ACCENT_COLOR + '90', 
         shadowColor: PRIMARY_COLOR,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.15,
         shadowRadius: 3,
-       
-        borderWidth: 0, // Removed border
-        // borderColor: LIGHT_ACCENT_COLOR, // Removed this line
     },
     advantageIconCircle: {
         width: 40, 
@@ -687,11 +725,11 @@ const styles = StyleSheet.create({
     advantageText: {
         // Base text styles are applied in the component, augmenting these specific styles
         fontSize: 10, 
-        color: PRIMARY_COLOR,
+        color: PRIMARY_COLOR, // Keep primary color for text
         textAlign: 'center',
-        lineHeight: 12, 
+        lineHeight: 14, // Adjusted for better line spacing on small text
     },
-    // --- REVIEW STYLES (Updated ReviewCard to use CARD_LIGHT_BG for consistency) ---
+    // --- REVIEW STYLES (Border Enhanced for pop) ---
     reviewsList: {
         paddingVertical: 10,
     },
@@ -701,13 +739,14 @@ const styles = StyleSheet.create({
         padding: 15,
         marginHorizontal: 10,
         width: screenWidth * 0.8,
-        borderWidth: 1, 
-        borderColor: PRIMARY_COLOR + '20', // Changed from LIGHT_ACCENT_COLOR to a lighter primary blue
+        borderWidth: 1.5, // Slightly thicker border
+        // ⭐ STYLIST BORDER COLOR: Secondary Color tint for contrast
+        borderColor: SECONDARY_COLOR + '30', 
         shadowColor: PRIMARY_COLOR,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 3 }, // Stronger shadow
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 4,
     },
     reviewHeader: {
         flexDirection: 'column',
@@ -739,10 +778,10 @@ const styles = StyleSheet.create({
         // Base text styles are applied in the component, augmenting these specific styles
         fontSize: 14,
         fontStyle: 'normal',
-        color: '#333',
         lineHeight: 20,
+        // The color is now controlled by baseText for stylishness
     },
-    // --- NEW BENEFIT STYLES (UNCHANGED) ---
+    // --- NEW BENEFIT STYLES (Border Enhanced) ---
     benefitsSection: {
         marginBottom: 25,
         paddingHorizontal: 15,
@@ -754,8 +793,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 15,
         marginBottom: 10,
-        borderWidth: 1,
-        borderColor: PRIMARY_COLOR + '30',
+        borderWidth: 1.5, // Thicker border
+        // ⭐ STYLIST BORDER COLOR: Primary Color tint for a strong, clean look
+        borderColor: PRIMARY_COLOR + '40', 
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
@@ -784,7 +824,7 @@ const styles = StyleSheet.create({
         color: '#666',
         lineHeight: 18,
     },
-    // --- VIEW LICENSE LINK (Enhanced Styling using LIGHT_ACCENT_COLOR) ---
+    // --- VIEW LICENSE LINK (Enhanced Styling using SECONDARY_COLOR border) ---
     viewLicenseLink: {
         alignSelf: 'center',
         marginTop: 10,
@@ -792,6 +832,10 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 25,
+        
+        // ⭐ STYLIST BORDER COLOR: Secondary Color border to pop
+        borderWidth: 1,
+        borderColor: SECONDARY_COLOR,
         
         // ⭐ ENHANCED STYLING: Floating appearance with a blue glow
         backgroundColor: LIGHT_ACCENT_COLOR,
@@ -832,6 +876,26 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         color: '#fff',
+    },
+    
+    // --- NEW PAGINATION DOTS STYLES ---
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10, // Space between scroll view and dots
+    },
+    paginationDot: {
+        height: 8,
+        width: 8,
+        borderRadius: 4,
+        marginHorizontal: 4,
+        // Default color for inactive dot (like a lighter grey)
+        backgroundColor: '#ccc', 
+    },
+    activeDot: {
+        // Active dot color (Use the PRIMARY_COLOR or SECONDARY_COLOR)
+        backgroundColor: PRIMARY_COLOR, 
     },
 });
 
