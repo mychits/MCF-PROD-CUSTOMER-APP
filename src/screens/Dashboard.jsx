@@ -12,6 +12,8 @@ import {
     FlatList,
     Modal,
     Linking, 
+    // New: Platform for platform-specific styling
+    Platform, 
 } from 'react-native';
 
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
@@ -25,11 +27,13 @@ const screenHeight = Dimensions.get('window').height;
 // -------------------------------------------------------------
 // ⭐ CONFIGURATION
 // UI Colors (Matching Home.jsx theme)
-const PRIMARY_COLOR = '#053B90'; 
+const PRIMARY_COLOR = '#042f74ff'; 
 const SECONDARY_COLOR = '#EF6C00'; 
 const LIGHT_ACCENT_COLOR = '#B3E5FC'; // The color to enhance
 const BACKGROUND_COLOR = '#FFFFFF'; 
 const CARD_LIGHT_BG = '#E3F2FD'; // Lighter blue background
+// New color for subtle text and shadows
+const GREY_TEXT = '#666666'; 
 // -------------------------------------------------------------
 
 // (SCROLL_IMAGES data is unchanged)
@@ -105,9 +109,7 @@ const ADVANTAGES = [
     },
 ];
 
-// -------------------------------------------------------------
-// ⭐ REVIEWS data (UPDATED with new list)
-// -------------------------------------------------------------
+// (REVIEWS data is unchanged)
 const REVIEWS = [
     {
         id: '1',
@@ -255,6 +257,8 @@ const Home = ({ navigation }) => {
     const [selectedImage, setSelectedImage] = useState(null);
     const scrollRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
+    
+    // Auto-scroll effect
     useEffect(() => {
         let intervalId;
         const autoScroll = () => {
@@ -268,6 +272,7 @@ const Home = ({ navigation }) => {
         intervalId = setInterval(autoScroll, 3000); 
         return () => clearInterval(intervalId);
     }, []); 
+    
     const handleScroll = (event) => {
         const contentOffsetX = event.nativeEvent.contentOffset.x;
         // Calculate the closest index: Round (Offset / Item Width)
@@ -315,26 +320,26 @@ const Home = ({ navigation }) => {
     const ReviewCard = ({ item }) => (
         <View style={styles.reviewCard}>
             <View style={styles.reviewHeader}>
-                {/* Ensure header text is bold and primary color for hierarchy */}
+                {/* Refined: Use bold/primary for name, GREY_TEXT for location */}
                 <Text style={styles.reviewName}>{item.name}</Text>
-                <Text style={styles.reviewLocation}>{item.location}</Text>
+                <Text style={[styles.reviewLocation, {color: GREY_TEXT}]}>{item.location}</Text>
             </View>
-            {/* APPLYING baseText HERE for stylish, readable body text */}
             <Text style={[styles.reviewText, styles.baseText]}>{item.review}</Text>
             <StarRating rating={item.rating} />
         </View>
     );
 
-    // ⭐ DASHBOARD ITEM RENDER FUNCTION
+    // ⭐ DASHBOARD ITEM RENDER FUNCTION (Added activeOpacity)
     const DashboardItem = ({ iconName, text, targetScreen }) => (
         <TouchableOpacity 
             style={styles.dashboardCard} 
             onPress={() => navigation.navigate(targetScreen)}
+            activeOpacity={0.7} // Added activeOpacity for better feedback
         >
-            <View style={[styles.iconCircle, { backgroundColor: SECONDARY_COLOR }]}>
-                <Feather name={iconName} size={24} color="#fff" />
+            {/* Inner text/icon color is now PRIMARY_COLOR for contrast */}
+            <View style={[styles.iconCircle, { backgroundColor: LIGHT_ACCENT_COLOR }]}>
+                <Feather name={iconName} size={26} color={PRIMARY_COLOR} /> 
             </View>
-            {/* Ensuring text uses PRIMARY_COLOR and the correct font style */}
             <Text style={styles.dashboardCardText}>{text}</Text>
         </TouchableOpacity>
     );
@@ -377,10 +382,9 @@ const Home = ({ navigation }) => {
                 <MaterialIcons name={icon} size={28} color={iconColor} />
             </View>
             <View style={styles.benefitTextContent}>
-                {/* Heading uses strong color for hierarchy */}
                 <Text style={styles.benefitHeading}>{heading}</Text>
-                {/* Description uses readable, lighter color */}
-                <Text style={styles.benefitDescription}>{description}</Text>
+                {/* Refined: Using GREY_TEXT for benefit description */}
+                <Text style={[styles.benefitDescription, {color: GREY_TEXT}]}>{description}</Text>
             </View>
         </View>
     );
@@ -406,6 +410,9 @@ const Home = ({ navigation }) => {
             </View>
         );
     };
+    
+    // ⭐ NEW: Section Divider Component
+    const SectionDivider = () => <View style={styles.sectionDivider} />;
 
 
     return (
@@ -413,9 +420,10 @@ const Home = ({ navigation }) => {
             <StatusBar barStyle="light-content" backgroundColor={PRIMARY_COLOR} /> 
             
             {/* ⭐ HEADER - MODIFIED PADDING HERE */}
-            <View style={[styles.header, { paddingTop: insets.top + 10, paddingBottom: 15 }]}>
+            <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 10 : 15), paddingBottom: 10 }]}>
                 <View style={styles.logoTitleContainer}>
                     <Image source={Group400} style={styles.headerLogo} resizeMode="contain" />
+                    {/* Refined: Added subtle shadow for the title text */}
                     <Text style={styles.headerTitle}>MyChits</Text>
                 </View>
                 <TouchableOpacity style={styles.helpButton} onPress={() => navigation.navigate("Help")} >
@@ -425,117 +433,134 @@ const Home = ({ navigation }) => {
 
             <ScrollView style={styles.mainScrollView} contentContainerStyle={styles.scrollContent}>
                 
-                {/* ⭐ YOUR HORIZONTAL SCROLLING IMAGES - Chit Schemes (CLEANED UP BOX) */}
-                <View style={[styles.sectionPadding, { marginBottom: 25 }]}>
-                    <Text style={styles.sectionTitle}>Explore Chit Schemes</Text>
-                    {/* The ScrollView itself acts as the box for scrolling */}
-                    <ScrollView 
-                        ref={scrollRef} 
-                        horizontal 
-                        showsHorizontalScrollIndicator={false} 
-                        contentContainerStyle={styles.scrollImageContainerClean}
-                        // Added for dot synchronization
-                        onScroll={handleScroll}
-                        scrollEventThrottle={16} // Update scroll position frequently
-                        pagingEnabled // Optional: Makes snapping to the next item easier
-                    >
-                        {SCROLL_IMAGES.map((img, index) => (
-                            <TouchableOpacity 
-                                key={index} 
-                                style={styles.scrollItemContainer} // Style updated
-                                onPress={() => handleImagePress(img)}
-                            >
-                                <Image source={img} style={styles.scrollImage} resizeMode="contain" />
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                    
-                    {/* ⭐ NEW: Pagination Dots Component */}
-                    <PaginationDots />
-                </View>
+                {/* ⭐ NEW: MAIN CONTENT BOX WRAPPER */}
+                <View style={styles.mainContentBox}>
                 
-                {/* ⭐ NEW SECTION: Benefits & License Link */}
-                <View style={[styles.sectionPadding, styles.benefitsSection]}>
-                    <Text style={styles.sectionTitleCenter}>Why Choose MyChits?</Text>
+                    {/* ⭐ YOUR HORIZONTAL SCROLLING IMAGES - Chit Schemes (CLEANED UP BOX) */}
+                    {/* MODIFICATION 1: Changed marginBottom from 25 to 10 */}
+                    <View style={[styles.innerSectionPadding, { marginBottom: 10 }]}>
+                        <Text style={styles.sectionTitle}>Explore Chit Schemes</Text>
+                        <ScrollView 
+                            ref={scrollRef} 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false} 
+                            contentContainerStyle={styles.scrollImageContainerClean}
+                            onScroll={handleScroll}
+                            scrollEventThrottle={16} 
+                            pagingEnabled 
+                        >
+                            {SCROLL_IMAGES.map((img, index) => (
+                                <TouchableOpacity 
+                                    key={index} 
+                                    style={styles.scrollItemContainer} 
+                                    onPress={() => handleImagePress(img)}
+                                    activeOpacity={0.8} // Added activeOpacity for feedback
+                                >
+                                    <Image source={img} style={styles.scrollImage} resizeMode="contain" />
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        
+                        <PaginationDots />
+                    </View>
                     
-                    {benefitsData.map((item, index) => (
-                        <BenefitItem key={index} {...item} />
-                    ))}
+                    {/* NEW DIVIDER - REMOVED the divider that was here */}
+                    {/* REMOVED: <SectionDivider /> */}
+
+                    {/* ⭐ NEW SECTION: Benefits & License Link */}
+                    {/* MODIFIED: Added benefitsSectionNoTopPadding to pull the section up */}
+                    <View style={[styles.innerSectionPadding, styles.benefitsSection, styles.benefitsSectionNoTopPadding]}>
+                        <Text style={styles.sectionTitleCenter}>Why Choose MyChits?</Text>
+                        
+                        {benefitsData.map((item, index) => (
+                            <BenefitItem key={index} {...item} />
+                        ))}
+                        
+                        {/* View License Link - STYLIST BUTTON STYLE */}
+                        <TouchableOpacity
+                            style={styles.viewLicenseLink} 
+                            onPress={() => navigation.navigate('LicenseAndCertificate')}
+                            activeOpacity={0.8} 
+                        >
+                            <View style={styles.viewLicenseContent}>
+                                {/* Icon color changed to white to match new background */}
+                                <MaterialIcons name="link" size={18} color="#fff" />
+                                <Text style={styles.viewLicenseText}>View License and Certificate</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
                     
-                    {/* View License Link */}
-                    <TouchableOpacity
-                        style={styles.viewLicenseLink} // Style updated
-                        onPress={() => navigation.navigate('LicenseAndCertificate')}
-                    >
-                        <View style={styles.viewLicenseContent}>
-                            <MaterialIcons name="link" size={14} color={PRIMARY_COLOR} />
-                            <Text style={styles.viewLicenseText}>View License and Certificate</Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
+                    {/* NEW DIVIDER */}
+                    <SectionDivider />
 
-                {/* ⭐ DASHBOARD CARDS - My Dashboard (Grid of 2) */}
-                <View style={styles.sectionPadding}>
-                    <Text style={styles.sectionTitle}>My Dashboard</Text>
+                    {/* ⭐ DASHBOARD CARDS - My Dashboard (Grid of 2) */}
+                    <View style={styles.innerSectionPadding}>
+                        <Text style={styles.sectionTitle}>My Dashboard</Text>
+                        
+                        <FlatList
+                            key={'dashboard-grid-2'}
+                            data={dashboardItems}
+                            keyExtractor={item => item.text}
+                            numColumns={2} 
+                            scrollEnabled={false}
+                            columnWrapperStyle={styles.dashboardRow}
+                            renderItem={({ item }) => (
+                                <DashboardItem {...item} />
+                            )}
+                        />
+                    </View>
                     
-                    <FlatList
-                        // FIX: Add key to force re-render when numColumns changes (2)
-                        key={'dashboard-grid-2'}
-                        data={dashboardItems}
-                        keyExtractor={item => item.text}
-                        numColumns={2} 
-                        scrollEnabled={false}
-                        columnWrapperStyle={styles.dashboardRow}
-                        renderItem={({ item }) => (
-                            <DashboardItem {...item} />
-                        )}
-                    />
-                </View>
+                    {/* NEW DIVIDER */}
+                    <SectionDivider />
 
-                {/* ⭐ ADVANTAGES - App Advantages (Grid of 3) */}
-                <View style={[styles.sectionPadding, { marginTop: 25 }]}>
-                    <Text style={styles.sectionTitleCenter}>App Advantages</Text>
-                    <FlatList
-                        // Change key to reflect 3 columns
-                        key={'advantage-grid-3'} 
-                        data={ADVANTAGES}
-                        keyExtractor={(item, index) => index.toString()}
-                        numColumns={3} 
-                        scrollEnabled={false}
-                        columnWrapperStyle={styles.advantageRow}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity 
-                                style={styles.advantageContainer} // Style updated
-                                onPress={() => handleAdvantageAction(item)}
-                            >
-                                <View style={[styles.advantageIconCircle, { backgroundColor: item.iconColor + '20' }]}>
-                                    <MaterialIcons name={item.icon} size={28} color={item.iconColor} />
-                                </View>
-                                {/* Using one text block with bolding for space saving */}
-                                {/* APPLYING baseText HERE for stylish, readable body text */}
-                                <Text style={[styles.advantageText, styles.baseText]}>
-                                    <Text style={{fontWeight: '700'}}>{item.text1}</Text>
-                                    <Text>{item.text2}</Text>
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
+                    {/* ⭐ ADVANTAGES - App Advantages (Grid of 3) */}
+                    <View style={[styles.innerSectionPadding, { marginTop: 25 }]}>
+                        <Text style={styles.sectionTitleCenter}>App Advantages</Text>
+                        <FlatList
+                            key={'advantage-grid-3'} 
+                            data={ADVANTAGES}
+                            keyExtractor={(item, index) => index.toString()}
+                            numColumns={3} 
+                            scrollEnabled={false}
+                            columnWrapperStyle={styles.advantageRow}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity 
+                                    style={styles.advantageContainer} 
+                                    onPress={() => handleAdvantageAction(item)}
+                                    activeOpacity={0.7} // Added activeOpacity for feedback
+                                >
+                                    <View style={[styles.advantageIconCircle, { backgroundColor: item.iconColor + '20' }]}>
+                                        <MaterialIcons name={item.icon} size={28} color={item.iconColor} />
+                                    </View>
+                                    <Text style={[styles.advantageText, styles.baseText]}>
+                                        <Text style={{fontWeight: '700', color: PRIMARY_COLOR}}>{item.text1}</Text>
+                                        <Text>{item.text2}</Text>
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                    
+                    {/* NEW DIVIDER */}
+                    <SectionDivider />
 
-                {/* ⭐ CUSTOMER REVIEWS */}
-                <View style={[styles.sectionPadding, { marginTop: 20 }]}>
-                    <Text style={styles.sectionTitleCenter}>What Our Customers Say</Text>
-                    <FlatList
-                        data={REVIEWS}
-                        renderItem={({ item }) => <ReviewCard item={item} />}
-                        keyExtractor={item => item.id}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.reviewsList}
-                    />
+                    {/* ⭐ CUSTOMER REVIEWS */}
+                    <View style={[styles.innerSectionPadding, { marginTop: 20, paddingBottom: 15 }]}>
+                        <Text style={styles.sectionTitleCenter}>What Our Customers Say</Text>
+                        <FlatList
+                            data={REVIEWS}
+                            renderItem={({ item }) => <ReviewCard item={item} />}
+                            keyExtractor={item => item.id}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.reviewsList}
+                        />
+                    </View>
+                
                 </View>
+                {/* ⭐ END: MAIN CONTENT BOX WRAPPER */}
 
-                {/* ⭐ START SAVING BUTTON (Placed at the end of scroll content) */}
+                {/* ⭐ START SAVING BUTTON (Placed below the main box) - ENHANCED LIFT */}
                 <TouchableOpacity
                     style={styles.bottomButton} 
                     onPress={() => navigation.navigate('Enrollment')}
@@ -561,17 +586,17 @@ const Home = ({ navigation }) => {
 };
 
 // -------------------------------------------------------------
-// ⭐ STYLES (Updated to make LIGHT_ACCENT_COLOR elements more stylish)
+// ⭐ STYLES 
 // -------------------------------------------------------------
 const styles = StyleSheet.create({
     // --- UNIQUE/GENERIC STYLES ADDED ---
     screenContainer: {
         flex: 1,
-        backgroundColor: BACKGROUND_COLOR, // Ensure the entire screen background is white
+        backgroundColor: PRIMARY_COLOR, 
     },
     baseText: {
         // Dark grey for improved readability/stylishness
-        color: '#444444', 
+        color: GREY_TEXT, 
         fontSize: 12,      
         fontWeight: '400', 
     },
@@ -582,12 +607,14 @@ const styles = StyleSheet.create({
     },
     mainScrollView: {
         flex: 1,
+        backgroundColor: PRIMARY_COLOR, 
     },
+    // MODIFICATION 2: Changed paddingTop from 18 to 10
     scrollContent: {
-        paddingTop: 18, 
+        paddingTop: 10, 
         paddingBottom: 20, 
     },
-    // --- HEADER STYLES ---
+    // --- HEADER STYLES (Refined title shadow) ---
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -608,10 +635,35 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         color: '#fff', 
+        // Refined: Subtle text shadow for a polished look
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 1,
     },
     helpButton: {
         padding: 5,
     },
+    // ⭐ MAIN CONTENT BOX (Border Removed, Stronger Shadow)
+    mainContentBox: {
+        backgroundColor: BACKGROUND_COLOR, // White content box
+        marginHorizontal: 5,              
+        borderRadius: 20, // Rounded corners
+        paddingVertical: 0, 
+        // Stronger shadow to lift it off the background (No border)
+        shadowColor: PRIMARY_COLOR, 
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15, 
+        shadowRadius: 10, // Wider radius for softer falloff
+        elevation: 10, 
+        // Removed border to let the primary color background blend more smoothly
+    },
+    
+    // ⭐ NEW: PADDING STYLE FOR SECTIONS INSIDE THE BOX
+    innerSectionPadding: {
+        paddingHorizontal: 15,
+        paddingVertical: 15, 
+    },
+    
     // --- SCROLL IMAGES STYLES (Enhanced Styling using LIGHT_ACCENT_COLOR) ---
     scrollImageContainerClean: {
         flexDirection: 'row',
@@ -626,37 +678,34 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         
         // ⭐ ENHANCED STYLING for LIGHT_ACCENT_COLOR usage: Soft shadow and blue highlight
-        shadowColor: LIGHT_ACCENT_COLOR, // Using LIGHT_ACCENT_COLOR for a beautiful, blue glow shadow
+        shadowColor: LIGHT_ACCENT_COLOR, 
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.6,
+        shadowOpacity: 0.8, 
         shadowRadius: 8,
         elevation: 8,
         borderWidth: 2, 
-        borderColor: LIGHT_ACCENT_COLOR, // Keep border for definition
+        borderColor: LIGHT_ACCENT_COLOR, 
     },
     scrollImage: {
         width: 160,
         height: 160,
         borderRadius: 10,
     },
-    // --- SECTION TITLE STYLES ---
+    // --- SECTION TITLE STYLES (Refined weight) ---
     sectionTitle: {
-        fontSize: 22,
-        fontWeight: '700',
+        fontSize: 20, 
+        fontWeight: '800', 
         color: PRIMARY_COLOR,
         marginBottom: 15,
     },
     sectionTitleCenter: {
-        fontSize: 22,
-        fontWeight: '700',
+        fontSize: 20, 
+        fontWeight: '800', 
         color: PRIMARY_COLOR,
         marginBottom: 15,
         textAlign: 'center',
     },
-    // --- DASHBOARD CARDS STYLES (Border & Text Enhanced) ---
-    sectionPadding: {
-        paddingHorizontal: 15,
-    },
+    // --- DASHBOARD CARDS STYLES (Floating/Subtle Lift) ---
     dashboardRow: {
         justifyContent: 'space-between',
         marginBottom: 10,
@@ -664,17 +713,17 @@ const styles = StyleSheet.create({
     dashboardCard: {
         width: '48%', 
         alignItems: 'center', 
-        paddingVertical: 20, 
+        paddingVertical: 15, 
         paddingHorizontal: 10,
-        borderRadius: 12, 
-        backgroundColor: CARD_LIGHT_BG, 
-        borderWidth: 2, // Thicker border
-        borderColor: PRIMARY_COLOR + '50', // More visible primary border
+        borderRadius: 15, 
+        backgroundColor: BACKGROUND_COLOR, // Pure white
+        borderWidth: 1, // Minimal border
+        borderColor: LIGHT_ACCENT_COLOR + '60', 
         shadowColor: PRIMARY_COLOR,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 3,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 1 }, 
+        shadowOpacity: 0.08, // Very subtle lift
+        shadowRadius: 3, 
+        elevation: 3, 
     },
     iconCircle: {
         width: 50, 
@@ -682,14 +731,15 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: SECONDARY_COLOR, 
+        backgroundColor: LIGHT_ACCENT_COLOR, // Overridden in component
         marginBottom: 8,
     },
     dashboardCardText: {
         fontSize: 14, 
-        fontWeight: '600',
-        color: PRIMARY_COLOR, // Ensure strong text color
+        fontWeight: '700', 
+        color: PRIMARY_COLOR, 
         textAlign: 'center',
+        marginTop: 5, 
     },
     // --- ADVANTAGE STYLES (Border Enhanced) ---
     advantageRow: {
@@ -701,18 +751,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10, 
         paddingHorizontal: 5,
-        borderRadius: 10, 
+        borderRadius: 12, 
         
-        // ⭐ STYLIST BORDER COLOR: Defined border using a primary tint
         borderWidth: 1.5,
-        borderColor: PRIMARY_COLOR + '40', // Semi-transparent Primary Color border
+        borderColor: LIGHT_ACCENT_COLOR, 
         
-        // ⭐ ENHANCED STYLING: Smoother background and subtle shadow instead of border
-        backgroundColor: LIGHT_ACCENT_COLOR + '90', 
+        backgroundColor: BACKGROUND_COLOR, 
         shadowColor: PRIMARY_COLOR,
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.1, 
         shadowRadius: 3,
+        elevation: 3,
     },
     advantageIconCircle: {
         width: 40, 
@@ -723,30 +772,31 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     advantageText: {
-        // Base text styles are applied in the component, augmenting these specific styles
         fontSize: 10, 
-        color: PRIMARY_COLOR, // Keep primary color for text
+        color: GREY_TEXT, 
         textAlign: 'center',
-        lineHeight: 14, // Adjusted for better line spacing on small text
+        lineHeight: 14, 
     },
-    // --- REVIEW STYLES (Border Enhanced for pop) ---
+    // --- REVIEW STYLES (Floating Card Effect) ---
     reviewsList: {
         paddingVertical: 10,
+        marginLeft: -15, 
+        paddingLeft: 15,
+        paddingRight: 15, 
     },
     reviewCard: {
         backgroundColor: CARD_LIGHT_BG, 
-        borderRadius: 15, 
-        padding: 15,
-        marginHorizontal: 10,
-        width: screenWidth * 0.8,
-        borderWidth: 1.5, // Slightly thicker border
-        // ⭐ STYLIST BORDER COLOR: Secondary Color tint for contrast
-        borderColor: SECONDARY_COLOR + '30', 
+        borderRadius: 18, // Slightly more rounded
+        padding: 18, // Slightly more padding
+        marginRight: 15, 
+        width: screenWidth * 0.75, 
+        
+        // ⭐ FLOATING EFFECT (Border removed, shadow strengthened)
         shadowColor: PRIMARY_COLOR,
-        shadowOffset: { width: 0, height: 3 }, // Stronger shadow
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 6 }, // Stronger vertical lift
+        shadowOpacity: 0.1, // Softer opacity
+        shadowRadius: 10, // Wider, softer glow
+        elevation: 6,
     },
     reviewHeader: {
         flexDirection: 'column',
@@ -755,57 +805,58 @@ const styles = StyleSheet.create({
     },
     reviewName: {
         fontSize: 16,
-        fontWeight: '700',
+        fontWeight: '800', 
         color: PRIMARY_COLOR,
         textAlign: 'left',
     },
     reviewLocation: {
-        fontSize: 12,
-        color: '#666',
+        fontSize: 11, 
+        color: GREY_TEXT, // Controlled by component now
         textAlign: 'left',
         fontStyle: 'italic',
         marginBottom: 5,
     },
     reviewRating: {
         flexDirection: 'row',
-        marginTop: 5,
-        marginBottom: 10,
+        marginTop: 8, 
     },
     reviewStar: {
         marginRight: 2,
     },
     reviewText: {
-        // Base text styles are applied in the component, augmenting these specific styles
-        fontSize: 14,
+        fontSize: 13, 
         fontStyle: 'normal',
-        lineHeight: 20,
-        // The color is now controlled by baseText for stylishness
+        lineHeight: 19, 
     },
     // --- NEW BENEFIT STYLES (Border Enhanced) ---
     benefitsSection: {
-        marginBottom: 25,
+        marginBottom: 0, 
+    },
+    // ⭐ NEW STYLE: Removes top padding from the section
+    benefitsSectionNoTopPadding: {
         paddingHorizontal: 15,
+        paddingTop: 0, // Removed top padding
+        paddingBottom: 15, // Kept bottom padding
     },
     benefitItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: BACKGROUND_COLOR, 
-        borderRadius: 10,
-        padding: 15,
+        backgroundColor:"#cee6f0ff", 
+        borderRadius: 12, 
+        padding: 12, 
         marginBottom: 10,
-        borderWidth: 1.5, // Thicker border
-        // ⭐ STYLIST BORDER COLOR: Primary Color tint for a strong, clean look
-        borderColor: PRIMARY_COLOR + '40', 
+        borderWidth: 1.5, 
+        borderColor: PRIMARY_COLOR + '20', 
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        shadowOpacity: 0.05, 
+        shadowRadius: 1,
+        elevation: 1,
     },
     benefitIconCircle: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 45, 
+        height: 45,
+        borderRadius: 22.5,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
@@ -814,67 +865,68 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     benefitHeading: {
-        fontSize: 16,
+        fontSize: 15, 
         fontWeight: '700',
         color: PRIMARY_COLOR,
         marginBottom: 2,
     },
     benefitDescription: {
-        fontSize: 12,
-        color: '#666',
-        lineHeight: 18,
+        fontSize: 11.5, 
+        color: GREY_TEXT, // Controlled by component now
+        lineHeight: 17,
     },
-    // --- VIEW LICENSE LINK (Enhanced Styling using SECONDARY_COLOR border) ---
+    // ⭐ VIEW LICENSE LINK (STYLIST BUTTON)
     viewLicenseLink: {
-        alignSelf: 'center',
-        marginTop: 10,
+        alignSelf: 'center', // Center the button
+        marginTop: 15,
         marginBottom: 10,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 25,
+        paddingVertical: 10, 
+        paddingHorizontal: 25, 
+        borderRadius: 30, // True pill shape
         
-        // ⭐ STYLIST BORDER COLOR: Secondary Color border to pop
-        borderWidth: 1,
-        borderColor: SECONDARY_COLOR,
+        // Set background to secondary color
+        backgroundColor: SECONDARY_COLOR,
+        borderWidth: 0, 
         
-        // ⭐ ENHANCED STYLING: Floating appearance with a blue glow
-        backgroundColor: LIGHT_ACCENT_COLOR,
-        shadowColor: LIGHT_ACCENT_COLOR, 
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.8,
-        shadowRadius: 5,
-        elevation: 6,
+        // Strong glow effect using secondary color
+        shadowColor: SECONDARY_COLOR, 
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.7, 
+        shadowRadius: 12, // Wide glow
+        elevation: 8,
     },
     viewLicenseContent: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     viewLicenseText: {
-        marginLeft: 5,
-        fontSize: 14,
-        fontWeight: '600',
-        color: PRIMARY_COLOR,
+        marginLeft: 8, // Increased margin for icon separation
+        fontSize: 15, // Slightly larger font
+        fontWeight: '700',
+        color: '#fff', // White text
         textDecorationLine: 'none',
     },
-    // --- BOTTOM BUTTON STYLE (Non-Floating) ---
+    // ⭐ BOTTOM BUTTON STYLE (High Priority CTA)
     bottomButton: {
-        marginHorizontal: 20, 
-        marginTop: 20,       
+        marginHorizontal: 15, 
+        marginTop: 35, // Increased margin to separate from the main box
         marginBottom: 100,   
         backgroundColor: SECONDARY_COLOR, 
-        paddingVertical: 15,
+        paddingVertical: 20, // Increased padding
         borderRadius: 30, 
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 8,
+        
+        // Stronger glow and lift
+        shadowColor: SECONDARY_COLOR, 
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.5, 
+        shadowRadius: 15, // Max soft glow
+        elevation: 15,
     },
     floatingButtonText: {
         fontSize: 18,
-        fontWeight: '700',
+        fontWeight: '800', 
         color: '#fff',
     },
     
@@ -883,20 +935,28 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 10, // Space between scroll view and dots
+        marginTop: 10, 
     },
     paginationDot: {
-        height: 8,
-        width: 8,
-        borderRadius: 4,
-        marginHorizontal: 4,
-        // Default color for inactive dot (like a lighter grey)
-        backgroundColor: '#ccc', 
+        height: 7, 
+        width: 7,
+        borderRadius: 3.5,
+        marginHorizontal: 3,
+        backgroundColor: LIGHT_ACCENT_COLOR, 
     },
     activeDot: {
-        // Active dot color (Use the PRIMARY_COLOR or SECONDARY_COLOR)
+        height: 8, 
+        width: 8,
         backgroundColor: PRIMARY_COLOR, 
     },
+    // --- NEW: SECTION DIVIDER STYLE ---
+    // MODIFICATION 3: Changed marginVertical from 10 to 5
+    sectionDivider: {
+        height: 1,
+        backgroundColor: LIGHT_ACCENT_COLOR, 
+        marginHorizontal: 15,
+        marginVertical: 5,
+    }
 });
 
 
