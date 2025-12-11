@@ -19,7 +19,9 @@ import {
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ContextProvider } from '../context/UserProvider';
-import Group400 from '../../assets/Group400.png';
+// NOTE: Make sure the paths to these assets are correct in your project structure
+import Group400 from '../../assets/Group400.png'; 
+// Other assets (SCROLL_IMAGES) are referenced via require() inside the component 
 
 const screenWidth = Dimensions.get('window').width;
 const screenHeight = Dimensions.get('window').height;
@@ -847,7 +849,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         borderWidth: 1.5, 
         borderColor: PRIMARY_COLOR + '20', 
-        shadowColor: '#000',
+        shadowColor: '#b42b2bff',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05, 
         shadowRadius: 1,
