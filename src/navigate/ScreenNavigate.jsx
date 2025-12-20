@@ -18,6 +18,7 @@ import RegisterOtpVerify from "../screens/RegisterOtpVerify.jsx";
 import HomeScreen from "./Screens/HomeScreen";
 import EnrollScreen from "./Screens/EnrollScreen";
 import PaymentScreen from "./Screens/PaymentScreen";
+import QrCodePage from "../screens/QrCodePage";
 import ProfileScreen from "./Screens/ProfileScreen";
 import EnrollGroup from "../screens/EnrollGroup";
 import AuctionsRecord from "../screens/AuctionsRecord";
@@ -257,6 +258,11 @@ export default function ScreenNavigate() {
             component={MyLoan}
             options={{ headerShown: false }}
           />
+             <Stack.Screen
+            name="QrCodePage"
+            component={QrCodePage}
+            options={{ headerShown: false }}
+          />
 
 
           <Stack.Screen
@@ -297,7 +303,7 @@ export default function ScreenNavigate() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
-            name="MyPassbook"
+            name="MyPassbookScreen"
             component={MyPassbookScreen}
             options={{ headerShown: false }}
           />

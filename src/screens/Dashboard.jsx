@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import {
     View,
     Image,
@@ -7,38 +7,32 @@ import {
     Text,
     TouchableOpacity,
     StatusBar,
-    SafeAreaView,
     ScrollView,
     FlatList,
-    Modal,
-    Linking, 
-    // New: Platform for platform-specific styling
-    Platform, 
+    ImageBackground,
+    Animated,
 } from 'react-native';
 
-import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ContextProvider } from '../context/UserProvider';
-// NOTE: Make sure the paths to these assets are correct in your project structure
-import Group400 from '../../assets/Group400.png'; 
-// Other assets (SCROLL_IMAGES) are referenced via require() inside the component 
+import Group400 from '../../assets/Group400.png';
+import url from "../data/url"; 
+import axios from 'axios';
 
-const screenWidth = Dimensions.get('window').width;
-const screenHeight = Dimensions.get('window').height;
+const { width: screenWidth } = Dimensions.get('window');
 
-// -------------------------------------------------------------
-// ⭐ CONFIGURATION
-// UI Colors (Matching Home.jsx theme)
-const PRIMARY_COLOR = '#042f74ff'; 
-const SECONDARY_COLOR = '#EF6C00'; 
-const LIGHT_ACCENT_COLOR = '#B3E5FC'; // The color to enhance
-const BACKGROUND_COLOR = '#FFFFFF'; 
-const CARD_LIGHT_BG = '#E3F2FD'; // Lighter blue background
-// New color for subtle text and shadows
-const GREY_TEXT = '#666666'; 
-// -------------------------------------------------------------
+// --- DESIGN SYSTEM ---
+const PRIMARY_COLOR = '#042f74';
+const SECONDARY_COLOR = '#EF6C00';
+const ACCENT_BLUE = '#E3F2FD';
+const TEXT_MAIN = '#1A1A1A';
+const TEXT_SUB = '#666666';
+const WHITE = '#FFFFFF';
 
-// (SCROLL_IMAGES data is unchanged)
+const SCHEME_CARD_WIDTH = screenWidth * 0.8; 
+const SCHEME_MARGIN = 12;
+
 const SCROLL_IMAGES = [
     require('../../assets/50k blue.png'),
     require('../../assets/1lakhblue.png'),
@@ -49,940 +43,377 @@ const SCROLL_IMAGES = [
     require('../../assets/25lakhblue.png'),
     require('../../assets/50lakhblue.png'),
     require('../../assets/1croreblue.png'),
-    require('../../assets/50kgreen.png'),
-    require('../../assets/1lakhgreen.png'),
-    require('../../assets/2lakhgrren.png'),
-    require('../../assets/3lahkgreen.png'),
-    require('../../assets/5lakhgreen.png'),
-    require('../../assets/10lakhgreen.png'),
-    require('../../assets/25lakhgreen.png'),
-    require('../../assets/50lakhgreen.png'),
-    require('../../assets/1croregreen.png'),
-];
-const SCROLL_ITEM_WIDTH = 175;
-
-// (ADVANTAGES data is unchanged)
-const ADVANTAGES = [
-    {
-        icon: 'lock-clock',
-        text1: 'Join a Chit ',
-        text2: 'in Minutes',
-        iconColor: '#EF6C00',
-        action: 'navigate',
-        targetScreen: 'Enrollment'
-    },
-    {
-        icon: 'gavel',
-        text1: 'In app ',
-        text2: 'Auctions',
-        iconColor: '#795548',
-        action: 'navigate',
-        targetScreen: 'AuctionList'
-    },
-    {
-        icon: 'event-note',
-        text1: ' Auctions ',
-        text2: 'every month',
-        iconColor: '#FBC02D',
-        action: 'navigate',
-        targetScreen: 'AuctionList'
-    },
-    {
-        icon: 'support-agent',
-        text1: '1 Click customer ',
-        text2: 'support',
-        iconColor: '#607D8B',
-        action: 'call',
-        phoneNumber: '+919483900777'
-    },
-    {
-        icon: 'verified',
-        text1: 'Fully Compliant as ',
-        text2: 'per Chit Act 1998',
-        iconColor: '#3F51B5'
-    },
-    {
-        icon: 'groups',
-        text1: 'Chit Plans for ',
-        text2: 'everyone',
-        iconColor: '#4CAF50',
-        action: 'navigate',
-        targetScreen: 'Enrollment'
-    },
 ];
 
-// (REVIEWS data is unchanged)
 const REVIEWS = [
-    {
-        id: '1',
-        name: 'Prakash',
-        rating: 5,
-        review: 'Great service! The app is easy to use, and I got my money on time. I recommend this fund.',
-        location: 'Bangalore'
+    { id: '1', name: 'Prakash', review: 'Great service! The app is incredibly easy to navigate, and the digital process saved me so much time.', location: 'Bangalore' },
+    { id: '2', name: 'Geetha Kumari', review: 'Very transparent and trustworthy company. I appreciate the regular updates.', location: 'Chamarajanagr' },
+    { id: '3', name: 'Ravi Kumar', review: 'The interface is simple to understand even for beginners.', location: 'Bangalore' },
+    { id: '4', name: 'Nisha Singh', review: 'Secure, simple, and transparent. It makes chit fund investments feel modern.', location: 'Davanagere' },
+];
+
+const QUICK_ACTIONS = [
+    { id: '1', icon: 'payments', label: 'Pay Due', color: '#4CAF50', target: 'PayYourDues' },
+    { id: '2', icon: 'gavel', label: 'Auction', color: '#EF6C00', target: 'AuctionList' },
+    { id: '3', icon: 'history', label: 'Passbook', color: '#2196F3', target: 'MyPassbookScreen' },
+    { id: '4', icon: 'group-add', label: 'Refer', color: '#9C27B0', target: 'IntroduceNewCustomers' },
+    { id: '5', icon: 'account-balance', label: 'Bank Info', color: '#607D8B', target: 'QrCodePage' },
+    { id: '6', icon: 'description', label: 'Legal', color: '#F44336', target: 'LicenseAndCertificate' },
+];
+
+// --- UPDATED GOALS WITH CUSTOM COLORS ---
+const GOALS = [
+    { 
+        title: 'Dream Home', 
+        icon: 'home', 
+        desc: 'Save for your downpayment',
+        bgColor: '#E8F5E9', // Light Green
+        iconColor: '#2E7D32' 
     },
-    {
-        id: '2',
-        name: 'Geetha Kumari',
-        rating: 4,
-        review: 'Very transparent and trustworthy. The team is always available to help and the process is seamless. A great way to save and invest.',
-        location: 'Chamarajanagr'
+    { 
+        title: 'Education', 
+        icon: 'school', 
+        desc: 'Secure your child’s future',
+        bgColor: '#FFF3E0', // Light Orange
+        iconColor: '#E65100' 
     },
-    {
-        id: '3',
-        name: 'Ravi Kumar',
-        rating: 5,
-        review: 'A good app for managing my investments. The interface is easy to understand. One small suggestion would be to add more payment options.',
-        location: 'Bangalore'
-    },
-    {
-        id: '4',
-        name: 'Nisha Singh',
-        rating: 4,
-        review: 'The best chit fund experience I’ve had. Secure, simple, and transparent. The digital process saves a lot of time.',
-        location: 'Davanagere'
-    },
-    {
-        id: '5',
-        name: 'Raja Reddy',
-        rating: 5,
-        review: 'I was not sure at first, but the good service and clear papers made me trust this app. I am very happy I chose it.',
-        location: 'Mysore'
-    },
-    {
-        id: '6',
-        name: 'Sangeeta Rao',
-        rating: 4,
-        review: 'The app is good and the people who help customers answer fast. It is a good way to save money and get it when you need it.',
-        location: 'Mandya'
-    },
-    {
-        id: '7',
-        name: 'Vikram Patel',
-        rating: 5,
-        review: 'The process of joining and managing my chit fund is so simple. Highly recommend MyChits to everyone looking for a reliable chit fund.',
-        location: 'Bidar'
-    },
-    {
-        id: '8',
-        name: 'Anjali Desai',
-        rating: 5,
-        review: 'Excellent app! It’s simple, secure, and I can manage everything from my phone. The customer support is also very responsive and helpful.',
-        location: 'Bangalore'
-    },
-    {
-        id: '9',
-        name: 'Mukesh Choudhary',
-        rating: 4,
-        review: 'A reliable and easy-to-use platform. The process for joining a chit and making payments is very straightforward. Highly satisfied with my experience.',
-        location: 'Davanagere'
-    },
-    {
-        id: '10',
-        name: 'Priya Reddy',
-        rating: 5,
-        review: 'The best way to save money for my future goals. The entire process is transparent. I recommend this app to my friends and family.',
-        location: 'Bangalore'
-    },
-    {
-        id: '11',
-        name: 'Suresh Kumar',
-        rating: 5,
-        review: 'I love how easy it is to track my chit progress and auction status. Great job!',
-        location: 'Mandya'
-    },
-    {
-        id: '12',
-        name: 'Kavita Singh',
-        rating: 4,
-        review: 'A very good overall.',
-        location: 'Bangalore'
-    },
-    {
-        id: '13',
-        name: 'Rajesh Nair',
-        rating: 5,
-        review: 'Superb platform for my savings needs. The app is fast and reliable, and I never faced any issues. The team is also very supportive.',
-        location: 'Mysore'
-    },
-    {
-        id: '14',
-        name: 'Sneha Sharma',
-        rating: 4,
-        review: 'I appreciate the transparency and the constant support from the team.',
-        location: 'Bangalore'
+    { 
+        title: 'Wedding', 
+        icon: 'favorite', 
+        desc: 'Plan the perfect ceremony',
+        bgColor: '#FCE4EC', // Light Pink
+        iconColor: '#C2185B' 
     },
 ];
 
-// -------------------------------------------------------------
-// ⭐ MODAL COMPONENT 
-// -------------------------------------------------------------
-const EnlargedImageModal = ({ isVisible, imageSource, onClose }) => {
-    if (!imageSource) return null;
-
-    return (
-        <Modal
-            animationType="fade"
-            transparent={true}
-            visible={isVisible}
-            onRequestClose={onClose}
-        >
-            <View style={modalStyles.centeredView}>
-                {/* Full-screen Image */}
-                <Image
-                    source={imageSource}
-                    style={modalStyles.enlargedImage}
-                    resizeMode="contain"
-                />
-
-                {/* Close Button (Cross Mark) */}
-                <TouchableOpacity
-                    style={modalStyles.closeButton}
-                    onPress={onClose}
-                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                >
-                    <Ionicons name="close-circle" size={40} color="#fff" />
-                </TouchableOpacity>
-            </View>
-        </Modal>
-    );
-};
-// -------------------------------------------------------------
-
-
-// -------------------------------------------------------------
-// ⭐ HOME SCREEN
-// -------------------------------------------------------------
 const Home = ({ navigation }) => {
     const [appUser] = useContext(ContextProvider);
     const insets = useSafeAreaInsets();
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [selectedImage, setSelectedImage] = useState(null);
-    const scrollRef = useRef(null);
+    const [activeChitsCount, setActiveChitsCount] = useState(0);
+    const horizontalScrollRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-    
-    // Auto-scroll effect
+
+    const headerFade = useRef(new Animated.Value(0)).current;
+    const headerSlide = useRef(new Animated.Value(-15)).current;
+
+    const HEADER_HEIGHT = 165 + insets.top; 
+
     useEffect(() => {
-        let intervalId;
-        const autoScroll = () => {
-            setCurrentIndex(prevIndex => {
-                const nextIndex = (prevIndex + 1) % SCROLL_IMAGES.length;
-                const offset = nextIndex * SCROLL_ITEM_WIDTH;
-                scrollRef.current?.scrollTo({ x: offset, animated: true });
-                return nextIndex;
+        Animated.parallel([
+            Animated.timing(headerFade, { toValue: 1, duration: 800, useNativeDriver: true }),
+            Animated.timing(headerSlide, { toValue: 0, duration: 800, useNativeDriver: true }),
+        ]).start();
+
+        const interval = setInterval(() => {
+            let nextIndex = (currentIndex + 1) % SCROLL_IMAGES.length;
+            horizontalScrollRef.current?.scrollTo({ 
+                x: nextIndex * (SCHEME_CARD_WIDTH + SCHEME_MARGIN), 
+                animated: true 
             });
+            setCurrentIndex(nextIndex);
+        }, 3500);
+        return () => clearInterval(interval);
+    }, [currentIndex]);
+
+    useEffect(() => {
+        const fetchActiveCounts = async () => {
+            try {
+                const [newRes, ongoingRes] = await Promise.all([
+                    axios.get(`${url}/group/filter/NewGroups`),
+                    axios.get(`${url}/group/filter/OngoingGroups`)
+                ]);
+                setActiveChitsCount((newRes.data?.groups?.length || 0) + (ongoingRes.data?.groups?.length || 0));
+            } catch (error) { console.error(error); }
         };
-        intervalId = setInterval(autoScroll, 3000); 
-        return () => clearInterval(intervalId);
-    }, []); 
-    
-    const handleScroll = (event) => {
-        const contentOffsetX = event.nativeEvent.contentOffset.x;
-        // Calculate the closest index: Round (Offset / Item Width)
-        const newIndex = Math.round(contentOffsetX / SCROLL_ITEM_WIDTH); 
-        setCurrentIndex(newIndex);
-    };
-
-    // Handler to open the modal
-    const handleImagePress = (imgSource) => {
-        setSelectedImage(imgSource);
-        setIsModalVisible(true);
-    };
-
-    // Handler to close the modal
-    const handleModalClose = () => {
-        setIsModalVisible(false);
-        setSelectedImage(null);
-    };
-
-    // Handler for advantage actions (navigate or call)
-    const handleAdvantageAction = (item) => {
-        if (item.action === 'navigate' && item.targetScreen) {
-            navigation.navigate(item.targetScreen);
-        } else if (item.action === 'call' && item.phoneNumber) {
-            Linking.openURL(`tel:${item.phoneNumber}`);
-        }
-    };
-
-    const StarRating = ({ rating }) => {
-        const stars = [];
-        for (let i = 1; i <= 5; i++) {
-            stars.push(
-                <Ionicons
-                    key={i}
-                    name={i <= rating ? "star" : "star-outline"}
-                    size={20} 
-                    color={i <= rating ? SECONDARY_COLOR : '#ccc'} 
-                    style={styles.reviewStar}
-                />
-            );
-        }
-        return <View style={styles.reviewRating}>{stars}</View>;
-    };
-
-    const ReviewCard = ({ item }) => (
-        <View style={styles.reviewCard}>
-            <View style={styles.reviewHeader}>
-                {/* Refined: Use bold/primary for name, GREY_TEXT for location */}
-                <Text style={styles.reviewName}>{item.name}</Text>
-                <Text style={[styles.reviewLocation, {color: GREY_TEXT}]}>{item.location}</Text>
-            </View>
-            <Text style={[styles.reviewText, styles.baseText]}>{item.review}</Text>
-            <StarRating rating={item.rating} />
-        </View>
-    );
-
-    // ⭐ DASHBOARD ITEM RENDER FUNCTION (Added activeOpacity)
-    const DashboardItem = ({ iconName, text, targetScreen }) => (
-        <TouchableOpacity 
-            style={styles.dashboardCard} 
-            onPress={() => navigation.navigate(targetScreen)}
-            activeOpacity={0.7} // Added activeOpacity for better feedback
-        >
-            {/* Inner text/icon color is now PRIMARY_COLOR for contrast */}
-            <View style={[styles.iconCircle, { backgroundColor: LIGHT_ACCENT_COLOR }]}>
-                <Feather name={iconName} size={26} color={PRIMARY_COLOR} /> 
-            </View>
-            <Text style={styles.dashboardCardText}>{text}</Text>
-        </TouchableOpacity>
-    );
-
-    // ⭐ DASHBOARD DATA (Only Active Chits and Refer & Earn remain)
-    const dashboardItems = [
-        { iconName: 'users', text: 'Active Chits', targetScreen: 'Enrollment' },
-        { iconName: 'gift', text: 'Refer & Earn', targetScreen: 'IntroduceNewCustomers' },
-    ];
-    
-    // ⭐ NEW BENEFITS DATA
-    const benefitsData = [
-        {
-            icon: 'touch-app',
-            heading: 'Easy Accessibility',
-            description: 'Use our online presence and companion mobile app to keep track of your chits anytime, anywhere.',
-            iconBg: '#FFEDEE',
-            iconColor: '#D32F2F',
-        },
-        {
-            icon: 'currency-rupee',
-            heading: 'Large Choice of Chits',
-            description: 'From ₹50,000 to ₹1 Crore, our subscriber-friendly plans are designed to suit your financial goals.',
-            iconBg: '#E1F5FE',
-            iconColor: '#1565C0',
-        },
-        {
-            icon: 'verified-user',
-            heading: 'Most Trusted',
-            description: 'MY CHITS has been trusted since 1998, operating as a safest registered chits company.',
-            iconBg: '#E8F5E9',
-            iconColor: '#388E3C',
-        },
-    ];
-
-    // ⭐ NEW BENEFIT ITEM RENDER FUNCTION
-    const BenefitItem = ({ icon, heading, description, iconBg, iconColor }) => (
-        <View style={styles.benefitItem}>
-            <View style={[styles.benefitIconCircle, { backgroundColor: iconBg }]}>
-                <MaterialIcons name={icon} size={28} color={iconColor} />
-            </View>
-            <View style={styles.benefitTextContent}>
-                <Text style={styles.benefitHeading}>{heading}</Text>
-                {/* Refined: Using GREY_TEXT for benefit description */}
-                <Text style={[styles.benefitDescription, {color: GREY_TEXT}]}>{description}</Text>
-            </View>
-        </View>
-    );
-    
-    // ⭐ NEW PAGINATION DOTS COMPONENT - MODIFIED TO SHOW ONLY 6 DOTS
-    const PaginationDots = () => {
-        // Limit the array to the first 6 elements to render only 6 dots
-        const limitedScrollImages = SCROLL_IMAGES.slice(0, 6); 
-        
-        return (
-            <View style={styles.paginationContainer}>
-                {limitedScrollImages.map((_, index) => (
-                    <View
-                        key={index}
-                        // Use modulo operator (%) to map the full 18-image index (currentIndex) 
-                        // back to the 6 dots, ensuring the active dot cycles correctly.
-                        style={[
-                            styles.paginationDot,
-                            index === currentIndex % limitedScrollImages.length ? styles.activeDot : styles.inactiveDot,
-                        ]}
-                    />
-                ))}
-            </View>
-        );
-    };
-    
-    // ⭐ NEW: Section Divider Component
-    const SectionDivider = () => <View style={styles.sectionDivider} />;
-
+        fetchActiveCounts();
+    }, []);
 
     return (
-        <SafeAreaView style={[styles.container, styles.screenContainer]}>
-            <StatusBar barStyle="light-content" backgroundColor={PRIMARY_COLOR} /> 
+        <View style={styles.container}>
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
             
-            {/* ⭐ HEADER - MODIFIED PADDING HERE */}
-            <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'android' ? 10 : 15), paddingBottom: 10 }]}>
-                <View style={styles.logoTitleContainer}>
-                    <Image source={Group400} style={styles.headerLogo} resizeMode="contain" />
-                    {/* Refined: Added subtle shadow for the title text */}
-                    <Text style={styles.headerTitle}>MyChits</Text>
+            <View style={[styles.brandHeader, { height: HEADER_HEIGHT, paddingTop: insets.top + 10 }]}>
+                <View style={styles.headerOrb1} />
+                <View style={styles.headerOrb2} />
+
+                <Animated.View style={{ opacity: headerFade, transform: [{ translateY: headerSlide }] }}>
+                    <View style={styles.headerTopRow}>
+                        <View style={styles.logoGroup}>
+                            <View style={styles.logoWhiteBg}>
+                                <Image source={Group400} style={styles.logoIcon} />
+                            </View>
+                            <Text style={styles.brandName}>MyChits</Text>
+                        </View>
+                        <View style={styles.headerIcons}>
+                            <TouchableOpacity style={styles.iconCircleBtn}><Feather name="bell" size={20} color={WHITE} /></TouchableOpacity>
+                            <TouchableOpacity style={[styles.iconCircleBtn, { marginLeft: 10 }]}><Feather name="help-circle" size={20} color={WHITE} /></TouchableOpacity>
+                        </View>
+                    </View>
+                    
+                    <View style={styles.welcomeSection}>
+                        <Text style={styles.welcomeSmall}>Welcome,</Text>
+                        <View style={styles.nameRow}>
+                             <Text style={styles.welcomeLarge}>{appUser?.name || 'Investor'}</Text>
+                             <MaterialIcons name="verified" size={18} color="#4FC3F7" style={{ marginLeft: 6, marginTop: 4 }} />
+                        </View>
+                    </View>
+                </Animated.View>
+            </View>
+
+            <View style={[styles.statusCard, { top: HEADER_HEIGHT - 35 }]}>
+                <View style={styles.statusInfo}>
+                    <View>
+                        <Text style={styles.statusLabel}>Active Chits</Text>
+                        <Text style={styles.statusValue}>{activeChitsCount}</Text>
+                    </View>
+                    <View style={styles.vDivider} />
+                    <View>
+                        <Text style={styles.statusLabel}>Auction Every</Text>
+                        <Text style={styles.statusValue}>10 Days</Text>
+                    </View>
                 </View>
-                <TouchableOpacity style={styles.helpButton} onPress={() => navigation.navigate("Help")} >
-                    <Ionicons name="help-circle-outline" size={26} color="#fff" />
+                <TouchableOpacity style={styles.statusBtn} onPress={() => navigation.navigate('Enrollment')}>
+                    <Text style={styles.statusBtnText}>Enroll Now</Text>
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.mainScrollView} contentContainerStyle={styles.scrollContent}>
-                
-                {/* ⭐ NEW: MAIN CONTENT BOX WRAPPER */}
-                <View style={styles.mainContentBox}>
-                
-                    {/* ⭐ YOUR HORIZONTAL SCROLLING IMAGES - Chit Schemes (CLEANED UP BOX) */}
-                    {/* MODIFICATION 1: Changed marginBottom from 25 to 10 */}
-                    <View style={[styles.innerSectionPadding, { marginBottom: 10 }]}>
-                        <Text style={styles.sectionTitle}>Explore Chit Schemes</Text>
-                        <ScrollView 
-                            ref={scrollRef} 
-                            horizontal 
-                            showsHorizontalScrollIndicator={false} 
-                            contentContainerStyle={styles.scrollImageContainerClean}
-                            onScroll={handleScroll}
-                            scrollEventThrottle={16} 
-                            pagingEnabled 
-                        >
-                            {SCROLL_IMAGES.map((img, index) => (
-                                <TouchableOpacity 
-                                    key={index} 
-                                    style={styles.scrollItemContainer} 
-                                    onPress={() => handleImagePress(img)}
-                                    activeOpacity={0.8} // Added activeOpacity for feedback
-                                >
-                                    <Image source={img} style={styles.scrollImage} resizeMode="contain" />
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        
-                        <PaginationDots />
-                    </View>
-                    
-                    {/* NEW DIVIDER - REMOVED the divider that was here */}
-                    {/* REMOVED: <SectionDivider /> */}
-
-                    {/* ⭐ NEW SECTION: Benefits & License Link */}
-                    {/* MODIFIED: Added benefitsSectionNoTopPadding to pull the section up */}
-                    <View style={[styles.innerSectionPadding, styles.benefitsSection, styles.benefitsSectionNoTopPadding]}>
-                        <Text style={styles.sectionTitleCenter}>Why Choose MyChits?</Text>
-                        
-                        {benefitsData.map((item, index) => (
-                            <BenefitItem key={index} {...item} />
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ 
+                    paddingTop: HEADER_HEIGHT + 50, 
+                    paddingBottom: insets.bottom + 40 
+                }}
+            >
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitleCenter}>Financial Services</Text>
+                    <View style={styles.actionGrid}>
+                        {QUICK_ACTIONS.map((item) => (
+                            <TouchableOpacity 
+                                key={item.id} 
+                                style={[styles.stylizedActionBox, { borderColor: item.color + '30' }]} 
+                                onPress={() => navigation.navigate(item.target)}
+                            >
+                                <View style={[styles.boxCornerGlow, { backgroundColor: item.color }]} />
+                                <View style={[styles.actionIconBg, { backgroundColor: item.color + '15' }]}>
+                                    <MaterialIcons name={item.icon} size={28} color={item.color} />
+                                </View>
+                                <Text style={styles.actionText}>{item.label.toUpperCase()}</Text>
+                                <View style={[styles.bottomLine, { backgroundColor: item.color }]} />
+                            </TouchableOpacity>
                         ))}
-                        
-                        {/* View License Link - STYLIST BUTTON STYLE */}
-                        <TouchableOpacity
-                            style={styles.viewLicenseLink} 
-                            onPress={() => navigation.navigate('LicenseAndCertificate')}
-                            activeOpacity={0.8} 
-                        >
-                            <View style={styles.viewLicenseContent}>
-                                {/* Icon color changed to white to match new background */}
-                                <MaterialIcons name="link" size={18} color="#fff" />
-                                <Text style={styles.viewLicenseText}>View License and Certificate</Text>
-                            </View>
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Popular Schemes</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Enrollment')}>
+                            <Text style={styles.seeAll}>See All</Text>
                         </TouchableOpacity>
                     </View>
-                    
-                    {/* NEW DIVIDER */}
-                    <SectionDivider />
-
-                    {/* ⭐ DASHBOARD CARDS - My Dashboard (Grid of 2) */}
-                    <View style={styles.innerSectionPadding}>
-                        <Text style={styles.sectionTitle}>My Dashboard</Text>
-                        
-                        <FlatList
-                            key={'dashboard-grid-2'}
-                            data={dashboardItems}
-                            keyExtractor={item => item.text}
-                            numColumns={2} 
-                            scrollEnabled={false}
-                            columnWrapperStyle={styles.dashboardRow}
-                            renderItem={({ item }) => (
-                                <DashboardItem {...item} />
-                            )}
-                        />
-                    </View>
-                    
-                    {/* NEW DIVIDER */}
-                    <SectionDivider />
-
-                    {/* ⭐ ADVANTAGES - App Advantages (Grid of 3) */}
-                    <View style={[styles.innerSectionPadding, { marginTop: 25 }]}>
-                        <Text style={styles.sectionTitleCenter}>App Advantages</Text>
-                        <FlatList
-                            key={'advantage-grid-3'} 
-                            data={ADVANTAGES}
-                            keyExtractor={(item, index) => index.toString()}
-                            numColumns={3} 
-                            scrollEnabled={false}
-                            columnWrapperStyle={styles.advantageRow}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity 
-                                    style={styles.advantageContainer} 
-                                    onPress={() => handleAdvantageAction(item)}
-                                    activeOpacity={0.7} // Added activeOpacity for feedback
-                                >
-                                    <View style={[styles.advantageIconCircle, { backgroundColor: item.iconColor + '20' }]}>
-                                        <MaterialIcons name={item.icon} size={28} color={item.iconColor} />
-                                    </View>
-                                    <Text style={[styles.advantageText, styles.baseText]}>
-                                        <Text style={{fontWeight: '700', color: PRIMARY_COLOR}}>{item.text1}</Text>
-                                        <Text>{item.text2}</Text>
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-                        />
-                    </View>
-                    
-                    {/* NEW DIVIDER */}
-                    <SectionDivider />
-
-                    {/* ⭐ CUSTOMER REVIEWS */}
-                    <View style={[styles.innerSectionPadding, { marginTop: 20, paddingBottom: 15 }]}>
-                        <Text style={styles.sectionTitleCenter}>What Our Customers Say</Text>
-                        <FlatList
-                            data={REVIEWS}
-                            renderItem={({ item }) => <ReviewCard item={item} />}
-                            keyExtractor={item => item.id}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.reviewsList}
-                        />
-                    </View>
-                
+                    <ScrollView 
+                        ref={horizontalScrollRef} horizontal showsHorizontalScrollIndicator={false} 
+                        snapToInterval={SCHEME_CARD_WIDTH + SCHEME_MARGIN} decelerationRate="fast"
+                    >
+                        {SCROLL_IMAGES.map((img, index) => (
+                            <TouchableOpacity key={index} style={styles.schemeCard} activeOpacity={0.9} onPress={() => navigation.navigate('Enrollment')}>
+                                <Image source={img} style={styles.schemeImg} resizeMode="cover" />
+                                <View style={styles.schemeOverlay}>
+                                    <Text style={styles.schemeTag}>Limited Slots</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
-                {/* ⭐ END: MAIN CONTENT BOX WRAPPER */}
 
-                {/* ⭐ START SAVING BUTTON (Placed below the main box) - ENHANCED LIFT */}
-                <TouchableOpacity
-                    style={styles.bottomButton} 
-                    onPress={() => navigation.navigate('Enrollment')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.floatingButtonText}>
-                        <Feather name="trending-up" size={18} color="#fff" />
-                        {'  '} START SAVING NOW
-                    </Text>
-                </TouchableOpacity>
+                <View style={styles.section}>
+                    <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('About')} style={styles.aboutHighlightCard}>
+                        <ImageBackground source={require('../../assets/image.png')} style={styles.aboutBgImage} imageStyle={{ opacity: 0.12 }}>
+                            <View style={styles.aboutContent}>
+                                <View style={styles.aboutTextCol}>
+                                    <Text style={styles.aboutBadge}>ABOUT US</Text>
+                                    <Text style={styles.aboutTitle}>India's 100% Digital Chit Fund</Text>
+                                    <Text style={styles.aboutDescription} numberOfLines={3}>
+                                        We are a registered chit fund company offering financial independence across India.
+                                    </Text>
+                                    <View style={styles.readMoreRow}>
+                                        <Text style={styles.readMoreText}>Explore Our Story</Text>
+                                        <Feather name="arrow-right" size={16} color={PRIMARY_COLOR} />
+                                    </View>
+                                </View>
+                                <View style={styles.aboutIconCircle}>
+                                    <MaterialIcons name="verified-user" size={30} color={PRIMARY_COLOR} />
+                                </View>
+                            </View>
+                        </ImageBackground>
+                    </TouchableOpacity>
+                </View>
 
+                {/* --- SAVING GOALS WITH DIFFERENT COLORS --- */}
+                <View style={styles.sectionWithLargeSpace}>
+                    <Text style={styles.sectionTitleSpaced}>What are you saving for?</Text>
+                    {GOALS.map((goal, index) => (
+                        <TouchableOpacity 
+                            key={index} 
+                            style={styles.goalCard}
+                            onPress={() => navigation.navigate('Enrollment')}
+                        >
+                            {/* Dynamic Background and Icon Color */}
+                            <View style={[styles.goalIcon, { backgroundColor: goal.bgColor }]}>
+                                <MaterialIcons name={goal.icon} size={24} color={goal.iconColor} />
+                            </View>
+                            <View style={styles.goalText}>
+                                <Text style={styles.goalTitle}>{goal.title}</Text>
+                                <Text style={styles.goalDesc}>{goal.desc}</Text>
+                            </View>
+                            <Feather name="chevron-right" size={20} color={TEXT_SUB} />
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                <View style={styles.sectionWithLargeSpace}>
+                    <Text style={styles.sectionTitleSpaced}>Trusted by Thousands</Text>
+                    <FlatList
+                        data={REVIEWS} horizontal showsHorizontalScrollIndicator={false}
+                        keyExtractor={item => item.id}
+                        renderItem={({ item }) => (
+                            <View style={styles.reviewCard}>
+                                <View style={styles.reviewHeader}>
+                                    <View style={styles.avatar}><Text style={styles.avatarText}>{item.name[0]}</Text></View>
+                                    <View><Text style={styles.reviewUser}>{item.name}</Text><Text style={styles.reviewLoc}>{item.location}</Text></View>
+                                </View>
+                                <Text style={styles.reviewBody}>"{item.review}"</Text>
+                                <View style={styles.reviewStarRow}>
+                                    {[1, 2, 3, 4, 5].map(s => <MaterialIcons key={s} name="star" size={14} color="#FFD700" />)}
+                                </View>
+                            </View>
+                        )}
+                    />
+                </View>
+
+                <View style={styles.finalActionSection}>
+                    <TouchableOpacity style={styles.mainBtn} onPress={() => navigation.navigate('Enrollment')}>
+                        <Text style={styles.mainBtnText}>EXPLORE ALL CHITS</Text>
+                        <Feather name="trending-up" size={20} color={WHITE} />
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
-
-            {/* Enlarged Image Modal */}
-            <EnlargedImageModal
-                isVisible={isModalVisible}
-                imageSource={selectedImage}
-                onClose={handleModalClose}
-            />
-            
-        </SafeAreaView>
+        </View>
     );
 };
 
-// -------------------------------------------------------------
-// ⭐ STYLES 
-// -------------------------------------------------------------
 const styles = StyleSheet.create({
-    // --- UNIQUE/GENERIC STYLES ADDED ---
-    screenContainer: {
-        flex: 1,
-        backgroundColor: PRIMARY_COLOR, 
+    container: { flex: 1, backgroundColor: '#F8FAFC' },
+    brandHeader: { 
+        position: 'absolute', top: 0, left: 0, right: 0, 
+        backgroundColor: PRIMARY_COLOR, paddingHorizontal: 20, 
+        borderBottomLeftRadius: 40, borderBottomRightRadius: 40, zIndex: 10,
+        overflow: 'hidden'
     },
-    baseText: {
-        // Dark grey for improved readability/stylishness
-        color: GREY_TEXT, 
-        fontSize: 12,      
-        fontWeight: '400', 
+    headerOrb1: {
+        position: 'absolute', width: 180, height: 180, borderRadius: 90,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)', top: -40, right: -40
     },
-    // --- EXISTING STYLES ---
-    container: {
-        flex: 1,
-        backgroundColor: BACKGROUND_COLOR, 
+    headerOrb2: {
+        position: 'absolute', width: 120, height: 120, borderRadius: 60,
+        backgroundColor: 'rgba(255, 255, 255, 0.04)', bottom: 20, left: -20
     },
-    mainScrollView: {
-        flex: 1,
-        backgroundColor: PRIMARY_COLOR, 
-    },
-    // MODIFICATION 2: Changed paddingTop from 18 to 10
-    scrollContent: {
-        paddingTop: 10, 
-        paddingBottom: 20, 
-    },
-    // --- HEADER STYLES (Refined title shadow) ---
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        backgroundColor: PRIMARY_COLOR, 
-    },
-    logoTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerLogo: {
-        width: 35,
-        height: 35,
-        marginRight: 8,
-    },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff', 
-        // Refined: Subtle text shadow for a polished look
-        textShadowColor: 'rgba(0, 0, 0, 0.1)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 1,
-    },
-    helpButton: {
-        padding: 5,
-    },
-    // ⭐ MAIN CONTENT BOX (Border Removed, Stronger Shadow)
-    mainContentBox: {
-        backgroundColor: BACKGROUND_COLOR, // White content box
-        marginHorizontal: 5,              
-        borderRadius: 20, // Rounded corners
-        paddingVertical: 0, 
-        // Stronger shadow to lift it off the background (No border)
-        shadowColor: PRIMARY_COLOR, 
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15, 
-        shadowRadius: 10, // Wider radius for softer falloff
-        elevation: 10, 
-        // Removed border to let the primary color background blend more smoothly
-    },
+    headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    logoGroup: { flexDirection: 'row', alignItems: 'center' },
+    logoWhiteBg: { backgroundColor: WHITE, padding: 5, borderRadius: 10, marginRight: 10 },
+    logoIcon: { width: 22, height: 22 },
+    brandName: { color: WHITE, fontSize: 22, fontWeight: '900', letterSpacing: 0.5 },
+    headerIcons: { flexDirection: 'row' },
+    iconCircleBtn: { backgroundColor: 'rgba(255,255,255,0.18)', padding: 10, borderRadius: 14 },
+    welcomeSection: { marginTop: 20 },
+    welcomeSmall: { color: 'rgba(255,255,255,0.65)', fontSize: 14, fontWeight: '500' },
+    nameRow: { flexDirection: 'row', alignItems: 'center' },
+    welcomeLarge: { color: WHITE, fontSize: 26, fontWeight: '800' },
     
-    // ⭐ NEW: PADDING STYLE FOR SECTIONS INSIDE THE BOX
-    innerSectionPadding: {
-        paddingHorizontal: 15,
-        paddingVertical: 15, 
+    statusCard: { 
+        position: 'absolute', left: 20, right: 20, 
+        backgroundColor: WHITE, borderRadius: 24, padding: 20, 
+        flexDirection: 'row', alignItems: 'center', elevation: 15, 
+        shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, zIndex: 11 
     },
+    statusInfo: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+    statusLabel: { color: TEXT_SUB, fontSize: 11, marginBottom: 2 },
+    statusValue: { color: PRIMARY_COLOR, fontSize: 16, fontWeight: '800' },
+    vDivider: { width: 1, height: 35, backgroundColor: '#E2E8F0', marginHorizontal: 20 },
+    statusBtn: { backgroundColor: SECONDARY_COLOR, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 15 },
+    statusBtnText: { color: WHITE, fontWeight: 'bold', fontSize: 13 },
     
-    // --- SCROLL IMAGES STYLES (Enhanced Styling using LIGHT_ACCENT_COLOR) ---
-    scrollImageContainerClean: {
-        flexDirection: 'row',
+    section: { marginTop: 20, paddingHorizontal: 20 },
+    sectionWithLargeSpace: { marginTop: 40, paddingHorizontal: 20 }, 
+    sectionTitleSpaced: { fontSize: 18, fontWeight: '800', color: TEXT_MAIN, marginBottom: 20 },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+    sectionTitle: { fontSize: 18, fontWeight: '800', color: TEXT_MAIN },
+    sectionTitleCenter: { fontSize: 18, fontWeight: '800', color: TEXT_MAIN, textAlign: 'center', marginBottom: 20 },
+    seeAll: { color: SECONDARY_COLOR, fontWeight: '700', fontSize: 13 },
+
+    actionGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    stylizedActionBox: { 
+        width: (screenWidth - 55) / 3, backgroundColor: WHITE, paddingTop: 22, 
+        paddingBottom: 18, borderRadius: 24, alignItems: 'center', marginBottom: 15, 
+        elevation: 8, position: 'relative', overflow: 'hidden' 
     },
-    scrollItemContainer: {
-        width: SCROLL_ITEM_WIDTH,
-        height: 160,
-        marginRight: 15,
-        borderRadius: 12, 
-        backgroundColor: BACKGROUND_COLOR, 
-        justifyContent: 'center',
-        alignItems: 'center',
-        
-        // ⭐ ENHANCED STYLING for LIGHT_ACCENT_COLOR usage: Soft shadow and blue highlight
-        shadowColor: LIGHT_ACCENT_COLOR, 
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.8, 
-        shadowRadius: 8,
-        elevation: 8,
-        borderWidth: 2, 
-        borderColor: LIGHT_ACCENT_COLOR, 
-    },
-    scrollImage: {
-        width: 160,
-        height: 160,
-        borderRadius: 10,
-    },
-    // --- SECTION TITLE STYLES (Refined weight) ---
-    sectionTitle: {
-        fontSize: 20, 
-        fontWeight: '800', 
-        color: PRIMARY_COLOR,
-        marginBottom: 15,
-    },
-    sectionTitleCenter: {
-        fontSize: 20, 
-        fontWeight: '800', 
-        color: PRIMARY_COLOR,
-        marginBottom: 15,
-        textAlign: 'center',
-    },
-    // --- DASHBOARD CARDS STYLES (Floating/Subtle Lift) ---
-    dashboardRow: {
-        justifyContent: 'space-between',
-        marginBottom: 10,
-    },
-    dashboardCard: {
-        width: '48%', 
+    actionIconBg: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+    actionText: { fontSize: 10, fontWeight: '900', color: TEXT_MAIN, textAlign: 'center' },
+    boxCornerGlow: { position: 'absolute', top: -15, right: -15, width: 40, height: 40, borderRadius: 20, opacity: 0.1 },
+    bottomLine: { position: 'absolute', bottom: 0, width: '35%', height: 3 },
+
+    schemeCard: { width: SCHEME_CARD_WIDTH, height: 180, marginRight: SCHEME_MARGIN, borderRadius: 24, overflow: 'hidden' },
+    schemeImg: { width: '100%', height: '100%' },
+    schemeOverlay: { position: 'absolute', top: 12, left: 12 },
+    schemeTag: { backgroundColor: 'rgba(0,0,0,0.5)', color: WHITE, fontSize: 10, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontWeight: 'bold' },
+
+    aboutHighlightCard: { backgroundColor: WHITE, borderRadius: 24, overflow: 'hidden', elevation: 6, borderWidth: 1, borderColor: '#E3F2FD' },
+    aboutBgImage: { padding: 20 },
+    aboutContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    aboutTextCol: { flex: 1, paddingRight: 10 },
+    aboutBadge: { backgroundColor: ACCENT_BLUE, color: PRIMARY_COLOR, fontSize: 10, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', marginBottom: 8 },
+    aboutTitle: { fontSize: 16, fontWeight: '800', color: PRIMARY_COLOR, marginBottom: 4 },
+    aboutDescription: { fontSize: 12, color: TEXT_SUB, lineHeight: 18, marginBottom: 10 },
+    readMoreRow: { flexDirection: 'row', alignItems: 'center' },
+    readMoreText: { color: PRIMARY_COLOR, fontWeight: 'bold', fontSize: 13, marginRight: 5 },
+    aboutIconCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: ACCENT_BLUE, justifyContent: 'center', alignItems: 'center' },
+
+    goalCard: { 
+        flexDirection: 'row', 
         alignItems: 'center', 
-        paddingVertical: 15, 
-        paddingHorizontal: 10,
-        borderRadius: 15, 
-        backgroundColor: BACKGROUND_COLOR, // Pure white
-        borderWidth: 1, // Minimal border
-        borderColor: LIGHT_ACCENT_COLOR + '60', 
-        shadowColor: PRIMARY_COLOR,
-        shadowOffset: { width: 0, height: 1 }, 
-        shadowOpacity: 0.08, // Very subtle lift
-        shadowRadius: 3, 
-        elevation: 3, 
+        backgroundColor: WHITE, 
+        padding: 15, 
+        borderRadius: 22, // Slightly rounder for premium feel
+        marginBottom: 12, 
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
     },
-    iconCircle: {
+    goalIcon: { 
         width: 50, 
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: LIGHT_ACCENT_COLOR, // Overridden in component
-        marginBottom: 8,
+        height: 50, 
+        borderRadius: 15, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        marginRight: 15 
     },
-    dashboardCardText: {
-        fontSize: 14, 
-        fontWeight: '700', 
-        color: PRIMARY_COLOR, 
-        textAlign: 'center',
-        marginTop: 5, 
-    },
-    // --- ADVANTAGE STYLES (Border Enhanced) ---
-    advantageRow: {
-        justifyContent: 'space-between',
-        marginBottom: 10,
-    },
-    advantageContainer: {
-        width: '31%', 
-        alignItems: 'center',
-        paddingVertical: 10, 
-        paddingHorizontal: 5,
-        borderRadius: 12, 
-        
-        borderWidth: 1.5,
-        borderColor: LIGHT_ACCENT_COLOR, 
-        
-        backgroundColor: BACKGROUND_COLOR, 
-        shadowColor: PRIMARY_COLOR,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1, 
-        shadowRadius: 3,
-        elevation: 3,
-    },
-    advantageIconCircle: {
-        width: 40, 
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 5,
-    },
-    advantageText: {
-        fontSize: 10, 
-        color: GREY_TEXT, 
-        textAlign: 'center',
-        lineHeight: 14, 
-    },
-    // --- REVIEW STYLES (Floating Card Effect) ---
-    reviewsList: {
-        paddingVertical: 10,
-        marginLeft: -15, 
-        paddingLeft: 15,
-        paddingRight: 15, 
-    },
-    reviewCard: {
-        backgroundColor: CARD_LIGHT_BG, 
-        borderRadius: 18, // Slightly more rounded
-        padding: 18, // Slightly more padding
-        marginRight: 15, 
-        width: screenWidth * 0.75, 
-        
-        // ⭐ FLOATING EFFECT (Border removed, shadow strengthened)
-        shadowColor: PRIMARY_COLOR,
-        shadowOffset: { width: 0, height: 6 }, // Stronger vertical lift
-        shadowOpacity: 0.1, // Softer opacity
-        shadowRadius: 10, // Wider, softer glow
-        elevation: 6,
-    },
-    reviewHeader: {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        marginBottom: 5,
-    },
-    reviewName: {
-        fontSize: 16,
-        fontWeight: '800', 
-        color: PRIMARY_COLOR,
-        textAlign: 'left',
-    },
-    reviewLocation: {
-        fontSize: 11, 
-        color: GREY_TEXT, // Controlled by component now
-        textAlign: 'left',
-        fontStyle: 'italic',
-        marginBottom: 5,
-    },
-    reviewRating: {
-        flexDirection: 'row',
-        marginTop: 8, 
-    },
-    reviewStar: {
-        marginRight: 2,
-    },
-    reviewText: {
-        fontSize: 13, 
-        fontStyle: 'normal',
-        lineHeight: 19, 
-    },
-    // --- NEW BENEFIT STYLES (Border Enhanced) ---
-    benefitsSection: {
-        marginBottom: 0, 
-    },
-    // ⭐ NEW STYLE: Removes top padding from the section
-    benefitsSectionNoTopPadding: {
-        paddingHorizontal: 15,
-        paddingTop: 0, // Removed top padding
-        paddingBottom: 15, // Kept bottom padding
-    },
-    benefitItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor:"#cee6f0ff", 
-        borderRadius: 12, 
-        padding: 12, 
-        marginBottom: 10,
-        borderWidth: 1.5, 
-        borderColor: PRIMARY_COLOR + '20', 
-        shadowColor: '#b42b2bff',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05, 
-        shadowRadius: 1,
-        elevation: 1,
-    },
-    benefitIconCircle: {
-        width: 45, 
-        height: 45,
-        borderRadius: 22.5,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 15,
-    },
-    benefitTextContent: {
-        flex: 1,
-    },
-    benefitHeading: {
-        fontSize: 15, 
-        fontWeight: '700',
-        color: PRIMARY_COLOR,
-        marginBottom: 2,
-    },
-    benefitDescription: {
-        fontSize: 11.5, 
-        color: GREY_TEXT, // Controlled by component now
-        lineHeight: 17,
-    },
-    // ⭐ VIEW LICENSE LINK (STYLIST BUTTON)
-    viewLicenseLink: {
-        alignSelf: 'center', // Center the button
-        marginTop: 15,
-        marginBottom: 10,
-        paddingVertical: 10, 
-        paddingHorizontal: 25, 
-        borderRadius: 30, // True pill shape
-        
-        // Set background to secondary color
-        backgroundColor: SECONDARY_COLOR,
-        borderWidth: 0, 
-        
-        // Strong glow effect using secondary color
-        shadowColor: SECONDARY_COLOR, 
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.7, 
-        shadowRadius: 12, // Wide glow
-        elevation: 8,
-    },
-    viewLicenseContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    viewLicenseText: {
-        marginLeft: 8, // Increased margin for icon separation
-        fontSize: 15, // Slightly larger font
-        fontWeight: '700',
-        color: '#fff', // White text
-        textDecorationLine: 'none',
-    },
-    // ⭐ BOTTOM BUTTON STYLE (High Priority CTA)
-    bottomButton: {
-        marginHorizontal: 15, 
-        marginTop: 35, // Increased margin to separate from the main box
-        marginBottom: 100,   
-        backgroundColor: SECONDARY_COLOR, 
-        paddingVertical: 20, // Increased padding
-        borderRadius: 30, 
-        alignItems: 'center',
-        justifyContent: 'center',
-        
-        // Stronger glow and lift
-        shadowColor: SECONDARY_COLOR, 
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.5, 
-        shadowRadius: 15, // Max soft glow
-        elevation: 15,
-    },
-    floatingButtonText: {
-        fontSize: 18,
-        fontWeight: '800', 
-        color: '#fff',
-    },
+    goalText: { flex: 1 },
+    goalTitle: { fontSize: 15, fontWeight: '700', color: TEXT_MAIN },
+    goalDesc: { fontSize: 12, color: TEXT_SUB },
     
-    // --- NEW PAGINATION DOTS STYLES ---
-    paginationContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 10, 
-    },
-    paginationDot: {
-        height: 7, 
-        width: 7,
-        borderRadius: 3.5,
-        marginHorizontal: 3,
-        backgroundColor: LIGHT_ACCENT_COLOR, 
-    },
-    activeDot: {
-        height: 8, 
-        width: 8,
-        backgroundColor: PRIMARY_COLOR, 
-    },
-    // --- NEW: SECTION DIVIDER STYLE ---
-    // MODIFICATION 3: Changed marginVertical from 10 to 5
-    sectionDivider: {
-        height: 1,
-        backgroundColor: LIGHT_ACCENT_COLOR, 
-        marginHorizontal: 15,
-        marginVertical: 5,
-    }
-});
+    reviewCard: { width: 300, backgroundColor: '#F1F5F9', padding: 20, borderRadius: 24, marginRight: 15 },
+    reviewHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: PRIMARY_COLOR, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    avatarText: { color: WHITE, fontWeight: 'bold' },
+    reviewUser: { fontWeight: 'bold', color: TEXT_MAIN },
+    reviewLoc: { fontSize: 11, color: TEXT_SUB },
+    reviewBody: { fontSize: 13, color: TEXT_MAIN, fontStyle: 'italic', marginBottom: 10, lineHeight: 18 },
+    reviewStarRow: { flexDirection: 'row' },
 
-
-// -------------------------------------------------------------
-// ⭐ MODAL STYLES
-// -------------------------------------------------------------
-const modalStyles = StyleSheet.create({
-    centeredView: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.95)',
-    },
-    enlargedImage: {
-        width: screenWidth * 0.95,
-        height: screenHeight * 0.95,
-    },
-    closeButton: {
-        position: 'absolute',
-        top: 40,
-        right: 20,
-        padding: 10,
-        zIndex: 1,
-    },
+    finalActionSection: { marginTop: 40, marginBottom: 20, paddingHorizontal: 20 },
+    mainBtn: { backgroundColor: PRIMARY_COLOR, height: 60, borderRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', elevation: 8 },
+    mainBtnText: { color: WHITE, fontWeight: '800', fontSize: 15, marginRight: 10 },
 });
 
 export default Home;
