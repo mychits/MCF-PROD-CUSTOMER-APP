@@ -45,6 +45,9 @@ const Colors = {
 const CONTACT_EMAIL = 'info.mychits@gmail.com';
 const CONTACT_PHONE = '+919483900777';
 
+// --- PURPOSE OPTIONS ---
+const PURPOSE_OPTIONS = ["Personal", "Medical", "Education", "Business", "Others"];
+
 const MyLoan = ({ route, navigation }) => {
   const { groupFilter } = route.params;
   const [appUser] = useContext(ContextProvider);
@@ -77,6 +80,7 @@ const MyLoan = ({ route, navigation }) => {
     phoneNumber: "",
     loanAmount: "", 
     loanPurpose: "",
+    otherPurpose: "", // To store the custom reason if "Others" is selected
   });
 
   // --- 1. AUTO-FILL USER DATA ---
@@ -93,7 +97,6 @@ const MyLoan = ({ route, navigation }) => {
             ...prev,
             fullName: userData.full_name || prev.fullName,
             phoneNumber: userData.phone_number || prev.phoneNumber,
-            address: userData.address || prev.address,
           }));
         }
       } catch (err) {
@@ -184,40 +187,68 @@ const MyLoan = ({ route, navigation }) => {
     return (isNegative ? "-" : "") + formatted + decimalPart;
   };
 
+  const getPaginationNumbers = () => {
+    const pages = [];
+    const limit = 3; 
+    const start = Math.max(1, currentPage - Math.floor(limit / 2));
+    const end = Math.min(totalPages, start + limit - 1);
+
+    if (start > 1) {
+      pages.push(1);
+      if (start > 2) pages.push("...");
+    }
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    if (end < totalPages) {
+      if (end < totalPages - 1) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages.filter((v, i, a) => a.indexOf(v) === i); 
+  };
+
   const handlePhonePress = () => {
     Linking.openURL(`tel:${CONTACT_PHONE}`);
   };
 
+  const handleEmailPress = () => {
+    Linking.openURL(`mailto:${CONTACT_EMAIL}`);
+  };
+
   // --- 5. API SUBMISSION LOGIC ---
   const handleFormSubmit = async () => {
-    if(!formData.loanAmount || !formData.loanPurpose || !formData.fullName || !formData.phoneNumber) {
+    // Determine the final purpose string
+    const finalPurpose = formData.loanPurpose === "Others" 
+        ? formData.otherPurpose 
+        : formData.loanPurpose;
+
+    if(!formData.loanAmount || !finalPurpose || !formData.fullName || !formData.phoneNumber) {
       Toast.show({ 
         type: "error", 
         text1: "Required Details", 
-        text2: "Please fill in all the fields to proceed.",
+        text2: "Please fill in all the fields and select a purpose.",
         position: 'bottom' 
       });
       return;
     }
 
     setIsSubmitting(true);
-    
     const payload = {
       user_id: userId,
       loan_amount: Number(formData.loanAmount),
-      loan_purpose: formData.loanPurpose,
+      loan_purpose: finalPurpose,
     };
 
-    // Logging the data to the console before posting
-    console.log("Submitting Loan Application:", payload);
+    // --- CONSOLE LOG FOR TERMINAL ---
+    console.log("----------------------------");
+    console.log("LOAN APPLICATION SUBMITTED");
+    console.log("Data:", JSON.stringify(payload, null, 2));
+    console.log("----------------------------");
 
     try {
       const res = await axios.post(`${url}/loans/loan-approval-request`, payload);
-      
       if (res.status === 201 || res.status === 200) {
         setIsFormVisible(false);
-        
-        // Timeout ensures modal is closed before the toast appears for better UX
         setTimeout(() => {
             Toast.show({ 
                 type: "success", 
@@ -225,19 +256,15 @@ const MyLoan = ({ route, navigation }) => {
                 text2: res.data.message || "Your loan request was submitted successfully!",
                 position: 'bottom',
                 visibilityTime: 4000,
-                autoHide: true,
-                bottomOffset: 60,
             });
         }, 500);
-
-        setFormData({ ...formData, loanAmount: "", loanPurpose: "" });
+        setFormData({ ...formData, loanAmount: "", loanPurpose: "", otherPurpose: "" });
       }
     } catch (err) {
-      console.error("Loan Submission Error:", err);
       Toast.show({ 
         type: "error", 
         text1: "Submission Failed", 
-        text2: "Something went wrong. Please check your connection and try again.",
+        text2: "Something went wrong. Please try again.",
         position: 'bottom'
       });
     } finally {
@@ -263,7 +290,6 @@ const MyLoan = ({ route, navigation }) => {
       {!loanId && <Header userId={userId} navigation={navigation} />}
 
       <View style={styles.outerBoxContainer}>
-        
         <View style={styles.fixedTitleContainer}>
               {loanId && (
                 <TouchableOpacity
@@ -298,7 +324,7 @@ const MyLoan = ({ route, navigation }) => {
                 </View>
               ) : (
                 <>
-                  {/* Loan Balance Card */}
+                  {/* Summary Card with Accordion */}
                   <View style={[styles.loanCard, styles.summaryCard]}>
                     <TouchableOpacity
                       style={styles.accordionHeader}
@@ -324,7 +350,6 @@ const MyLoan = ({ route, navigation }) => {
                           name={isSummaryExpanded ? "chevron-up" : "chevron-down"}
                           size={24}
                           color={Colors.darkText}
-                          style={styles.toggleIcon}
                       />
                     </TouchableOpacity>
 
@@ -337,7 +362,6 @@ const MyLoan = ({ route, navigation }) => {
                             ₹ {formatNumberIndianStyle(loanAmount)}
                           </Text>
                         </View>
-
                         <View style={styles.summaryDetailItem}>
                           <Ionicons name="checkmark-circle-outline" size={20} color={Colors.successGreen} style={styles.detailIcon}/>
                           <Text style={styles.detailLabelVertical}>TOTAL PAID</Text>
@@ -345,7 +369,6 @@ const MyLoan = ({ route, navigation }) => {
                             ₹ {formatNumberIndianStyle(totalRepayment)}
                           </Text>
                         </View>
-                        
                         <View style={styles.summaryDetailItem}>
                           <Ionicons name="calculator-outline" size={20} color={Colors.primaryBlue} style={styles.detailIcon}/>
                           <Text style={styles.detailLabelVertical}>Remaining Balance</Text>
@@ -360,7 +383,9 @@ const MyLoan = ({ route, navigation }) => {
                   {/* Payment History List */}
                   <View>
                     <Text style={styles.paymentHistoryTitle}>Payment History</Text>
-                    {totalPayments.length > 0 ? (
+                    {totalPaymentsError ? (
+                      <Text style={styles.errorText}>{totalPaymentsError}</Text>
+                    ) : totalPayments.length > 0 ? (
                       totalPayments.map((pay) => (
                         <View key={pay._id} style={styles.paymentCard}>
                           <Ionicons name="receipt-outline" size={22} color={Colors.primaryBlue} />
@@ -377,6 +402,41 @@ const MyLoan = ({ route, navigation }) => {
                       ))
                     ) : (
                       <Text style={styles.emptyText}>No payments found for this loan.</Text>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <View style={styles.paginationContainer}>
+                        <TouchableOpacity
+                          disabled={currentPage === 1}
+                          onPress={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          style={styles.paginationArrowButton}
+                        >
+                          <Ionicons name="chevron-back" size={24} color={currentPage === 1 ? Colors.mediumText : Colors.darkText} />
+                        </TouchableOpacity>
+                        {getPaginationNumbers().map((pageNumber, index) =>
+                          pageNumber === "..." ? (
+                            <Text key={`ellipsis-${index}`} style={styles.paginationEllipsis}>...</Text>
+                          ) : (
+                            <TouchableOpacity
+                              key={pageNumber}
+                              style={[styles.paginationBox, currentPage === pageNumber && styles.paginationBoxActive]}
+                              onPress={() => setCurrentPage(pageNumber)}
+                            >
+                              <Text style={[styles.paginationBoxText, currentPage === pageNumber && styles.paginationBoxTextActive]}>
+                                {pageNumber}
+                              </Text>
+                            </TouchableOpacity>
+                          )
+                        )}
+                        <TouchableOpacity
+                          disabled={currentPage === totalPages}
+                          onPress={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          style={styles.paginationArrowButton}
+                        >
+                          <Ionicons name="chevron-forward" size={24} color={currentPage === totalPages ? Colors.mediumText : Colors.darkText} />
+                        </TouchableOpacity>
+                      </View>
                     )}
                   </View>
                 </>
@@ -403,7 +463,6 @@ const MyLoan = ({ route, navigation }) => {
                           <Text style={styles.cardSubtitle}>ID: {loan.loan_id.substring(0, 10)}</Text>
                         </View>
                       </View>
-                      
                       <View style={styles.detailsList}>
                         <View style={styles.detailItemVertical}>
                           <Ionicons name="cash-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
@@ -417,8 +476,12 @@ const MyLoan = ({ route, navigation }) => {
                           <Text style={styles.detailLabelVertical}>Tenure</Text>
                           <Text style={styles.detailValueVertical}>{loan.tenure} days</Text>
                         </View>
+                        <View style={styles.detailItemVertical}>
+                          <Ionicons name="time-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
+                          <Text style={styles.detailLabelVertical}>Start Date</Text>
+                          <Text style={styles.detailValueVertical}>{new Date(loan.start_date).toLocaleDateString()}</Text>
+                        </View>
                       </View>
-                      
                       <TouchableOpacity
                         style={styles.viewPaymentsButton}
                         onPress={() => { setLoanId(loan._id); setCurrentPage(1); }}
@@ -433,17 +496,17 @@ const MyLoan = ({ route, navigation }) => {
                         <Ionicons name="rocket-outline" size={60} color={Colors.cardBackground} />
                         <Text style={styles.noLoanTitle}>Unlock Your Potential</Text>
                       </View>
-                      
                       <Text style={styles.noLoanMessage}>
                           You currently have no active loans. Ready to make a move? Take a loan and enjoy the flexibility.
                       </Text>
-
+                      <Text style={styles.requestLoanSentence}>
+                        Request your next loan instantly by applying below!
+                      </Text>
                       <View style={styles.contactGroup}>
                           <TouchableOpacity onPress={() => setIsFormVisible(true)} style={styles.contactButtonPhone}>
                               <Ionicons name="document-text-outline" size={20} color={Colors.cardBackground} />
                               <Text style={styles.contactButtonText}>Apply for Personal Loan</Text>
                           </TouchableOpacity>
-
                           <TouchableOpacity onPress={handlePhonePress} style={styles.contactButtonEmail}>
                               <Ionicons name="call-outline" size={20} color={Colors.accentColor} />
                               <Text style={styles.contactButtonTextEmail}>Call Us: {CONTACT_PHONE}</Text>
@@ -458,12 +521,7 @@ const MyLoan = ({ route, navigation }) => {
       </View>
 
       {/* --- FORM MODAL --- */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isFormVisible}
-        onRequestClose={() => setIsFormVisible(false)}
-      >
+      <Modal animationType="slide" transparent={true} visible={isFormVisible} onRequestClose={() => setIsFormVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -472,68 +530,64 @@ const MyLoan = ({ route, navigation }) => {
                 <Ionicons name="close-circle" size={30} color={Colors.mediumText} />
               </TouchableOpacity>
             </View>
-
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.formSectionLabel}>Applicant Details:</Text>
               
               <Text style={styles.inputLabel}>Full Name:</Text>
-              <TextInput 
-                style={styles.input} 
-                value={formData.fullName} 
-                onChangeText={(txt) => setFormData({...formData, fullName: txt})} 
-                placeholder="Enter Full Name"
-              />
-
+              <TextInput style={styles.input} value={formData.fullName} onChangeText={(txt) => setFormData({...formData, fullName: txt})} placeholder="Enter Full Name" />
+              
               <Text style={styles.inputLabel}>Phone Number:</Text>
-              <TextInput 
-                style={styles.input} 
-                keyboardType="phone-pad" 
-                value={formData.phoneNumber} 
-                onChangeText={(txt) => setFormData({...formData, phoneNumber: txt})} 
-                placeholder="Mobile Number"
-              />
-
+              <TextInput style={styles.input} keyboardType="phone-pad" value={formData.phoneNumber} onChangeText={(txt) => setFormData({...formData, phoneNumber: txt})} placeholder="Mobile Number" />
+              
               <Text style={styles.inputLabel}>Required Loan Amount (₹):</Text>
-              <TextInput 
-                style={styles.input} 
-                keyboardType="numeric"
-                value={formData.loanAmount} 
-                onChangeText={(txt) => setFormData({...formData, loanAmount: txt})} 
-                placeholder="e.g. 250000"
-              />
-
+              <TextInput style={styles.input} keyboardType="numeric" value={formData.loanAmount} onChangeText={(txt) => setFormData({...formData, loanAmount: txt})} placeholder="e.g. 250000" />
+              
               <Text style={styles.inputLabel}>Purpose of Loan:</Text>
-              <TextInput 
-                style={styles.input} 
-                value={formData.loanPurpose} 
-                onChangeText={(txt) => setFormData({...formData, loanPurpose: txt})} 
-                placeholder="e.g. Personal Loan"
-              />
+              <View style={styles.purposeGrid}>
+                {PURPOSE_OPTIONS.map((option) => (
+                  <TouchableOpacity 
+                    key={option} 
+                    style={[
+                      styles.purposeChip, 
+                      formData.loanPurpose === option && styles.purposeChipSelected
+                    ]}
+                    onPress={() => setFormData({...formData, loanPurpose: option})}
+                  >
+                    <Text style={[
+                      styles.purposeChipText, 
+                      formData.loanPurpose === option && styles.purposeChipTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Input field if "Others" is selected */}
+              {formData.loanPurpose === "Others" && (
+                <View style={{ marginBottom: 15 }}>
+                  <Text style={styles.inputLabel}>Please specify:</Text>
+                  <TextInput 
+                    style={styles.input} 
+                    value={formData.otherPurpose} 
+                    onChangeText={(txt) => setFormData({...formData, otherPurpose: txt})} 
+                    placeholder="Enter your specific reason" 
+                  />
+                </View>
+              )}
 
               <View style={styles.certificationBox}>
                 <Ionicons name="shield-checkmark-outline" size={18} color={Colors.mediumText} />
-                <Text style={styles.certificationText}>
-                  I certify that information provided is true and accurate.
-                </Text>
+                <Text style={styles.certificationText}>I certify that information provided is true and accurate.</Text>
               </View>
-
-              <TouchableOpacity 
-                style={[styles.submitFormButton, isSubmitting && { opacity: 0.7 }]} 
-                onPress={handleFormSubmit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.submitFormButtonText}>Submit Application</Text>
-                )}
+              <TouchableOpacity style={[styles.submitFormButton, isSubmitting && { opacity: 0.7 }]} onPress={handleFormSubmit} disabled={isSubmitting}>
+                {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitFormButtonText}>Submit Application</Text>}
               </TouchableOpacity>
             </ScrollView>
           </View>
         </View>
       </Modal>
 
-      {/* Toast configuration */}
       <Toast position="bottom" bottomOffset={60} />
     </SafeAreaView>
   );
@@ -576,10 +630,19 @@ const styles = StyleSheet.create({
   receiptText: { fontSize: 14, fontWeight: "600", color: Colors.darkText },
   amountText: { fontSize: 14, fontWeight: "bold", color: Colors.vibrantBlue },
   dateText: { fontSize: 12, color: Colors.mediumText },
+  emptyText: { marginTop: 14, fontSize: 16, color: Colors.mediumText, textAlign: "center" },
+  paginationContainer: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginVertical: 20 },
+  paginationArrowButton: { padding: 8, backgroundColor: Colors.cardBackground, borderRadius: 6, borderWidth: 1, borderColor: Colors.lightGrayBorder, marginHorizontal: 2 },
+  paginationBox: { width: 32, height: 32, borderRadius: 6, backgroundColor: Colors.paginationInactive, justifyContent: "center", alignItems: "center", marginHorizontal: 3 },
+  paginationBoxActive: { backgroundColor: Colors.primaryBlue, borderColor: Colors.primaryBlue },
+  paginationBoxText: { fontSize: 14, fontWeight: "bold", color: Colors.paginationInactiveText },
+  paginationBoxTextActive: { color: Colors.paginationActiveText },
+  paginationEllipsis: { fontSize: 16, color: Colors.mediumText, marginHorizontal: 4 },
   noLoanContainer: { alignItems: 'center', backgroundColor: Colors.primaryBlue, borderRadius: 16, overflow: 'hidden', marginTop: 5, elevation: 8 },
   noLoanHeader: { width: '100%', padding: 25, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.2)' },
   noLoanTitle: { fontSize: 24, fontWeight: '900', color: Colors.cardBackground, marginTop: 10 },
   noLoanMessage: { fontSize: 16, color: Colors.cardBackground, textAlign: 'center', padding: 20 },
+  requestLoanSentence: { fontSize: 15, fontWeight: '600', color: Colors.cardBackground, textAlign: 'center', backgroundColor: Colors.vibrantBlue, padding: 8, width: '100%' },
   contactGroup: { width: '100%', padding: 20, backgroundColor: Colors.cardBackground, alignItems: 'center' },
   contactButtonPhone: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.successGreen, paddingVertical: 14, paddingHorizontal: 20, borderRadius: 10, width: '100%', justifyContent: 'center', marginBottom: 10 },
   contactButtonEmail: { flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: Colors.accentColor, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 10, width: '100%', justifyContent: 'center' },
@@ -592,6 +655,14 @@ const styles = StyleSheet.create({
   formSectionLabel: { fontSize: 16, fontWeight: 'bold', marginBottom: 15, color: Colors.darkText },
   inputLabel: { fontSize: 13, fontWeight: '700', color: Colors.mediumText, marginBottom: 5 },
   input: { borderBottomWidth: 1, borderBottomColor: Colors.lightGrayBorder, paddingVertical: 8, marginBottom: 20, fontSize: 15, color: Colors.darkText },
+  
+  // New Styles for Option Boxes (Chips)
+  purposeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  purposeChip: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: Colors.lightGrayBorder, backgroundColor: Colors.softGrayBackground, minWidth: '30%', alignItems: 'center' },
+  purposeChipSelected: { borderColor: Colors.primaryBlue, backgroundColor: Colors.softBlueAccent },
+  purposeChipText: { color: Colors.mediumText, fontWeight: '600', fontSize: 12 },
+  purposeChipTextSelected: { color: Colors.primaryBlue, fontWeight: 'bold' },
+  
   submitFormButton: { backgroundColor: Colors.primaryBlue, padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
   submitFormButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   certificationBox: { flexDirection: 'row', alignItems: 'center', marginVertical: 15, backgroundColor: Colors.softGrayBackground, padding: 10, borderRadius: 8 },
