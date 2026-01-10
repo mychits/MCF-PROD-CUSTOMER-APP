@@ -335,7 +335,7 @@ const PayYourDues = ({ navigation, route }) => {
           ]}>
             <MaterialCommunityIcons name="alert-decagram" size={20} color="#92400E" style={{ marginRight: 8 }} />
             <Text style={styles.globalWarningText}>
-              Please pay your future dues on time to avoid any Penalty. Penalty will be charged on a daily basis.
+           Pay on time to stay penalty-free. Late dues incur daily charges.
             </Text>
           </Animated.View>
 
