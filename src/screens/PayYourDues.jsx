@@ -50,24 +50,33 @@ const Colors = {
   logoBackgroundColor: "#FFFFFF",
 };
 
+// Updated to ensure 2 decimal places consistently
 const formatNumberIndianStyle = (num) => {
-  if (num === null || num === undefined) return "0";
-  const parts = num.toString().split(".");
+  if (num === null || num === undefined || isNaN(num)) return "0.00";
+  
+  // Ensure we are working with a number and fix to 2 decimal places
+  const fixedNum = parseFloat(num).toFixed(2);
+  const parts = fixedNum.split(".");
   let integerPart = parts[0];
-  let decimalPart = parts.length > 1 ? "." + parts[1] : "";
+  const decimalPart = parts[1]; // Always exists because of toFixed(2)
+
   let isNegative = false;
   if (integerPart.startsWith("-")) {
     isNegative = true;
     integerPart = integerPart.substring(1);
   }
+
   const lastThree = integerPart.substring(integerPart.length - 3);
   const otherNumbers = integerPart.substring(0, integerPart.length - 3);
+  
+  let formattedInteger = "";
   if (otherNumbers !== "") {
-    const formattedOtherNumbers = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
-    return (isNegative ? "-" : "") + formattedOtherNumbers + "," + lastThree + decimalPart;
+    formattedInteger = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree;
   } else {
-    return (isNegative ? "-" : "") + lastThree + decimalPart;
+    formattedInteger = lastThree;
   }
+
+  return (isNegative ? "-" : "") + formattedInteger + "." + decimalPart;
 };
 
 const PayYourDues = ({ navigation, route }) => {
@@ -96,27 +105,22 @@ const PayYourDues = ({ navigation, route }) => {
   const amountInputRef = useRef(null);
   const scaleAnims = useRef({}).current;
 
-  // --- Warning Animations ---
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Continuous loop: Pulse Scale + Opacity + Periodic Shake
     const runAnimation = () => {
       Animated.loop(
         Animated.parallel([
-          // Scale Pulse
           Animated.sequence([
             Animated.timing(pulseAnim, { toValue: 1.05, duration: 1500, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
             Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
           ]),
-          // Opacity Pulse (Glow effect)
           Animated.sequence([
             Animated.timing(opacityAnim, { toValue: 0.7, duration: 1500, useNativeDriver: true }),
             Animated.timing(opacityAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
           ]),
-          // Periodic Shake (Wiggle)
           Animated.sequence([
             Animated.delay(2000),
             Animated.timing(shakeAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
@@ -135,8 +139,6 @@ const PayYourDues = ({ navigation, route }) => {
     inputRange: [-1, 1],
     outputRange: ['-2deg', '2deg']
   });
-
-  // -------------------------
 
   const focusInput = () => {
     if (amountInputRef.current) {
@@ -291,7 +293,7 @@ const PayYourDues = ({ navigation, route }) => {
       setLoading(true);
       const response = await axios.post(`${url}/paymentapi/app/add`, {
         user_id: userId,
-        amount: `${amountToPay}`,
+        amount: `${amountToPay.toFixed(2)}`,
         purpose: "Due Payment (Inc. Penalty & Late Charges)",
         payment_group_tickets: [`chit-${modalDetails.groupId}|${modalDetails.ticket}`],
       });
@@ -308,7 +310,7 @@ const PayYourDues = ({ navigation, route }) => {
   };
 
   const handleAmountChange = (text) => {
-    const filteredText = text.replace(/[^0-9]/g, "");
+    const filteredText = text.replace(/[^0-9.]/g, ""); // Allow decimals in input
     if (parseFloat(filteredText) > 20000) {
       Alert.alert("Limit Reached", "You can pay up to ₹20,000 at a time.");
       return;
@@ -325,7 +327,6 @@ const PayYourDues = ({ navigation, route }) => {
           <Text style={styles.sectionTitle}>Pay Your Outstanding Amount</Text>
           <Text style={styles.subSectionTitle}>Stay on top of your group payments!</Text>
 
-          {/* Enhanced Animated Warning */}
           <Animated.View style={[
             styles.globalWarningContainer, 
             { 

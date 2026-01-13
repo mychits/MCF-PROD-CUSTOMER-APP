@@ -547,9 +547,9 @@ const Home = ({ route, navigation }) => {
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
         { navigateTo: 'MyLoan', screen: 'MyLoan', icon: 'account-balance-wallet', title: 'My Loan', bgColor: '#EDE7F6', iconBg: '#3e09a7ff', filter: 'My Loan', disabled: false },
         { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Refer Now', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
-       { navigateTo: 'OnlineAuction', icon: 'language', title: 'e-Auction', bgColor: '#E0F2F1', iconBg: '#00796B', disabled: false },
+       { navigateTo: 'OnlineAuction', icon: 'language', title: 'Auto-Auction', bgColor: '#E0F2F1', iconBg: '#00796B', disabled: false },
         { navigateTo: 'PayYourDues', icon: 'currency-rupee', title: 'Pay Your Dues', bgColor: '#FFEBEE', iconBg: '#B71C1C', disabled: false },
-        { navigateTo: 'Pay Online', icon: 'language', title: 'Pay Online', bgColor: '#FFEBEE', iconBg: '#c17272', disabled: false },
+        { navigateTo: 'PayOnline', icon: 'language', title: 'Pay Online', bgColor: '#FFEBEE', iconBg: '#c17272', disabled: false },
         ];
 
     const mychitsAdvantages = [

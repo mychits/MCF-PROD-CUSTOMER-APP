@@ -32,6 +32,7 @@ import MyLoan from "../screens/MyLoan.jsx";
 import OffersScreen from "../screens/OffersScreen.jsx"; ``
 import RewardsScreen from "../screens/RewardsScreen.jsx";
 import Dashboard from "../screens/Dashboard.jsx";
+import PayOnline from "../screens/PayOnline.jsx";
 
 
 import About from "../screens/About";
@@ -300,6 +301,11 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="Becomeanagent"
             component={Becomeanagent}
+            options={{ headerShown: false }}
+          />
+            <Stack.Screen
+            name="PayOnline"
+            component={PayOnline}
             options={{ headerShown: false }}
           />
           <Stack.Screen
