@@ -1,284 +1,652 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import {
   View,
   Text,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  StatusBar,
-  Image,
+  FlatList,
   TouchableOpacity,
-  Vibration,
+  ActivityIndicator,
+  StyleSheet,
   Dimensions,
-  Linking,
+  StatusBar,
+  Modal,
+  TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  Linking,
 } from "react-native";
-import url from "../data/url";
-import axios from "axios";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
-import Header from "../components/layouts/Header";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import NoGroupImage from "../../assets/Nogroup.png";
 import { ContextProvider } from "../context/UserProvider";
+import axios from "axios";
 
+import baseUrl from "../data/url";
 const { width } = Dimensions.get("window");
 
-const Colors = {
-  brandPrimary: "#053B90",
-  brandSecondary: "#0062FF",
-  success: "#00C853",
-  background: "#F8FAFC",
-  white: "#FFFFFF",
-  textMain: "#1E293B",
-  textMuted: "#64748B",
-  border: "#E2E8F0",
-  chipBlue: "#E0E7FF",
-  chipText: "#4338CA",
-};
+// Style Constants
+const TOP_GRADIENT = ["#1aa2cc", "#0e7490"];
+const MODERN_PRIMARY = "#1e293b";
+const ACCENT_BLUE = "#1796d1";
+const TEXT_GREY = "#64748b";
+const WARNING_COLOR = "#f59e0b";
+const PURPLE_COLOR = "#8b5cf6";
+const SUCCESS_GREEN = "#10b981";
 
-const PayOnline = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
+export default function CustomerPaymentLink({ route, navigation }) {
   const [appUser] = useContext(ContextProvider);
   const userId = appUser?.userId || null;
 
-  const [cardsData, setCardsData] = useState([]);
+  const customer = { _id: userId, name: appUser?.name || "Customer" };
+  const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredCards, setFilteredCards] = useState([]);
+  const [paymentModal, setPaymentModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
+  const [successModal, setSuccessModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [amount, setAmount] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    if (!userId) {
+  const inputRef = useRef(null);
+  const successScale = useRef(new Animated.Value(0)).current;
+
+  const formatDate = (dateString) => {
+    if (!dateString || dateString === "N/A") return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
+
+  useEffect(() => {
+    const filtered = cards.filter(
+      (item) =>
+        item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.type?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredCards(filtered);
+  }, [searchQuery, cards]);
+
+  useEffect(() => {
+    if (paymentModal)
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 250);
+  }, [paymentModal]);
+
+  useEffect(() => {
+    if (successModal) {
+      Animated.spring(successScale, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+      setTimeout(() => {
+        setSuccessModal(false);
+        setAmount("");
+      }, 3000);
+    } else {
+      successScale.setValue(0);
+    }
+  }, [successModal]);
+
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        axios.post(`${baseUrl}/enroll/get-user-tickets/${customer?._id}`),
+        axios.get(`${baseUrl}/loans/get-borrower-by-user-id/${customer?._id}`),
+        axios.get(`${baseUrl}/pigme/get-pigme-customer-by-user-id/${customer?._id}`),
+      ]);
+
+      let finalCards = [];
+      const chitRes = results[0].status === "fulfilled" ? results[0].value : null;
+      const loanRes = results[1].status === "fulfilled" ? results[1].value : null;
+      const pigmeRes = results[2].status === "fulfilled" ? results[2].value : null;
+
+      (chitRes?.data || []).forEach((c) => {
+        finalCards.push({
+          type: "chit",
+          customer_name: customer?.name,
+          title: c.group_id?.group_name,
+          displayValue: Array.isArray(c.tickets) ? c.tickets[0] : c.tickets,
+          label: "TICKET NO",
+          group_id: c.group_id?._id,
+          ticket_no: Array.isArray(c.tickets) ? c.tickets[0] : c.tickets,
+          color: ACCENT_BLUE,
+          icon: "people",
+        });
+      });
+
+      const loans = Array.isArray(loanRes?.data) ? loanRes.data : loanRes?.data ? [loanRes.data] : [];
+      loans.forEach((l) =>
+        finalCards.push({
+          type: "loan",
+          customer_name: customer?.name,
+          title: `Loan ID: ${l.loan_id}`,
+          displayValue: `₹${l.loan_amount}`,
+          label: "LOAN AMOUNT",
+          loan_db_id: l._id,
+          color: WARNING_COLOR,
+          icon: "cash",
+        })
+      );
+
+      const pigmes = Array.isArray(pigmeRes?.data) ? pigmeRes.data : pigmeRes?.data ? [pigmeRes.data] : [];
+      pigmes.forEach((p) =>
+        finalCards.push({
+          type: "pigmy",
+          customer_name: customer?.name,
+          title: `Pigmy ID: ${p.pigme_id}`,
+          displayValue: `₹${p.payable_amount}`,
+          label: "COLLECTION",
+          pigme_db_id: p._id,
+          color: PURPLE_COLOR,
+          icon: "wallet",
+          start_date: p.start_date || "N/A",
+        })
+      );
+
+      setCards(finalCards);
+      setFilteredCards(finalCards);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const processFinalPayment = async () => {
+    if (!amount || Number(amount) <= 0) {
+      Alert.alert("Invalid Amount", "Please enter a valid amount to pay.");
       return;
     }
-    setLoading(true);
-    try {
-      const response = await axios.post(`${url}/enroll/get-user-tickets/${userId}`);
-      const data = response.data || [];
-      const filtered = data.filter((item) => item.group_id);
-      setCardsData(filtered);
-    } catch (error) {
-      console.error("Fetch Error:", error);
-    } finally {
-      setTimeout(() => setLoading(false), 300);
-    }
-  }, [userId]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
-  useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
-
-  const handleMakePayment = async (groupId, ticketCount) => {
-    if (isProcessing) return;
-    
-    Vibration.vibrate(40);
-    setIsProcessing(true);
+    setIsSending(true);
+    let payment_group_tickets = [];
+    if (selectedItem.type === "chit")
+      payment_group_tickets = [`chit-${selectedItem.group_id}|${selectedItem.ticket_no}`];
+    else if (selectedItem.type === "loan")
+      payment_group_tickets = [`loan-${selectedItem.loan_db_id}`];
+    else 
+      payment_group_tickets = [`pigme-${selectedItem.pigme_db_id}`];
 
     try {
-      // Ensure the keys match exactly what your backend 'req.body' expects
-      const payload = {
-        userId: userId,
-        groupId: groupId,
-        ticket: ticketCount, 
-        amount:"1"
-      };
+      const response = await axios.post(`${baseUrl}/paymentapi/generate-payment-link`, {
+        user_id: customer?._id,
+        amount: Number(amount),
+        payment_group_tickets,
+        admin_type: "68904ce8ef406d77cbc074f3",
+        purpose: `${selectedItem.type.toUpperCase()} Payment`,
+      });
 
-      console.log("Sending Payload:", payload);
+      const { linkUrl } = response.data;
 
-      const response = await axios.post(`${url}/paymentapi/generate-payment-link`, payload);
-
-      if (response.data && response.data.linkUrl) {
-        const remoteUrl = response.data.linkUrl;
+      if (linkUrl) {
+        // Close modals first
+        setConfirmModal(false);
+        setPaymentModal(false);
         
-        // Open the generated link
-        const canOpen = await Linking.canOpenURL(remoteUrl);
-        if (canOpen) {
-          await Linking.openURL(remoteUrl);
+        // Open the URL in the browser
+        const supported = await Linking.canOpenURL(linkUrl);
+        if (supported) {
+          await Linking.openURL(linkUrl);
+          setSuccessModal(true);
         } else {
-          Alert.alert("Link Error", "Device cannot open this URL type.");
+          Alert.alert("Error", "Unable to open the payment link. Please check your browser settings.");
         }
       } else {
-        Alert.alert("Error", response.data.message || "Payment link not received.");
+        Alert.alert("Payment Error", "Link was not generated. Please try again.");
       }
-    } catch (error) {
-      // DETAILED ERROR LOGGING
-      if (error.response) {
-        // Server responded with 500 or other error code
-        console.error("Backend Error Data:", error.response.data);
-        console.error("Status Code:", error.response.status);
-        Alert.alert("Server Error", `Status ${error.response.status}: ${JSON.stringify(error.response.data.message || "Internal Error")}`);
-      } else if (error.request) {
-        // Request was made but no response received (Network issue)
-        console.error("Network Error:", error.request);
-        Alert.alert("Network Error", "No response from server. Check your connection.");
-      } else {
-        console.error("Error:", error.message);
-        Alert.alert("Error", error.message);
-      }
+    } catch (err) {
+      console.error("Payment API Error:", err);
+      const msg = err.response?.data?.message || "Failed to process payment link.";
+      Alert.alert("Error", msg);
     } finally {
-      setIsProcessing(false);
+      setIsSending(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent />
-      
-      <LinearGradient
-        colors={[Colors.brandPrimary, Colors.brandSecondary]}
-        style={[styles.headerGradient, { paddingTop: insets.top }]}
-      >
-        <Header userId={userId} navigation={navigation} />
-        <View style={styles.headerContent}>
-          <Text style={styles.welcomeText}>Make Online Payment</Text>
-          {!loading && (
-            <Text style={styles.statsText}>{cardsData.length} active chit accounts</Text>
-          )}
+    <View style={styles.screenContainer}>
+      <StatusBar barStyle="light-content" />
+
+      <LinearGradient colors={TOP_GRADIENT} style={styles.topHeader}>
+        <View style={styles.headerIconRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerTextCenter}>
+          <Text style={styles.headerTitle}>Make Payment</Text>
+          <Text style={styles.headerSubtitle}>
+            Complete your transactions for {customer?.name}
+          </Text>
+        </View>
+        <View style={styles.searchBox}>
+          <Ionicons name="search-outline" size={20} color={TEXT_GREY} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search accounts..."
+            style={styles.searchField}
+            placeholderTextColor={TEXT_GREY}
+          />
         </View>
       </LinearGradient>
 
-      <View style={styles.contentLayer}>
-        {loading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={Colors.brandPrimary} />
-            <Text style={styles.loadingText}>Fetching your accounts...</Text>
-          </View>
-        ) : (
-          <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
-            {cardsData.length > 0 ? (
-              cardsData.map((item, index) => (
-                <View key={item._id || index} style={styles.cardContainer}>
-                  <View style={styles.premiumCard}>
-                    <View style={styles.cardHeader}>
-                      <View style={styles.chitChip}>
-                        <Text style={styles.chitChipText}>CHIT PLAN</Text>
+      <View style={styles.mainBody}>
+        <View style={styles.bigBoxContainer}>
+          {loading ? (
+            <ActivityIndicator size="large" color={ACCENT_BLUE} style={{ marginTop: 50 }} />
+          ) : filteredCards.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="folder-open-outline" size={70} color={TEXT_GREY} />
+              <Text style={styles.emptyTitle}>No Accounts Found</Text>
+              <Text style={styles.emptySubtitle}>
+                No active Chits, Loans, or Pigmy accounts were found for this user.
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredCards}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.cardWrapper}>
+                  <View style={styles.cardInner}>
+                    <View style={styles.cardHeaderRow}>
+                      <View style={styles.iconAndText}>
+                        <Ionicons name={item.icon} size={18} color={item.color} />
+                        <Text style={styles.labelStatic}>ACCOUNT DETAILS</Text>
                       </View>
-                      <Ionicons name="shield-checkmark" size={18} color={Colors.success} />
-                    </View>
-
-                    <View style={styles.identitySection}>
-                      <Text style={styles.memberStatus}>Active Member</Text>
-                      <Text style={styles.groupCode}>{item.group_id?.group_name || "N/A"}</Text>
-                    </View>
-
-                    <View style={styles.dataGrid}>
-                      <View style={styles.dataBox}>
-                        <Text style={styles.dataLabel}>TICKET NO</Text>
-                        <Text style={styles.dataValue}>{item.tickets}</Text>
-                      </View>
-                      <View style={[styles.dataBox, styles.dataBoxRight]}>
-                        <Text style={styles.dataLabel}>STATUS</Text>
-                        <View style={styles.statusRow}>
-                          <View style={styles.pulseDot} />
-                          <Text style={styles.statusText}>Active</Text>
-                        </View>
+                      <View style={[styles.miniBadge, { backgroundColor: `${item.color}15` }]}>
+                        <Text style={[styles.miniBadgeText, { color: item.color }]}>
+                          {item.type.toUpperCase()}
+                        </Text>
                       </View>
                     </View>
-
-                    <TouchableOpacity 
-                      activeOpacity={0.85}
-                      style={[styles.payButton, isProcessing && { opacity: 0.6 }]}
-                      onPress={() => handleMakePayment(item.group_id._id, item.tickets)}
-                      disabled={isProcessing}
-                    >
-                      <LinearGradient
-                        colors={["#00AB66", "#008F58"]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.payButtonGradient}
-                      >
-                        {isProcessing ? (
-                          <ActivityIndicator size="small" color="white" />
-                        ) : (
-                          <>
-                            <Text style={styles.payButtonText}>MAKE PAYMENT</Text>
-                            <MaterialIcons name="chevron-right" size={22} color="white" />
-                          </>
-                        )}
-                      </LinearGradient>
+                    <View style={styles.cardMainContent}>
+                      <Text style={styles.cardCustName}>{item.customer_name}</Text>
+                      <Text style={styles.cardGrpName}>{item.title}</Text>
+                    </View>
+                    <View style={styles.infoGrid}>
+                      <View style={styles.gridItem}>
+                        <Text style={styles.tinyLabel}>
+                          {item.type === "pigmy" ? "START DATE" : item.label}
+                        </Text>
+                        <Text style={[styles.gridVal, { color: item.color }]}>
+                          {item.type === "pigmy" ? formatDate(item.start_date) : item.displayValue}
+                        </Text>
+                      </View>
+                      <View style={[styles.gridItem, { alignItems: "flex-end" }]}>
+                        <Text style={styles.tinyLabel}>STATUS</Text>
+                        <Text style={styles.gridVal}>ACTIVE</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedItem(item);
+                        setPaymentModal(true);
+                      }}
+                      activeOpacity={0.8}
+                      style={[styles.sendLinkBtn, { backgroundColor: item.color }]}>
+                      <Text style={styles.sendLinkBtnText}>MAKE PAYMENT</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
-              ))
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Image source={NoGroupImage} style={styles.emptyImg} resizeMode="contain" />
-                <Text style={styles.emptyTitle}>No Accounts Found</Text>
-                <Text style={styles.emptySub}>You aren't enrolled in any groups yet.</Text>
-              </View>
-            )}
-          </ScrollView>
-        )}
+              )}
+              contentContainerStyle={{ padding: 15, paddingBottom: 120 }}
+            />
+          )}
+        </View>
       </View>
+
+      {/* Amount Entry Modal */}
+      <Modal visible={paymentModal} transparent animationType="fade">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalBlurCenter}>
+          <View style={styles.centeredCard}>
+            <LinearGradient colors={["#fff", "#f8fafc"]} style={styles.centeredContent}>
+              <TouchableOpacity
+                style={styles.closeBtnIcon}
+                onPress={() => {
+                  setPaymentModal(false);
+                  setAmount("");
+                }}>
+                <Ionicons name="close-circle" size={28} color={TEXT_GREY} />
+              </TouchableOpacity>
+              <Text style={styles.mSetupLabel}>ENTER PAYMENT AMOUNT</Text>
+              <Text style={styles.mCustName}>{selectedItem?.customer_name}</Text>
+              <Text style={styles.modalSubInfo}>{selectedItem?.title}</Text>
+              <Text style={[styles.modalTinyInfo, { color: selectedItem?.color }]}>
+                {selectedItem?.label}: {selectedItem?.displayValue}
+              </Text>
+              <View style={[styles.mInputRow, { borderBottomColor: selectedItem?.color }]}>
+                <Text style={[styles.mCurrency, { color: selectedItem?.color }]}>₹</Text>
+                <TextInput
+                  ref={inputRef}
+                  keyboardType="numeric"
+                  value={amount}
+                  onChangeText={setAmount}
+                  style={styles.mInputField}
+                  placeholder="0"
+                />
+              </View>
+              <TouchableOpacity
+                style={[styles.mActionBtn, { backgroundColor: selectedItem?.color }]}
+                onPress={() => amount > 0 && setConfirmModal(true)}>
+                <Text style={styles.mActionBtnText}>Proceed to Pay</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal visible={confirmModal} transparent animationType="slide">
+        <View style={styles.confirmOverlay}>
+          <View style={styles.glassConfirmCard}>
+            <Text style={styles.confirmHeading}>Confirm Payment Details</Text>
+            <View style={styles.glassDetailBox}>
+              <View style={styles.glassRow}>
+                <Text style={styles.glassLabel}>CUSTOMER</Text>
+                <Text style={styles.glassValue}>{selectedItem?.customer_name}</Text>
+              </View>
+              <View style={styles.glassRow}>
+                <Text style={styles.glassLabel}>ACCOUNT</Text>
+                <Text style={styles.glassValue}>{selectedItem?.title}</Text>
+              </View>
+              {selectedItem?.type === "chit" && (
+                <View style={styles.glassRow}>
+                  <Text style={styles.glassLabel}>TICKET NO</Text>
+                  <Text style={[styles.glassValue, { color: ACCENT_BLUE }]}>
+                    {selectedItem?.ticket_no}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.glassRow}>
+                <Text style={styles.glassLabel}>PAYABLE AMOUNT</Text>
+                <Text style={[styles.glassValue, { color: SUCCESS_GREEN, fontSize: 24 }]}>
+                  ₹{amount}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.confirmBtnRow}>
+              <TouchableOpacity style={styles.glassCancel} onPress={() => setConfirmModal(false)}>
+                <Text style={styles.glassCancelText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.glassConfirm} onPress={processFinalPayment}>
+                {isSending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.glassConfirmText}>CONFIRM & PAY</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Redirecting/Success Modal */}
+      <Modal visible={successModal} transparent>
+        <View style={styles.successOverlay}>
+          <Animated.View
+            style={[styles.premiumSuccessCard, { transform: [{ scale: successScale }] }]}>
+            <View style={styles.successIconWrapper}>
+              <Ionicons name="globe-outline" size={60} color="#fff" />
+            </View>
+            <Text style={styles.pSuccessTitle}>REDIRECTING TO GATEWAY...</Text>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  headerGradient: {
-    height: 220,
+  screenContainer: { flex: 1, backgroundColor: "#f1f5f9" },
+  topHeader: {
+    paddingTop: 50,
+    paddingBottom: 30,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    elevation: 12,
   },
-  headerContent: { marginTop: 15 },
-  welcomeText: { color: 'white', fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  statsText: { color: 'rgba(255,255,255,0.75)', fontSize: 16, marginTop: 4, fontWeight: '500' },
-  contentLayer: { flex: 1, marginTop: -30 },
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 12, color: Colors.textMuted, fontSize: 14, fontWeight: '500' },
-  scrollBody: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: 10 },
-  cardContainer: {
+  headerIconRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: -5,
+  },
+  headerTextCenter: { alignItems: "center", marginBottom: 20 },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: "900",
+    color: "#fff",
+    textAlign: "center",
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.8)",
+    fontWeight: "600",
+    marginTop: 4,
+    textAlign: "center",
+  },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    height: 50,
+    paddingHorizontal: 15,
+    elevation: 8,
+  },
+  searchField: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: MODERN_PRIMARY,
+    fontWeight: "600",
+  },
+  mainBody: { flex: 1, marginTop: -20, paddingHorizontal: 15 },
+  bigBoxContainer: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderRadius: 30,
+    elevation: 5,
     marginBottom: 20,
-    borderRadius: 24,
-    backgroundColor: Colors.white,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    overflow: "hidden",
   },
-  premiumCard: {
-    padding: 24,
-    borderRadius: 24,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: MODERN_PRIMARY,
+    marginTop: 15,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: TEXT_GREY,
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  cardWrapper: {
+    backgroundColor: "#fff",
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: "#e2e8f0",
+    elevation: 2,
+    marginBottom: 15,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  chitChip: { backgroundColor: Colors.chipBlue, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
-  chitChipText: { color: Colors.chipText, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-  identitySection: { marginBottom: 18 },
-  memberStatus: { fontSize: 26, fontWeight: '800', color: Colors.textMain, letterSpacing: -0.8 },
-  groupCode: { fontSize: 15, color: Colors.textMuted, fontWeight: '600', marginTop: 3 },
-  dataGrid: { 
-    flexDirection: 'row', 
-    backgroundColor: '#F8FAFC', 
-    borderRadius: 18, 
-    padding: 16, 
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#EDF2F7'
+  cardInner: { padding: 18 },
+  cardHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
   },
-  dataBox: { flex: 1 },
-  dataBoxRight: { alignItems: 'flex-end' },
-  dataLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '800', letterSpacing: 1.2 },
-  dataValue: { fontSize: 22, fontWeight: '700', color: Colors.textMain, marginTop: 4 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success, marginRight: 6 },
-  statusText: { fontSize: 18, fontWeight: '800', color: Colors.success },
-  payButton: { width: '100%', borderRadius: 15, overflow: 'hidden' },
-  payButtonGradient: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    paddingVertical: 16 
+  iconAndText: { flexDirection: "row", alignItems: "center" },
+  labelStatic: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: TEXT_GREY,
+    marginLeft: 6,
   },
-  payButtonText: { color: 'white', fontWeight: '900', fontSize: 15, letterSpacing: 1, marginRight: 5 },
-  emptyContainer: { alignItems: 'center', marginTop: 80, paddingHorizontal: 40 },
-  emptyImg: { width: 160, height: 160, opacity: 0.8 },
-  emptyTitle: { color: Colors.textMain, fontSize: 20, fontWeight: '800', marginTop: 20 },
-  emptySub: { color: Colors.textMuted, textAlign: 'center', marginTop: 8, lineHeight: 22 }
+  miniBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
+  miniBadgeText: { fontSize: 9, fontWeight: "900" },
+  cardMainContent: { alignItems: "center", marginBottom: 15 },
+  cardCustName: { fontSize: 22, fontWeight: "900", color: MODERN_PRIMARY },
+  cardGrpName: { fontSize: 14, color: TEXT_GREY, fontWeight: "600" },
+  infoGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+  },
+  gridItem: { flex: 1 },
+  tinyLabel: {
+    fontSize: 9,
+    fontWeight: "900",
+    color: TEXT_GREY,
+    marginBottom: 4,
+  },
+  gridVal: { fontSize: 16, fontWeight: "900" },
+  sendLinkBtn: {
+    width: "100%",
+    paddingVertical: 15,
+    borderRadius: 15,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  sendLinkBtnText: { color: "#fff", fontWeight: "900" },
+  modalBlurCenter: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  centeredCard: { width: width * 0.9, borderRadius: 32, overflow: "hidden" },
+  centeredContent: { padding: 25, alignItems: "center" },
+  closeBtnIcon: { alignSelf: "flex-end" },
+  mSetupLabel: {
+    fontSize: 10,
+    fontWeight: "900",
+    color: TEXT_GREY,
+    marginBottom: 10,
+  },
+  mCustName: { fontSize: 24, fontWeight: "900", color: MODERN_PRIMARY },
+  modalSubInfo: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: TEXT_GREY,
+    marginTop: 4,
+  },
+  modalTinyInfo: {
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 2,
+    marginBottom: 15,
+  },
+  mInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: 3,
+    width: "80%",
+    justifyContent: "center",
+    marginBottom: 30,
+  },
+  mCurrency: { fontSize: 32, fontWeight: "900", marginRight: 5 },
+  mInputField: {
+    fontSize: 48,
+    fontWeight: "900",
+    minWidth: 100,
+    textAlign: "center",
+    color: MODERN_PRIMARY,
+  },
+  mActionBtn: {
+    width: "100%",
+    padding: 20,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+  mActionBtnText: { color: "#fff", fontWeight: "900", fontSize: 16 },
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-end",
+  },
+  glassConfirmCard: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    padding: 30,
+    paddingBottom: 50,
+  },
+  confirmHeading: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: MODERN_PRIMARY,
+    textAlign: "center",
+    marginBottom: 25,
+  },
+  glassDetailBox: {
+    backgroundColor: "#f1f5f9",
+    borderRadius: 25,
+    padding: 20,
+    marginBottom: 30,
+  },
+  glassRow: { marginBottom: 12 },
+  glassLabel: { fontSize: 9, fontWeight: "900", color: TEXT_GREY },
+  glassValue: { fontSize: 17, fontWeight: "900", color: MODERN_PRIMARY },
+  confirmBtnRow: { flexDirection: "row", gap: 15 },
+  glassCancel: {
+    flex: 1,
+    paddingVertical: 18,
+    borderRadius: 18,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+  },
+  glassCancelText: { color: TEXT_GREY, fontWeight: "900" },
+  glassConfirm: {
+    flex: 2,
+    paddingVertical: 18,
+    borderRadius: 18,
+    backgroundColor: MODERN_PRIMARY,
+    alignItems: "center",
+  },
+  glassConfirmText: { color: "#fff", fontWeight: "900" },
+  successOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  premiumSuccessCard: { alignItems: "center" },
+  successIconWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: SUCCESS_GREEN,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 25,
+  },
+  pSuccessTitle: { fontSize: 20, fontWeight: "900", color: "#fff" },
 });
-
-export default PayOnline;
