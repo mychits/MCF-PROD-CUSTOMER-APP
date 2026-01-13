@@ -24,11 +24,12 @@ import axios from "axios";
 import baseUrl from "../data/url";
 const { width } = Dimensions.get("window");
 
-// Style Constants
+
 const TOP_GRADIENT = ["#053B90", "#03265f"];
 const MODERN_PRIMARY = "#1e293b";
 const ACCENT_BLUE = "#28487a";
 const TEXT_GREY = "#09110b";
+
 const WARNING_COLOR = "#f59e0b";
 const PURPLE_COLOR = "#8b5cf6";
 const SUCCESS_GREEN = "#10b981";
@@ -226,9 +227,12 @@ export default function CustomerPaymentLink({ route, navigation }) {
           </TouchableOpacity>
         </View>
         <View style={styles.headerTextCenter}>
+
        <Text style={styles.headerTitle}>Make Online Payment</Text>
           <Text style={styles.headerSubtitle}>
             Select an active account below to proceed with your online payment.
+
+        
           </Text>
         </View>
         <View style={styles.searchBox}>
@@ -274,7 +278,8 @@ export default function CustomerPaymentLink({ route, navigation }) {
                       </View>
                     </View>
                     <View style={styles.cardMainContent}>
-                
+
+
                       <Text style={styles.cardGrpName}>{item.title}</Text>
                     </View>
                     <View style={styles.infoGrid}>
@@ -325,6 +330,9 @@ export default function CustomerPaymentLink({ route, navigation }) {
                 <Ionicons name="close-circle" size={28} color={TEXT_GREY} />
               </TouchableOpacity>
               <Text style={styles.mSetupLabel}>ENTER PAYMENT AMOUNT</Text>
+
+             
+
               <Text style={styles.modalSubInfo}>{selectedItem?.title}</Text>
               <Text style={[styles.modalTinyInfo, { color: selectedItem?.color }]}>
                 {selectedItem?.label}: {selectedItem?.displayValue}
@@ -356,9 +364,14 @@ export default function CustomerPaymentLink({ route, navigation }) {
           <View style={styles.glassConfirmCard}>
             <Text style={styles.confirmHeading}>Confirm Payment Details</Text>
             <View style={styles.glassDetailBox}>
+
              
               <View style={styles.glassRow}>
                 <Text style={styles.glassLabel}>Group Name</Text>
+
+              <View style={styles.glassRow}>
+               
+
                 <Text style={styles.glassValue}>{selectedItem?.title}</Text>
               </View>
               {selectedItem?.type === "chit" && (
@@ -390,6 +403,7 @@ export default function CustomerPaymentLink({ route, navigation }) {
             </View>
           </View>
         </View>
+        </View>
       </Modal>
 
       {/* Redirecting/Success Modal */}
@@ -411,7 +425,11 @@ export default function CustomerPaymentLink({ route, navigation }) {
 const styles = StyleSheet.create({
   screenContainer: { flex: 1, backgroundColor: "#f1f5f9" },
   topHeader: {
+
     paddingTop: 60,
+
+
+
     paddingBottom: 30,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 40,
@@ -422,9 +440,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+
     marginBottom: 10,
   },
   headerTextCenter: { alignItems: "center", marginBottom: 30 },
+
   headerTitle: {
     fontSize: 26,
     fontWeight: "900",
@@ -508,7 +528,9 @@ const styles = StyleSheet.create({
   miniBadgeText: { fontSize: 9, fontWeight: "900" },
   cardMainContent: { alignItems: "center", marginBottom: 15 },
   cardCustName: { fontSize: 22, fontWeight: "900", color: MODERN_PRIMARY },
+
   cardGrpName: { fontSize: 24, color: TEXT_GREY, fontWeight: "600" },
+
   infoGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -542,20 +564,26 @@ const styles = StyleSheet.create({
   centeredContent: { padding: 25, alignItems: "center" },
   closeBtnIcon: { alignSelf: "flex-end" },
   mSetupLabel: {
+
     fontSize: 14,
+
     fontWeight: "900",
     color: TEXT_GREY,
     marginBottom: 10,
   },
   mCustName: { fontSize: 24, fontWeight: "900", color: MODERN_PRIMARY },
   modalSubInfo: {
+
     fontSize: 24,
+
     fontWeight: "600",
     color: TEXT_GREY,
     marginTop: 4,
   },
   modalTinyInfo: {
+
     fontSize: 18,
+
     fontWeight: "800",
     marginTop: 2,
     marginBottom: 15,
