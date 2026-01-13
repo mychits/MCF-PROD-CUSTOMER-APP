@@ -186,9 +186,9 @@ const Home = ({ route, navigation }) => {
         { title: "Chat with MyChit", icon: "chatbubbles-outline", onPress: handleWhatsAppPress },
         { title: "Get Help", icon: "help-circle-outline", link: "Help" },
         // START OF MODIFICATION TO PREVENT NAVIGATION ON 'EARN REWARDS'
-        { 
-            title: "Earn Rewards", 
-            icon: "gift-outline", 
+        {
+            title: "Earn Rewards",
+            icon: "gift-outline",
             featureTitle: "Rewards",
             onPress: () => {
                 Toast.show({
@@ -547,14 +547,15 @@ const Home = ({ route, navigation }) => {
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
         { navigateTo: 'MyLoan', screen: 'MyLoan', icon: 'account-balance-wallet', title: 'My Loan', bgColor: '#EDE7F6', iconBg: '#3e09a7ff', filter: 'My Loan', disabled: false },
         { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Refer Now', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
-       { navigateTo: 'OnlineAuction', icon: 'language', title: 'Auto-Auction', bgColor: '#E0F2F1', iconBg: '#00796B', disabled: false },
-        { navigateTo: 'PayYourDues', icon: 'currency-rupee', title: 'Pay Your Dues', bgColor: '#FFEBEE', iconBg: '#B71C1C', disabled: false },
-        { navigateTo: 'PayOnline', icon: 'language', title: 'Pay Online', bgColor: '#FFEBEE', iconBg: '#c17272', disabled: false },
-        ];
+        { navigateTo: 'OnlineAuction', screen: 'OnlineAuction', icon: 'language', title: 'Auto-Auction', bgColor: '#E0F2F1', iconBg: '#00796B', disabled: false },
+      
+    ];
 
     const mychitsAdvantages = [
-        { icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00',  action: 'navigate',
-            targetScreen: 'Enrollment'},
+        {
+            icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00', action: 'navigate',
+            targetScreen: 'Enrollment'
+        },
         {
             icon: 'gavel',
             text1: 'In app ',
@@ -580,8 +581,10 @@ const Home = ({ route, navigation }) => {
             phoneNumber: '+919483900777'
         },
         { icon: 'verified', text1: 'Fully Compliant as', text2: 'per Chit Act 1998', iconColor: '#3F51B5' },
-        { icon: 'groups', text1: 'Chit Plans for', text2: 'everyone', iconColor: '#4CAF50' , action: 'navigate',
-            targetScreen: 'Enrollment'},
+        {
+            icon: 'groups', text1: 'Chit Plans for', text2: 'everyone', iconColor: '#4CAF50', action: 'navigate',
+            targetScreen: 'Enrollment'
+        },
     ];
 
     const customerReviews = [
@@ -801,15 +804,20 @@ const Home = ({ route, navigation }) => {
                     ) : (
                         <>
                             <View style={styles.welcomeContainer}>
-                                <View>
-                                    <Text style={styles.welcomeText}>
-                                        {greeting}!
-                                    </Text>
+                                <View style={styles.welcomeTextColumn}>
+                                    <Text style={styles.welcomeText}>{greeting}!</Text>
                                     <Text style={styles.userNameText}>
                                         {userData.full_name || 'User'}
                                     </Text>
                                 </View>
 
+                                <TouchableOpacity
+                                    style={styles.onlinePayButton}
+                                    onPress={() => navigation.navigate('PayOnline', { userId: userId })}
+                                >
+                                    <MaterialIcons name="payment" size={16} color="#FFFFFF" />
+                                    <Text style={styles.onlinePayButtonText}>Pay Online</Text>
+                                </TouchableOpacity>
                             </View>
                         </>
                     )}
@@ -857,6 +865,34 @@ const Home = ({ route, navigation }) => {
                         scrollEnabled={false}
                         columnWrapperStyle={styles.row}
                     />
+                    {/* New Quick Pay Section */}
+<View style={styles.quickPayContainer}>
+    <TouchableOpacity 
+        style={[styles.payButton, styles.duesButton]} 
+        onPress={() => navigation.navigate('PayYourDues', { userId: userId })}
+    >
+        <View style={styles.payIconCircle}>
+         <MaterialIcons name="history" size={24} color="#B71C1C" />
+        </View>
+        <View>
+            <Text style={styles.payButtonTitle}>Pay Dues</Text>
+            <Text style={styles.payButtonSub}>Pending Installments</Text>
+        </View>
+    </TouchableOpacity>
+
+    <TouchableOpacity 
+        style={[styles.payButton, styles.onlineButton]} 
+        onPress={() => navigation.navigate('PayOnline', { userId: userId })}
+    >
+        <View style={styles.payIconCircle}>
+            <MaterialIcons name="bolt" size={24} color="#053B90" />
+        </View>
+        <View>
+            <Text style={styles.payButtonTitle}>Pay Online</Text>
+            <Text style={styles.payButtonSub}>Quick Payment</Text>
+        </View>
+    </TouchableOpacity>
+</View>
                     <View style={styles.blueContainer}>
                         {/* MODIFICATION: Rewards onPress changed to show a Toast instead of navigating to RewardsScreen */}
                         <TouchableOpacity
@@ -1221,8 +1257,77 @@ const styles = StyleSheet.create({
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
     mainScrollView: { flex: 1 },
     contentContainer: { overflow: 'hidden', paddingBottom: 85 },
-    skyBlueSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#B3E5FC', borderRadius: 15, marginTop: 5, width: '92%', height: 100, alignSelf: 'center', padding: 15 },
-    welcomeContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1, },
+    skyBlueSection: {
+        backgroundColor: '#B3E5FC',
+        borderRadius: 20,
+        marginTop: 15,
+        width: '92%',
+        alignSelf: 'center',
+        padding: 20,
+        // Adds a soft depth to the card
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    quickPayContainer: {
+    flexDirection: 'row',
+    width: '93%',
+    justifyContent: 'space-between',
+    marginTop: 15,
+    marginBottom: 10,
+},
+payButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '48%',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+},
+duesButton: {
+    backgroundColor: '#FFEBEE', // Light Red
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+},
+onlineButton: {
+    backgroundColor: '#E3F2FD', // Light Blue
+    borderWidth: 1,
+    borderColor: '#BBDEFB',
+},
+payIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+},
+payButtonTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#333',
+},
+payButtonSub: {
+    fontSize: 8,
+    color: '#666',
+    marginTop: 1,
+},
+    welcomeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    welcomeTextColumn: {
+        flex: 1,
+    },
 
     servicesSection: { borderColor: '#053B90', borderWidth: 5, marginTop: 25, backgroundColor: '#FFFFFF', borderRadius: 15, paddingTop: 30, width: '97%', alignSelf: 'center', alignItems: 'center', paddingBottom: 13, borderColor: '#053B90' },
     servicesTitle: { position: 'absolute', top: -20, alignSelf: 'center', backgroundColor: '#d9dbb6ff', width: 230, height: 40, borderRadius: 11, textAlign: 'center', textAlignVertical: 'center', color: '#053B90', fontWeight: '900', fontSize: 20, lineHeight: 22, textTransform: 'capitalize', borderWidth: 1, borderColor: '#053B90' },
@@ -1310,6 +1415,38 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         paddingTop: 30,
         paddingBottom: 20
+    },
+    onlinePayButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#109c3a',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 12,
+        // High elevation makes it look "clickable"
+        elevation: 8,
+        shadowColor: '#053B90',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+    onlinePayButtonText: {
+        color: '#FFFFFF',
+        fontSize: 13,
+        fontWeight: 'bold',
+        marginLeft: 6,
+    },
+    welcomeText: {
+        fontSize: 18,
+        fontWeight: '500',
+        color: '#053B90',
+        opacity: 0.8
+    },
+    userNameText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#053B90',
+        marginTop: 2
     },
     headerImage: {
         width: 50,

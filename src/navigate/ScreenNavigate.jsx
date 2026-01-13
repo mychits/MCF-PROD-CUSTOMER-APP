@@ -18,6 +18,7 @@ import RegisterOtpVerify from "../screens/RegisterOtpVerify.jsx";
 import HomeScreen from "./Screens/HomeScreen";
 import EnrollScreen from "./Screens/EnrollScreen";
 import PaymentScreen from "./Screens/PaymentScreen";
+
 import QrCodePage from "../screens/QrCodePage";
 import ProfileScreen from "./Screens/ProfileScreen";
 import EnrollGroup from "../screens/EnrollGroup";
@@ -33,6 +34,7 @@ import OffersScreen from "../screens/OffersScreen.jsx"; ``
 import RewardsScreen from "../screens/RewardsScreen.jsx";
 import Dashboard from "../screens/Dashboard.jsx";
 import PayOnline from "../screens/PayOnline.jsx";
+import OnlineAuction from "../screens/OnlineAuction.jsx";
 
 
 import About from "../screens/About";
@@ -72,12 +74,13 @@ const EnrollStackNavigator = ({ route }) => {
         component={EnrollGroup}
         options={{ headerShown: false }}
       />
+
       <EnrollStack.Screen
         name="AuctionsRecord"
         component={AuctionsRecord}
         options={{ headerShown: false }}
       />
-    
+
       <EnrollStack.Screen
         name="ViewMore"
         component={ViewMore}
@@ -223,6 +226,7 @@ export default function ScreenNavigate() {
             component={PasswordChanged}
             options={{ headerShown: false }}
           />
+
           <Stack.Screen
             name="ReportScreen"
             component={ReportScreen}
@@ -259,7 +263,7 @@ export default function ScreenNavigate() {
             component={MyLoan}
             options={{ headerShown: false }}
           />
-             <Stack.Screen
+          <Stack.Screen
             name="QrCodePage"
             component={QrCodePage}
             options={{ headerShown: false }}
@@ -303,7 +307,7 @@ export default function ScreenNavigate() {
             component={Becomeanagent}
             options={{ headerShown: false }}
           />
-            <Stack.Screen
+          <Stack.Screen
             name="PayOnline"
             component={PayOnline}
             options={{ headerShown: false }}
@@ -335,7 +339,7 @@ export default function ScreenNavigate() {
             component={TermsConditions}
             options={{ headerShown: false }}
           />
-             <Stack.Screen
+          <Stack.Screen
             name="Dashboard"
             component={Dashboard}
             options={{ headerShown: false }}
@@ -348,6 +352,12 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="Mygroups"
             component={Mygroups}
+            options={{ headerShown: false }}
+          />
+          {/* CORRECT: Use the same Stack instance as the surrounding screens */}
+          <Stack.Screen
+            name="OnlineAuction"
+            component={OnlineAuction}
             options={{ headerShown: false }}
           />
           <Stack.Screen
