@@ -193,7 +193,7 @@ const Otp = ({ route, navigation }) => {
                   style={styles.signUpText}
                   onPress={() => navigation.navigate("Register")}
                 >
-                  Sign Up
+                  Register
                 </Text>
               </Text>
             </View>

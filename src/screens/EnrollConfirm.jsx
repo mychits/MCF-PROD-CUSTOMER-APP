@@ -10,8 +10,9 @@ import {
   Platform,
   StatusBar,
   Linking,
+  Alert,
 } from "react-native";
-import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
+import { AntDesign, Feather, Ionicons, FontAwesome } from "@expo/vector-icons"; // Added FontAwesome
 import Header from "../components/layouts/Header";
 import { NetworkContext } from "../context/NetworkProvider";
 import Toast from "react-native-toast-message";
@@ -24,8 +25,9 @@ const EnrollConfirm = ({ navigation, route }) => {
   const [scaleValue] = useState(new Animated.Value(0));
 
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
-  
-  const phoneNumber = '+919483900777';
+
+  const phoneNumber = "+919483900777";
+  const whatsappNumber = "919483900777"; // No '+' for the URL scheme
 
   useEffect(() => {
     Animated.spring(scaleValue, {
@@ -50,6 +52,22 @@ const EnrollConfirm = ({ navigation, route }) => {
     Linking.openURL(`tel:${phoneNumber}`);
   };
 
+  const handleWhatsApp = () => {
+    const message = `Hello, I just enrolled in group: ${group_name}. I need assistance.`;
+    const url = `whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
+
+    Linking.canOpenURL(url)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(url);
+        } else {
+          // Fallback to browser link if WhatsApp app isn't installed
+          return Linking.openURL(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`);
+        }
+      })
+      .catch(() => Alert.alert("Error", "Could not open WhatsApp. Please ensure it is installed."));
+  };
+
   const handleGoToMyGroups = () => {
     if (!userId) {
       Toast.show({
@@ -59,12 +77,12 @@ const EnrollConfirm = ({ navigation, route }) => {
         position: "bottom",
         visibilityTime: 3000,
       });
-      return; 
+      return;
     }
 
     navigation.navigate("BottomTab", {
       screen: "PaymentScreen",
-      params: { userId: userId }, 
+      params: { userId: userId },
     });
   };
 
@@ -87,10 +105,8 @@ const EnrollConfirm = ({ navigation, route }) => {
             <AntDesign name="checkcircle" size={80} color="#28A745" />
           </Animated.View>
 
-          <Text style={styles.congratulationsText}>
-            Enrollment Confirmed!
-          </Text>
-          
+          <Text style={styles.congratulationsText}>Enrollment Confirmed!</Text>
+
           <Text style={styles.favorableStatement}>
             You've taken the first step toward achieving your goals! Welcome aboard.
           </Text>
@@ -116,34 +132,39 @@ const EnrollConfirm = ({ navigation, route }) => {
                 </Text>
               </View>
             )}
-            
-            <View style={styles.pendingRow}>
-                <Ionicons name="time-outline" size={16} color="#FFC107" style={styles.detailIcon} />
-                <Text style={styles.pendingText}>Status: Activation Pending</Text>
-            </View>
 
+            <View style={styles.pendingRow}>
+              <Ionicons name="time-outline" size={16} color="#FFC107" style={styles.detailIcon} />
+              <Text style={styles.pendingText}>Status: Activation Pending</Text>
+            </View>
           </View>
-          
+
           <Text style={styles.infoText}>
             Our team is reviewing your details now! We'll notify you as soon as your group is fully active.
           </Text>
 
+          {/* Updated Support Section */}
           <View style={styles.contactCard}>
-            <Text style={styles.contactTitle}>Quick Support Line</Text>
-            <TouchableOpacity style={styles.contactButton} onPress={handleCall}>
-              <Feather name="phone-call" size={16} color="#fff" />
-              <Text style={styles.contactButtonText}>Call Us: {phoneNumber}</Text>
-            </TouchableOpacity>
+            <Text style={styles.contactTitle}>Quick Support</Text>
+            <View style={styles.contactButtonsRow}>
+              <TouchableOpacity style={styles.contactButton} onPress={handleCall}>
+                <Feather name="phone-call" size={16} color="#fff" />
+                <Text style={styles.contactButtonText}>Call Us</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.contactButton, styles.whatsappButton]} onPress={handleWhatsApp}>
+                <FontAwesome name="whatsapp" size={18} color="#fff" />
+                <Text style={styles.contactButtonText}>WhatsApp</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {!isConnected && (
             <View style={styles.offlineBox}>
-              <Text style={styles.offlineIndicator}>
-                You are currently offline.
-              </Text>
+              <Text style={styles.offlineIndicator}>You are currently offline.</Text>
             </View>
           )}
-          
+
           <TouchableOpacity style={styles.button} onPress={handleGoToMyGroups}>
             <Text style={styles.buttonText}>VIEW MY GROUPS</Text>
           </TouchableOpacity>
@@ -163,146 +184,136 @@ const styles = StyleSheet.create({
   mainContentWrapper: {
     flex: 1,
     alignItems: "center",
-    // MODIFICATION: Changed alignment to push content towards the top
-    justifyContent: "flex-start", 
-    paddingTop: 40, // Added vertical padding to give some space from the header
+    justifyContent: "flex-start",
+    paddingTop: 40,
     paddingBottom: 20,
   },
   contentCard: {
-    // MODIFICATION: Removed flex: 1 to allow the card to take only the required space
     backgroundColor: "#fff",
-    width: "95%",
+    width: "92%",
     borderRadius: 15,
     padding: 15,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 10,
     alignItems: "center",
   },
   congratulationsText: {
-    fontSize: 26, 
+    fontSize: 24,
     fontWeight: "800",
     textAlign: "center",
-    marginTop: 5,
+    marginTop: 10,
     marginBottom: 5,
     color: "#053B90",
   },
   favorableStatement: {
     fontSize: 14,
-    textAlign: 'center',
-    color: '#6c757d',
+    textAlign: "center",
+    color: "#6c757d",
     marginBottom: 15,
-    maxWidth: '90%',
+    maxWidth: "90%",
   },
   detailsContainer: {
-    width: '100%',
+    width: "100%",
     padding: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 10,
     marginBottom: 10,
-    borderWidth: 1, 
-    borderColor: '#E0E7FF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#E0E7FF",
   },
   detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 1)',
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
   },
   pendingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 5,
     marginTop: 5,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#FFC107',
+    borderTopColor: "#FFC107",
   },
   detailIcon: {
     marginRight: 8,
     width: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   detailItem: {
     fontSize: 16,
     color: "#333",
   },
   detailValue: {
-    fontWeight: '700',
-    color: '#000',
+    fontWeight: "700",
+    color: "#000",
   },
   installmentValue: {
-    color: '#28A745', 
-    fontSize: 16,
-    fontWeight: '900',
+    color: "#28A745",
+    fontWeight: "900",
   },
   pendingText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#FFC107',
+    fontWeight: "700",
+    color: "#FFC107",
   },
-  infoText: { 
-    fontSize: 14,
+  infoText: {
+    fontSize: 13,
     textAlign: "center",
     color: "#666",
     marginBottom: 10,
-    fontWeight: '500',
+    paddingHorizontal: 10,
   },
   contactCard: {
-    backgroundColor: '#E6EEF9', 
+    backgroundColor: "#E6EEF9",
     padding: 12,
     borderRadius: 10,
-    width: '95%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginVertical: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#053B90',
+    borderLeftColor: "#053B90",
   },
   contactTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#053B90',
-    marginBottom: 5,
+    fontWeight: "600",
+    color: "#053B90",
+    marginBottom: 10,
+  },
+  contactButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
   },
   contactButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#053B90',
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#053B90",
+    paddingVertical: 10,
     borderRadius: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
+    flex: 0.48,
+  },
+  whatsappButton: {
+    backgroundColor: "#25D366",
   },
   contactButtonText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
-    marginLeft: 8,
+    fontSize: 14,
+    marginLeft: 6,
   },
   offlineBox: {
     borderWidth: 1,
-    borderColor: 'orange',
+    borderColor: "orange",
     paddingHorizontal: 15,
     paddingVertical: 6,
     borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 8,
-    backgroundColor: '#FFF8E1', 
+    marginVertical: 8,
+    backgroundColor: "#FFF8E1",
   },
   offlineIndicator: {
     fontSize: 13,
@@ -312,18 +323,10 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#28A745",
-    padding: 12,
+    padding: 14,
     borderRadius: 10,
     alignItems: "center",
     width: "100%",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
     marginTop: 10,
   },
   buttonText: {

@@ -190,15 +190,7 @@ const Home = ({ route, navigation }) => {
             title: "Earn Rewards",
             icon: "gift-outline",
             featureTitle: "Rewards",
-            onPress: () => {
-                Toast.show({
-                    type: 'info',
-                    text1: 'Feature Coming Soon',
-                    text2: 'Rewards feature is under development.',
-                    position: 'bottom',
-                    visibilityTime: 4000,
-                });
-            }
+            link: "RewardsScreen" // Changed from manual Toast to navigation link
         },
         // END OF MODIFICATION
         // START OF MODIFICATION: Added My Profile to Side Menu
@@ -547,8 +539,8 @@ const Home = ({ route, navigation }) => {
         { navigateTo: 'AuctionList', icon: 'gavel', title: 'Auction', bgColor: '#F1F8E9', iconBg: '#558B2F', disabled: false, featureTitle: 'Auction' },
         { navigateTo: 'MyLoan', screen: 'MyLoan', icon: 'account-balance-wallet', title: 'My Loan', bgColor: '#EDE7F6', iconBg: '#3e09a7ff', filter: 'My Loan', disabled: false },
         { navigateTo: 'IntroduceNewCustomers', icon: 'person-add', title: 'Refer Now', bgColor: '#FFFDE7', iconBg: '#F9A825', disabled: false },
-        { navigateTo: 'OnlineAuction', screen: 'OnlineAuction', icon: 'language', title: 'Auto-Auction', bgColor: '#E0F2F1', iconBg: '#00796B', disabled: false },
-      
+        { navigateTo: 'OnlineAuction', screen: 'OnlineAuction', icon: 'language', title: 'Online-Auction', bgColor: '#E0F2F1', iconBg: '#00796B', disabled: false },
+
     ];
 
     const mychitsAdvantages = [
@@ -785,7 +777,14 @@ const Home = ({ route, navigation }) => {
                     <View style={styles.hamburgerLine} />
                     <View style={styles.hamburgerLine} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Chit Plans</Text>
+                <View style={styles.logoAndTitleContainer}>
+                    <Image
+                        source={Group400}
+                        style={styles.headerLogo}
+                        resizeMode="contain"
+                    />
+                    <Text style={styles.headerTitle}>My Chits</Text>
+                </View>
                 <TouchableOpacity
                     style={styles.helpButton}
                     onPress={handleNeedHelp}
@@ -866,46 +865,37 @@ const Home = ({ route, navigation }) => {
                         columnWrapperStyle={styles.row}
                     />
                     {/* New Quick Pay Section */}
-<View style={styles.quickPayContainer}>
-    <TouchableOpacity 
-        style={[styles.payButton, styles.duesButton]} 
-        onPress={() => navigation.navigate('PayYourDues', { userId: userId })}
-    >
-        <View style={styles.payIconCircle}>
-         <MaterialIcons name="history" size={24} color="#B71C1C" />
-        </View>
-        <View>
-            <Text style={styles.payButtonTitle}>Pay Dues</Text>
-            <Text style={styles.payButtonSub}>Pending Installments</Text>
-        </View>
-    </TouchableOpacity>
+                    <View style={styles.quickPayContainer}>
+                        <TouchableOpacity
+                            style={[styles.payButton, styles.duesButton]}
+                            onPress={() => navigation.navigate('PayYourDues', { userId: userId })}
+                        >
+                            <View style={styles.payIconCircle}>
+                                <MaterialIcons name="history" size={24} color="#B71C1C" />
+                            </View>
+                            <View>
+                                <Text style={styles.payButtonTitle}>Pay Dues</Text>
+                                <Text style={styles.payButtonSub}>Pending Installments</Text>
+                            </View>
+                        </TouchableOpacity>
 
-    <TouchableOpacity 
-        style={[styles.payButton, styles.onlineButton]} 
-        onPress={() => navigation.navigate('PayOnline', { userId: userId })}
-    >
-        <View style={styles.payIconCircle}>
-            <MaterialIcons name="bolt" size={24} color="#053B90" />
-        </View>
-        <View>
-            <Text style={styles.payButtonTitle}>Pay Online</Text>
-            <Text style={styles.payButtonSub}>Quick Payment</Text>
-        </View>
-    </TouchableOpacity>
-</View>
+                        <TouchableOpacity
+                            style={[styles.payButton, styles.onlineButton]}
+                            onPress={() => navigation.navigate('PayOnline', { userId: userId })}
+                        >
+                            <View style={styles.payIconCircle}>
+                                <MaterialIcons name="bolt" size={24} color="#053B90" />
+                            </View>
+                            <View>
+                                <Text style={styles.payButtonTitle}>Pay Online</Text>
+                                <Text style={styles.payButtonSub}>Quick Payment</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
                     <View style={styles.blueContainer}>
-                        {/* MODIFICATION: Rewards onPress changed to show a Toast instead of navigating to RewardsScreen */}
                         <TouchableOpacity
                             style={styles.blueGridItem}
-                            onPress={() => {
-                                Toast.show({
-                                    type: 'info',
-                                    text1: 'Feature Coming Soon',
-                                    text2: 'Rewards feature is under development.',
-                                    position: 'bottom',
-                                    visibilityTime: 4000,
-                                });
-                            }}
+                            onPress={() => navigation.navigate('RewardsScreen', { userId: userId, featureTitle: 'Rewards' })}
                         >
                             <View style={styles.iconCircleBlue}>
                                 <MaterialIcons name="emoji-events" size={30} color="#053B90" />
@@ -1272,54 +1262,54 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
     },
     quickPayContainer: {
-    flexDirection: 'row',
-    width: '93%',
-    justifyContent: 'space-between',
-    marginTop: 15,
-    marginBottom: 10,
-},
-payButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '48%',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 15,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-},
-duesButton: {
-    backgroundColor: '#FFEBEE', // Light Red
-    borderWidth: 1,
-    borderColor: '#FFCDD2',
-},
-onlineButton: {
-    backgroundColor: '#E3F2FD', // Light Blue
-    borderWidth: 1,
-    borderColor: '#BBDEFB',
-},
-payIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-},
-payButtonTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#333',
-},
-payButtonSub: {
-    fontSize: 8,
-    color: '#666',
-    marginTop: 1,
-},
+        flexDirection: 'row',
+        width: '93%',
+        justifyContent: 'space-between',
+        marginTop: 15,
+        marginBottom: 10,
+    },
+    payButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '48%',
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        borderRadius: 15,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+    },
+    duesButton: {
+        backgroundColor: '#FFEBEE', // Light Red
+        borderWidth: 1,
+        borderColor: '#FFCDD2',
+    },
+    onlineButton: {
+        backgroundColor: '#E3F2FD', // Light Blue
+        borderWidth: 1,
+        borderColor: '#BBDEFB',
+    },
+    payIconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#FFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+    },
+    payButtonTitle: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    payButtonSub: {
+        fontSize: 8,
+        color: '#666',
+        marginTop: 1,
+    },
     welcomeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1358,6 +1348,25 @@ payButtonSub: {
     modalContent: { width: '97%', backgroundColor: '#FFFFFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 25, paddingBottom: 0, shadowColor: 'transparent', elevation: 0 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
     modalTitle: { fontSize: 22, fontWeight: '800', color: '#1A237E' },
+    logoAndTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1, // Takes up available space
+        marginLeft: 55,
+        marginTop: 10,
+    },
+    // New style for the header image
+    headerLogo: {
+        width: 30,
+        height: 30,
+    },
+    // Updated headerTitle (removed marginLeft)
+    headerTitle: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginLeft: 8, // Small gap between logo and text
+    },
     modalMenuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#f5f5f5', backgroundColor: 'transparent' },
     modalMenuItemLeft: { flexDirection: 'row', alignItems: 'center' },
     modalMenuText: { fontSize: 17, color: '#424242', marginLeft: 20, fontWeight: '500' },
@@ -1555,6 +1564,7 @@ payButtonSub: {
     },
     sideMenuFooter: {
         paddingVertical: 12,
+        paddingBottom: 40, // <--- Add this line to create extra space at the bottom
         alignItems: 'center',
         borderTopWidth: 1,
         borderTopColor: '#eee',

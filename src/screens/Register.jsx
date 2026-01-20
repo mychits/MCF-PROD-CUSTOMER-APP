@@ -78,26 +78,15 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [showReferralInput, setShowReferralInput] = useState(false); // State to manage visibility
+  const [showReferralInput, setShowReferralInput] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      () => {
-        setKeyboardVisible(true);
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setKeyboardVisible(false);
-      }
-    );
-
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
     return () => {
       keyboardDidHideListener.remove();
       keyboardDidShowListener.remove();
@@ -116,21 +105,14 @@ export default function Register() {
     const trimmedPassword = password.trim();
     const trimmedConfirmPassword = confirmPassword.trim();
 
-    if (
-      !trimmedFullName ||
-      !trimmedPhoneNumber ||
-      !trimmedPassword ||
-      !trimmedConfirmPassword
-    ) {
-      showAppToast("Please fill all required fields (Name, Phone, Password).");
+    if (!trimmedFullName || !trimmedPhoneNumber || !trimmedPassword || !trimmedConfirmPassword) {
+      showAppToast("Please fill all required fields.");
       return false;
     }
-
     if (trimmedPassword !== trimmedConfirmPassword) {
       showAppToast("Passwords do not match.");
       return false;
     }
-
     if (trimmedPhoneNumber.length !== 10 || isNaN(trimmedPhoneNumber)) {
       showAppToast("Phone number must be 10 digits.");
       return false;
@@ -139,56 +121,43 @@ export default function Register() {
   };
 
   const handleSendOtp = async () => {
-    if (!validateInputs()) {
-      return;
-    }
+    if (!validateInputs()) return;
+
     setLoading(true);
+    const cleanPhone = phoneNumber.replace(/\s/g, "");
+
     try {
-      const payload = {
-        phone_number: phoneNumber.replace(/\s/g, ""),
+      // PROPER FLOW: Just send the OTP request. 
+      // The backend should check if the number is already registered inside this endpoint.
+      const otpPayload = {
+        phone_number: cleanPhone,
         full_name: fullName.trim(),
-        // Conditionally add referral_code if the input is not empty
         ...(referralCode.trim() && { referral_code: referralCode.trim() }),
       };
-     
-      const apiEndpoint = `${url}/user/send-register-otp`; 
-      
-      console.log("Attempting to send OTP to:", apiEndpoint); 
-      console.log("Sending OTP payload:", payload);
 
-      const response = await fetch(apiEndpoint, {
+      const otpResponse = await fetch(`${url}/user/send-register-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(otpPayload),
       });
 
-      const contentType = response.headers.get("content-type");
-      if (response.ok && contentType && contentType.includes("application/json")) {
-        const data = await response.json();
-        console.log("OTP send success response:", data);
-        showAppToast(data.message || "OTP sent successfully!");
+      const otpData = await otpResponse.json();
+
+      if (otpResponse.ok) {
+        showAppToast(otpData.message || "OTP sent successfully!");
         navigation.navigate("RegisterOtpVerify", {
-          mobileNumber: phoneNumber.replace(/\s/g, ""),
+          mobileNumber: cleanPhone,
           fullName: fullName.trim(),
           password: password.trim(),
           referralCode: referralCode.trim(),
         });
       } else {
-        let errorMessage = "Failed to send OTP. Please try again.";
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-          console.error("OTP send error (JSON response):", errorData);
-        } else {
-          const errorText = await response.text();
-          console.error("OTP send error (non-JSON response):", response.status, errorText);
-          errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route.`;
-        }
-        showAppToast(errorMessage);
+        // This is where "User already exists" or "Error sending SMS" will be caught
+        showAppToast(otpData.message || "Failed to send OTP.");
       }
     } catch (error) {
-      console.error("Network or unexpected error sending OTP:", error);
-      showAppToast("An unexpected error occurred. Please check your network and try again.");
+      console.error("Verification Error:", error);
+      showAppToast("Network error. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -200,21 +169,12 @@ export default function Register() {
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={
-          Platform.OS === "ios" ? 0 : -screenHeight * 0.15
-        }
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -screenHeight * 0.15}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollViewContent}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps="handled">
           {!keyboardVisible && (
             <View style={styles.topSection}>
-              <Image
-                source={require("../../assets/Group400.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
+              <Image source={require("../../assets/Group400.png")} style={styles.logo} resizeMode="contain" />
               <Text style={styles.title}>MyChits</Text>
             </View>
           )}
@@ -223,37 +183,25 @@ export default function Register() {
             <Text style={styles.registerTitle}>Register</Text>
             <Text style={styles.registerSubtitle}>Create your account</Text>
 
-           
             <TextInput
               style={styles.input}
               placeholder="Full Name"
               placeholderTextColor="#78909C"
               value={fullName}
               onChangeText={setFullName}
-              accessible
-              accessibilityLabel="Full name input"
               autoCapitalize="words"
-              autoCorrect={false}
             />
 
-           
             <TextInput
               style={styles.input}
               placeholder="Phone Number"
               placeholderTextColor="#78909C"
               keyboardType="phone-pad"
               value={phoneNumber}
-              onChangeText={(text) =>
-                setPhoneNumber(text.replace(/[^0-9]/g, ""))
-              }
+              onChangeText={(text) => setPhoneNumber(text.replace(/[^0-9]/g, ""))}
               maxLength={10}
-              accessible
-              accessibilityLabel="Phone number input"
-              autoCapitalize="none"
-              autoCorrect={false}
             />
 
-           
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -262,26 +210,12 @@ export default function Register() {
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
-                accessible
-                accessibilityLabel="Password input"
-                autoCapitalize="none"
-                autoCorrect={false}
               />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-                accessible
-                accessibilityLabel="Toggle password visibility"
-              >
-                <AntDesign
-                  name={showPassword ? "eye" : "eyeo"}
-                  size={20}
-                  color="#78909C"
-                />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                <AntDesign name={showPassword ? "eye" : "eyeo"} size={20} color="#78909C" />
               </TouchableOpacity>
             </View>
 
-           
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -290,168 +224,80 @@ export default function Register() {
                 secureTextEntry={!showConfirmPassword}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                accessible
-                accessibilityLabel="Confirm password input"
-                autoCapitalize="none"
-                autoCorrect={false}
               />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeIcon}
-                accessible
-                accessibilityLabel="Toggle confirm password visibility"
-              >
-                <AntDesign
-                  name={showConfirmPassword ? "eye" : "eyeo"}
-                  size={20}
-                  color="#78909C"
-                />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+                <AntDesign name={showConfirmPassword ? "eye" : "eyeo"} size={20} color="#78909C" />
               </TouchableOpacity>
             </View>
-            
-            {/* Conditional Rendering for Referral Code */}
+
             {showReferralInput ? (
-                // Block shown when the input is active
-                <View style={styles.referralInputGroup}>
-                    {/* NEW: Skip Link */}
-                    <TouchableOpacity
-                        onPress={() => {
-                            setShowReferralInput(false); // Hide the input
-                            setReferralCode(""); // Clear the input value
-                        }}
-                        style={styles.skipLinkContainer} 
-                        accessible
-                        accessibilityLabel="Skip referral code input"
-                    >
-                        <Text style={styles.skipLinkText}>
-                            Skip
-                        </Text>
-                    </TouchableOpacity>
-                    
-                    {/* Referral Input Field */}
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Referral Number (Optional)"
-                        placeholderTextColor="#78909C"
-                        value={referralCode}
-                        onChangeText={setReferralCode}
-                        accessible
-                        accessibilityLabel="Referral Code input"
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                    />
-                </View>
-            ) : (
-                // Block shown when the link is active
+              <View style={styles.referralInputGroup}>
                 <TouchableOpacity
-                    onPress={() => setShowReferralInput(true)}
-                    style={styles.referralLinkContainer}
-                    accessible
-                    accessibilityLabel="I have a referral code link"
+                  onPress={() => {
+                    setShowReferralInput(false);
+                    setReferralCode("");
+                  }}
+                  style={styles.skipLinkContainer}
                 >
-                    <Text style={styles.referralLinkText}>
-                        Have a referral code?
-                    </Text>
+                  <Text style={styles.skipLinkText}>Skip</Text>
                 </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Referral Number (Optional)"
+                  placeholderTextColor="#78909C"
+                  value={referralCode}
+                  onChangeText={setReferralCode}
+                />
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setShowReferralInput(true)} style={styles.referralLinkContainer}>
+                <Text style={styles.referralLinkText}>Have a referral code?</Text>
+              </TouchableOpacity>
             )}
 
-            <TouchableOpacity
-              style={styles.registerButton}
-              onPress={handleSendOtp}
-              accessible
-              accessibilityLabel="Send OTP"
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.registerButtonText}>Send OTP</Text>
-              )}
+            <TouchableOpacity style={styles.registerButton} onPress={handleSendOtp} disabled={loading}>
+              {loading ? <ActivityIndicator color="white" /> : <Text style={styles.registerButtonText}>Continue</Text>}
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Already have an account? </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("Login")}
-                accessible
-                accessibilityLabel="Navigate to Login"
-              >
+              <TouchableOpacity onPress={() => navigation.navigate("Login")}>
                 <Text style={styles.loginButtonText}>Log in</Text>
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Loading Overlay */}
-          {loading && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color="#053B90" />
-              <Text style={styles.loadingText}>Sending OTP...</Text>
-            </View>
-          )}
         </ScrollView>
       </KeyboardAvoidingView>
-
       <Toast ref={toastRef} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#053B90",
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-    justifyContent: "space-between",
-  },
+  safeArea: { flex: 1, backgroundColor: "#053B90" },
+  keyboardAvoidingView: { flex: 1 },
+  scrollViewContent: { flexGrow: 1, justifyContent: "space-between" },
   topSection: {
     flex: 0.6,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#053B90",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
     paddingVertical: 20,
     width: "100%",
   },
-  logo: {
-    width: 110,
-    height: 110,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 30,
-    fontWeight: "700",
-    textAlign: "center",
-    letterSpacing: 1,
-  },
+  logo: { width: 110, height: 110 },
+  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "700", textAlign: "center" },
   bottomSection: {
     flex: 1,
     backgroundColor: "#C7E3EF",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 20,
-    paddingTop: 20,
     alignItems: "center",
     width: "100%",
   },
-  registerTitle: {
-    color: "#000",
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 5,
-  },
-  registerSubtitle: {
-    color: "#000",
-    fontSize: 14,
-    textAlign: "center",
-    marginBottom: 10,
-  },
+  registerTitle: { color: "#000", fontSize: 24, fontWeight: "bold", marginBottom: 5 },
+  registerSubtitle: { color: "#000", fontSize: 14, marginBottom: 10 },
   input: {
     width: "90%",
     height: 50,
@@ -475,59 +321,20 @@ const styles = StyleSheet.create({
     borderColor: "#ADD8E6",
     marginBottom: 12,
   },
-  passwordInput: {
-    flex: 1,
-    height: 50,
-    paddingHorizontal: 15,
-    fontSize: 14,
-    color: "#053B90",
-  },
-  eyeIcon: {
-    padding: 12,
-  },
+  passwordInput: { flex: 1, height: 50, paddingHorizontal: 15, color: "#053B90" },
+  eyeIcon: { padding: 12 },
   registerButton: {
     backgroundColor: "#053B90",
     borderRadius: 120,
     paddingVertical: 12,
     width: "70%",
     alignItems: "center",
-    marginBottom: 18,
     marginTop: 10,
   },
-  registerButtonText: {
-    color: "white",
-    fontSize: 16,
-  },
-  loginContainer: {
-    flexDirection: "row",
-    marginTop: 15,
-    alignItems: "center",
-  },
-  loginText: {
-    color: "#78909C",
-    fontSize: 14,
-  },
-  loginButtonText: {
-    color: "#053B90",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#053B90",
-  },
+  registerButtonText: { color: "white", fontSize: 16 },
+  loginContainer: { flexDirection: "row", marginTop: 15 },
+  loginText: { color: "#78909C" },
+  loginButtonText: { color: "#053B90", fontWeight: "bold" },
   toastContainer: {
     position: "absolute",
     top: 40,
@@ -535,54 +342,16 @@ const styles = StyleSheet.create({
     right: "5%",
     backgroundColor: "rgba(238, 243, 247, 0.9)",
     paddingVertical: 10,
-    paddingHorizontal: 20,
     borderRadius: 25,
+    alignItems: "center",
     zIndex: 9999,
-    alignItems: "center",
   },
-  toastContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  toastText: {
-    color: "#053B90",
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 10,
-  },
-  toastImage: {
-    width: 30,
-    height: 30,
-  },
-  // Style for the initial 'Have a referral code?' link
-  referralLinkContainer: {
-    width: "90%",
-    alignItems: "flex-end",
-    marginBottom: 12,
-    paddingRight: 5,
-  },
-  referralLinkText: {
-    color: "#053B90",
-    fontSize: 14,
-    fontWeight: "600",
-    textDecorationLine: "underline",
-  },
-  // NEW styles for the active referral input group and skip link
-  referralInputGroup: {
-    width: "100%", 
-    alignItems: "center", 
-    // marginBottom is handled by the input's own marginBottom: 12
-  },
-  skipLinkContainer: {
-    width: "90%", 
-    alignItems: "flex-end", 
-    marginBottom: 5, 
-    paddingRight: 5, 
-  },
-  skipLinkText: {
-    color: "#053B90", // A distinct color for "Skip"
-    fontSize: 13,
-    fontWeight: "500",
-    textDecorationLine: "underline",
-  },
+  toastContent: { flexDirection: "row", alignItems: "center" },
+  toastText: { color: "#053B90", fontWeight: "900", marginLeft: 10 },
+  toastImage: { width: 30, height: 30 },
+  referralLinkContainer: { width: "90%", alignItems: "flex-end", marginBottom: 12 },
+  referralLinkText: { color: "#053B90", textDecorationLine: "underline" },
+  referralInputGroup: { width: "100%", alignItems: "center" },
+  skipLinkContainer: { width: "90%", alignItems: "flex-end", marginBottom: 5 },
+  skipLinkText: { color: "#053B90", fontSize: 13, textDecorationLine: "underline" },
 });

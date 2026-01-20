@@ -176,6 +176,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#053B90", // Blue text color
     marginBottom: 5,
+    textAlign:'center',
   },
   phoneNumber: {
     fontSize: 15,

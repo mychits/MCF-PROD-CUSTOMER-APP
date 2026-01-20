@@ -8,8 +8,8 @@ import {
   Dimensions,
   StatusBar,
   SafeAreaView,
-  Animated, // Import Animated
-  Easing, // Import Easing for better animation control
+  Animated,
+  Easing,
 } from "react-native";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
@@ -20,19 +20,16 @@ import url from "../../data/url"; // Your API base URL
 
 const { width, height } = Dimensions.get("window");
 
-// Define colors for consistency and better aesthetics
 const Colors = {
-  primaryBlue: "#053B90", // Dark blue, main app color
-  lightBackground: "#F0F5F9", // Very light grey-blue for screen background
-  cardBackground: "#FFFFFF", // Pure white for card base
-  darkText: "#2C3E50", // Dark grey for primary text
-  mediumText: "#7F8C8D", // Medium grey for secondary text
-  lightText: "#BDC3C7", // Light grey for subtle labels
-  shadowColor: "rgba(0,0,0,0.1)", // Light shadow for depth
-
-  // Header specific colors/gradients
-  headerGradientStart: "#053B90", // Dark blue
-  headerGradientEnd: "#053B90", // Slightly lighter, more vibrant blue
+  primaryBlue: "#053B90",
+  lightBackground: "#F0F5F9",
+  cardBackground: "#FFFFFF",
+  darkText: "#2C3E50",
+  mediumText: "#7F8C8D",
+  lightText: "#BDC3C7",
+  shadowColor: "rgba(0,0,0,0.1)",
+  headerGradientStart: "#053B90",
+  headerGradientEnd: "#053B90",
 };
 
 const Header = ({ userId, navigation }) => {
@@ -45,8 +42,7 @@ const Header = ({ userId, navigation }) => {
   const [showInfoPopup, setShowInfoPopup] = useState(false);
   const route = useRoute();
 
-  // Animated value for header slide-down
-  const headerAnim = useRef(new Animated.Value(-height * 0.2)).current; // Start off-screen above
+  const headerAnim = useRef(new Animated.Value(-height * 0.2)).current;
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -64,14 +60,13 @@ const Header = ({ userId, navigation }) => {
 
     fetchUserData();
 
-    // Start the header animation when the component mounts
     Animated.timing(headerAnim, {
-      toValue: 0, // Slide to its original position (top: 0)
-      duration: 1000, // 1 second duration
-      easing: Easing.out(Easing.ease), // Smooth easing out effect
-      useNativeDriver: true, // Use native driver for performance
+      toValue: 0,
+      duration: 1000,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
     }).start();
-  }, [userId]); // Dependency array: re-run if userId changes
+  }, [userId]);
 
   const showBackButton = route.name !== "Home";
 
@@ -79,28 +74,28 @@ const Header = ({ userId, navigation }) => {
     setShowInfoPopup(!showInfoPopup);
   };
 
+  // Helper function to get the first two words of a string
+  const getShortenedName = (name) => {
+    if (!name) return "...";
+    const words = name.trim().split(/\s+/); // Splits by any whitespace
+    return words.length > 2 ? `${words[0]} ${words[1]}` : name;
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.headerGradientStart} />
-      <Animated.View // Use Animated.View for the animated header
+      <Animated.View
         style={[
           styles.animatedHeaderWrapper,
-          { transform: [{ translateY: headerAnim }] }, // Apply the translate animation
+          { transform: [{ translateY: headerAnim }] },
         ]}
       >
         <LinearGradient
           colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
           style={styles.headerGradient}
         >
-          {/* Removed: LottieView component */}
-
           <View style={styles.headerContainer}>
-            {/* Left side: Back Button (if applicable) and Profile Info */}
-            <View // Changed from TouchableOpacity to a standard View
-              style={styles.leftContainer}
-              // REMOVED onPress HANDLER HERE to stop navigation
-            >
-              {/* Conditional Back Button */}
+            <View style={styles.leftContainer}>
               {showBackButton && (
                 <TouchableOpacity
                   onPress={() => navigation.goBack()}
@@ -110,24 +105,25 @@ const Header = ({ userId, navigation }) => {
                 </TouchableOpacity>
               )}
               
-              {/* Profile Image and Name/ID - Now in its own TouchableOpacity if you want to keep that touch feedback */}
-              <TouchableOpacity // Wrapped the profile details in an inner TouchableOpacity
-                // ADDED onPress={null} or simply remove the onPress for no action on touch
-                activeOpacity={1} // Optional: set activeOpacity to 1 to remove touch feedback, making it look like a static View
+              <TouchableOpacity
+                activeOpacity={1}
                 style={[
                   styles.profileContainer,
-                  // The profileContainer style now correctly handles the positioning/margin
                   !showBackButton && { marginLeft: width * 0.02 },
                 ]}
               >
                 <Image
-                  source={require("../../../assets/profile (2).png")} // Updated image path
+                  source={require("../../../assets/profile (2).png")}
                   style={styles.profileImage}
                   resizeMode="cover"
                 />
-                <View>
-                  <Text style={styles.profileName}>
-                    {userData.full_name || "..."}
+                <View style={{ flexShrink: 1 }}> 
+                  <Text 
+                    style={styles.profileName} 
+                    numberOfLines={1} 
+                    ellipsizeMode="tail"
+                  >
+                    {getShortenedName(userData.full_name)}
                   </Text>
                   <Text style={styles.customerId}>
                     {userData.phone_number || "..."}
@@ -136,7 +132,6 @@ const Header = ({ userId, navigation }) => {
               </TouchableOpacity>
             </View>
 
-            {/* Right side: Info Icon to trigger popup */}
             <TouchableOpacity
               onPress={toggleInfoPopup}
               style={styles.infoIconContainer}
@@ -144,15 +139,13 @@ const Header = ({ userId, navigation }) => {
               <AntDesign name="infocirlceo" size={22} color="#fff" />
             </TouchableOpacity>
 
-            {/* Info Popup (conditionally rendered) */}
             {showInfoPopup && (
               <TouchableOpacity
-                style={styles.infoPopupOverlay} // Covers the entire screen
-                onPress={toggleInfoPopup} // Dismiss popup when clicked anywhere on the overlay
-                activeOpacity={1} // Prevents visual feedback (opacity change) on overlay press
+                style={styles.infoPopupOverlay}
+                onPress={toggleInfoPopup}
+                activeOpacity={1}
               >
                 <View style={styles.infoPopup}>
-                  {/* Close Button */}
                   <TouchableOpacity
                     onPress={toggleInfoPopup}
                     style={styles.closeButton}
@@ -160,16 +153,14 @@ const Header = ({ userId, navigation }) => {
                     <AntDesign name="closecircle" size={24} color="#053B90" />
                   </TouchableOpacity>
 
-                  {/* Image for the popup */}
                   <Image
-                    source={require("../../../assets/Group400.png")} // **Verify this path**
+                    source={require("../../../assets/Group400.png")}
                     style={styles.popupImage}
-                    resizeMode="contain" // Ensures the whole image is visible within its bounds
+                    resizeMode="contain"
                     onError={(e) =>
                       console.log("Image loading error:", e.nativeEvent.error)
                     }
                   />
-                  {/* Text for the popup - MODIFIED HERE */}
                   <View style={styles.infoPopupTextContainer}>
                     <Text style={styles.mychitsText}>Mychits</Text>
                     <Text style={styles.customerAppText}>Customer app</Text>
@@ -197,9 +188,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.04,
     position: "relative",
     zIndex: 10,
-    // Removed: overflow: 'hidden' because Lottie is gone
   },
-  // Removed: lottieAnimation style
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -210,6 +199,7 @@ const styles = StyleSheet.create({
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1, // Added to allow text to take remaining space
   },
   backButton: {
     marginRight: width * 0.04,
@@ -218,6 +208,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginLeft: width * 0.04,
+    flex: 1, // Added to prevent pushing the info icon off screen
   },
   profileImage: {
     width: width * 0.1,

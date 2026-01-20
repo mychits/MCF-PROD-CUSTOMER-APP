@@ -393,7 +393,7 @@ export default function Login() {
                 accessibilityLabel="Navigate to Sign Up"
                 disabled={loading || !isConnected || !isInternetReachable}
               >
-                <Text style={styles.signUpButtonText}>Sign Up</Text>
+                <Text style={styles.signUpButtonText}>Register</Text>
               </TouchableOpacity>
             </View>
           </View>

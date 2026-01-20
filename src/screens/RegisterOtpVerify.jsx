@@ -10,7 +10,6 @@ import {
   ScrollView,
   Platform,
   Keyboard,
-  Alert,
   Dimensions,
   Animated,
   ActivityIndicator,
@@ -71,10 +70,8 @@ const RegisterOtpVerify = ({ route }) => {
   const toastRef = useRef();
   const [appUser, setAppUser] = useContext(ContextProvider);
 
-  // Change 1: Include referralCode in destructuring
   const { mobileNumber, fullName, password, referralCode } = route.params;
 
-  // Change 1: Initialize otp state for 4 digits
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [seconds, setSeconds] = useState(59);
   const [timerActive, setTimerActive] = useState(true);
@@ -82,8 +79,6 @@ const RegisterOtpVerify = ({ route }) => {
   const [loading, setLoading] = useState(false);
 
   const bottomSectionPaddingTopAnim = useRef(new Animated.Value(50)).current;
-
-  // Change 2: Create refs for 4 input fields
   const inputRefs = Array(4).fill(0).map((_, i) => useRef(null));
 
   useEffect(() => {
@@ -99,29 +94,23 @@ const RegisterOtpVerify = ({ route }) => {
   }, [timerActive, seconds]);
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      () => {
-        setKeyboardVisible(true);
-        Animated.timing(bottomSectionPaddingTopAnim, {
-          toValue: Platform.OS === "ios" ? 15 : 5,
-          duration: 250,
-          useNativeDriver: false,
-        }).start();
-      }
-    );
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true);
+      Animated.timing(bottomSectionPaddingTopAnim, {
+        toValue: Platform.OS === "ios" ? 15 : 5,
+        duration: 250,
+        useNativeDriver: false,
+      }).start();
+    });
 
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setKeyboardVisible(false);
-        Animated.timing(bottomSectionPaddingTopAnim, {
-          toValue: 50,
-          duration: 250,
-          useNativeDriver: false,
-        }).start();
-      }
-    );
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+      Animated.timing(bottomSectionPaddingTopAnim, {
+        toValue: 50,
+        duration: 250,
+        useNativeDriver: false,
+      }).start();
+    });
 
     return () => {
       keyboardDidHideListener.remove();
@@ -144,7 +133,7 @@ const RegisterOtpVerify = ({ route }) => {
       inputRefs[index + 1].current.focus();
     }
     if (index === otp.length - 1 && text !== "") {
-        Keyboard.dismiss();
+      Keyboard.dismiss();
     }
   };
 
@@ -160,78 +149,37 @@ const RegisterOtpVerify = ({ route }) => {
     }
   };
 
-  // UPDATED: Function to fetch user details and navigate based on approval_status
   const fetchUserDetailsAndNavigate = async (userId) => {
     try {
       const userDetailUrl = `${url}/user/get-user-by-id/${userId}`; 
-      console.log("Attempting to fetch user details to:", userDetailUrl);
-
       const response = await fetch(userDetailUrl, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
-      const contentType = response.headers.get("content-type");
-      if (response.ok && contentType && contentType.includes("application/json")) {
+      if (response.ok) {
         const data = await response.json();
         const approvalStatus = data.approval_status; 
 
-        showAppToast("Registration successful! Checking approval status...", require("../../assets/Group400.png"));
-        
-        // CONSOLE LOG FOR STATUS CHECK
-        const statusDescription = approvalStatus === null ? 'null' : approvalStatus === '' ? 'empty string' : approvalStatus === undefined ? 'undefined' : `'${approvalStatus}'`;
-        console.log(`[RegisterOtpVerify] Fetched approval_status after registration: ${statusDescription}`);
-
-        // NEW NAVIGATION LOGIC: 
-        // If approvalStatus is explicitly 'false', go to Dashboard.
-        // Otherwise (true, null, empty, undefined), go to Home (BottomTab).
         setTimeout(() => {
           if (approvalStatus === 'false') {
-            console.log("[RegisterOtpVerify] approval_status is 'false'. Directing to Dashboard.");
             navigation.replace("Dashboard", { userId });
           } else {
-            console.log("[RegisterOtpVerify] approval_status is not 'false' (i.e., 'true', null, or empty). Directing to Home (BottomTab).");
-            // This handles 'true', null, empty, or any other value by navigating to Home
             navigation.replace("BottomTab", { userId });
           }
-        }, 2000); // Wait for the "Registration Successful" toast to display
-
-      } else {
-        // Handle error in fetching user details, default to Home (since null/empty is now Home)
-        let errorMessage = "Registration successful, but failed to fetch approval status. Navigating to Home.";
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-          errorMessage = `Registration successful, but failed to fetch approval status: ${errorData.message}. Navigating to Home.`;
-          console.error("User details fetch error (JSON response):", errorData);
-        } else {
-          const errorText = await response.text();
-          console.error("User details fetch error (non-JSON response):", response.status, errorText);
-          errorMessage = `Registration successful, but server error during status check (${response.status}). Navigating to Home.`;
-        }
-        console.log("[RegisterOtpVerify] Error fetching status. Defaulting to Home (BottomTab).");
-        showAppToast(errorMessage);
-        setTimeout(() => {
-          navigation.replace("BottomTab", { userId });
         }, 2000);
+      } else {
+        showAppToast("Registration successful! Redirecting...");
+        setTimeout(() => navigation.replace("BottomTab", { userId }), 2000);
       }
     } catch (error) {
-      console.error("Network or unexpected error fetching user details after registration:", error);
-      console.log("[RegisterOtpVerify] Network error. Defaulting to Home (BottomTab).");
-      showAppToast(
-        "Registration successful, but an unexpected error occurred while checking approval status. Navigating to Home."
-      );
-      // Fallback navigation
-      setTimeout(() => {
-        navigation.replace("BottomTab", { userId });
-      }, 2000);
+      console.error(error);
+      setTimeout(() => navigation.replace("BottomTab", { userId }), 2000);
     }
   };
 
   const handleVerifyOtp = async () => {
     const fullOtp = otp.join("");
-    // Change 3: Validate for 4-digit OTP
     if (fullOtp.length !== 4) {
       showAppToast("Please enter the complete OTP.");
       return;
@@ -244,95 +192,52 @@ const RegisterOtpVerify = ({ route }) => {
         phone_number: mobileNumber,
         otp: fullOtp,
       };
-      // Endpoint updated as per previous turn's request
-      const verifyApiEndpoint = `${url}/user/verify-register-otp`;
-      console.log("Attempting to verify OTP to:", verifyApiEndpoint);
-      console.log("Verifying OTP payload:", otpVerificationPayload);
-
-      const response = await fetch(verifyApiEndpoint, {
+      
+      const verifyResponse = await fetch(`${url}/user/verify-register-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(otpVerificationPayload),
       });
 
-      const contentType = response.headers.get("content-type");
-      if (response.ok && contentType && contentType.includes("application/json")) {
-        const data = await response.json();
+      const verifyData = await verifyResponse.json();
 
-        // New logic to check for success/failure
-        if (data.success) { // Assuming the server sends { success: true, ... } for a correct OTP
-            console.log("OTP verification success response:", data);
-            showAppToast("OTP Verified Successfully!");
+      if (verifyResponse.ok && verifyData.success) {
+        showAppToast("OTP Verified Successfully!");
 
-            const registrationPayload = {
-              full_name: fullName,
-              phone_number: mobileNumber,
-              password: password,
-              track_source: "mobile",
-              // Change 2: Include referral_code if it exists in the props
-              ...(referralCode && { referral_code: referralCode }),
-            };
-            const signupApiEndpoint = `${url}/user/signup-user`;
-            console.log("Attempting to sign up user to:", signupApiEndpoint);
-            console.log("Registering user payload:", registrationPayload);
+        // ONLY NOW: Call signup-user to actually create the account
+        const registrationPayload = {
+          full_name: fullName,
+          phone_number: mobileNumber,
+          password: password,
+          track_source: "mobile",
+          ...(referralCode && { referral_code: referralCode }),
+        };
 
-            const registerResponse = await fetch(signupApiEndpoint, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(registrationPayload),
-            });
+        const registerResponse = await fetch(`${url}/user/signup-user`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(registrationPayload),
+        });
 
-            const registerContentType = registerResponse.headers.get("content-type");
-            if (registerResponse.ok && registerContentType && registerContentType.includes("application/json")) {
-              const registerData = await registerResponse.json();
-              showAppToast("Registration Successful!");
-              
-              const registeredUserId = registerData.user?._id;
-              setAppUser((prev) => ({ ...prev, userId: registeredUserId }));
-              
-              // NEW: Proceed to fetch user details and navigate
-              await fetchUserDetailsAndNavigate(registeredUserId);
+        const registerData = await registerResponse.json();
 
-            } else {
-              let registerErrorMessage = "Registration failed. Please try again.";
-              if (registerContentType && registerContentType.includes("application/json")) {
-                const errorData = await registerResponse.json();
-                registerErrorMessage = errorData.message || registerErrorMessage;
-                console.error("Registration error (JSON response):", errorData);
-              } else {
-                const errorText = await registerResponse.text();
-                console.error("Registration error (non-JSON response):", registerResponse.status, errorText);
-                registerErrorMessage = `Server Error (${registerResponse.status}) during registration: ${errorText.substring(0, 100)}...`;
-              }
-              showAppToast(registerErrorMessage);
-              setLoading(false); // Stop loading here if registration fails
-            }
+        if (registerResponse.ok) {
+          showAppToast("Registration Successful!");
+          const registeredUserId = registerData.user?._id;
+          setAppUser((prev) => ({ ...prev, userId: registeredUserId }));
+          await fetchUserDetailsAndNavigate(registeredUserId);
         } else {
-          // New logic for when OTP is incorrect (success: false)
-          showAppToast(data.message || "OTP is incorrect. Please try again.");
-          console.error("OTP verification error:", data);
-          setLoading(false); // Stop loading here if verification fails
+          showAppToast(registerData.message || "Registration failed.");
+          setLoading(false);
         }
-        
-
       } else {
-        let errorMessage = "OTP verification failed. Please try again.";
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-          console.error("OTP verification error (JSON response):", errorData);
-        } else {
-          const errorText = await response.text();
-          console.error("OTP verification error (non-JSON response):", response.status, errorText);
-          errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}... Please check your backend route.`;
-        }
-        showAppToast(errorMessage);
-        setLoading(false); // Stop loading here if verification fails
+        showAppToast(verifyData.message || "Incorrect OTP.");
+        setLoading(false);
       }
     } catch (error) {
-      console.error("Network or unexpected error during OTP verification/registration:", error);
-      showAppToast("An unexpected error occurred. Please check your network and try again.");
-      setLoading(false); // Stop loading here on caught error
+      console.error(error);
+      showAppToast("Unexpected error. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -340,46 +245,24 @@ const RegisterOtpVerify = ({ route }) => {
     if (!timerActive) {
       setLoading(true);
       try {
-        const resendPayload = {
-          phone_number: mobileNumber,
-          full_name: fullName,
-        };
-        const resendApiEndpoint = `${url}/user/send-register-otp`; //
-        console.log("Attempting to resend OTP to:", resendApiEndpoint);
-        console.log("Resending OTP payload:", resendPayload);
-
-        const response = await fetch(resendApiEndpoint, {
+        const resendPayload = { phone_number: mobileNumber, full_name: fullName };
+        const response = await fetch(`${url}/user/send-register-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(resendPayload),
         });
 
-        const contentType = response.headers.get("content-type");
-        if (response.ok && contentType && contentType.includes("application/json")) {
-          const data = await response.json();
-          console.log("OTP resend success response:", data);
-          showAppToast(data.message || "New OTP sent successfully!");
+        if (response.ok) {
+          showAppToast("New OTP sent successfully!");
           setSeconds(59);
           setTimerActive(true);
-          // Change 5: Reset OTP state for 4 digits upon resend
           setOtp(["", "", "", ""]);
           inputRefs[0].current.focus();
         } else {
-          let errorMessage = "Failed to resend OTP. Please try again.";
-          if (contentType && contentType.includes("application/json")) {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
-            console.error("OTP resend error (JSON response):", errorData);
-          } else {
-            const errorText = await response.text();
-            console.error("OTP resend error (non-JSON response):", response.status, errorText);
-            errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100)}...`;
-          }
-          showAppToast(errorMessage);
+          showAppToast("Failed to resend OTP.");
         }
       } catch (error) {
-        console.error("Network or unexpected error resending OTP:", error);
-        showAppToast("An unexpected error occurred while resending OTP. Please check your network and try again.");
+        showAppToast("Network error.");
       } finally {
         setLoading(false);
       }
@@ -392,30 +275,16 @@ const RegisterOtpVerify = ({ route }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "android" ? -screenHeight * 0.15 : 0}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollViewContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollViewContent} keyboardShouldPersistTaps="handled">
         <View style={styles.container}>
           {!keyboardVisible && (
             <View style={styles.topSection}>
-              <Image
-                source={require("../../assets/Group400.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
+              <Image source={require("../../assets/Group400.png")} style={styles.logo} resizeMode="contain" />
               <Text style={styles.title}>MyChits</Text>
             </View>
           )}
-          <Animated.View
-            style={[
-              styles.bottomSection,
-              { paddingTop: bottomSectionPaddingTopAnim },
-            ]}
-          >
+          <Animated.View style={[styles.bottomSection, { paddingTop: bottomSectionPaddingTopAnim }]}>
             <Text style={styles.enterOtpText}>Enter OTP</Text>
-            {/* Change 4: Update instruction text */}
             <Text style={styles.instructionText}>
               A 4 digit code has been sent to your number {mobileNumber}
             </Text>
@@ -436,50 +305,17 @@ const RegisterOtpVerify = ({ route }) => {
               ))}
             </View>
 
-            <Text style={styles.timerText}>
-              00:{seconds < 10 ? "0" : ""}
-              {seconds}
-            </Text>
+            <Text style={styles.timerText}>00:{seconds < 10 ? "0" : ""}{seconds}</Text>
 
-            <TouchableOpacity
-              style={styles.verifyButton}
-              onPress={handleVerifyOtp}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#1A237E" />
-              ) : (
-                <Text style={styles.verifyButtonText}>Verify</Text>
-              )}
+            <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyOtp} disabled={loading}>
+              {loading ? <ActivityIndicator color="#1A237E" /> : <Text style={styles.verifyButtonText}>Verify</Text>}
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.resendButton}
-              onPress={handleResendOtp}
-              disabled={timerActive || loading}
-            >
-              <Text
-                style={[
-                  styles.resendButtonText,
-                  { color: (timerActive || loading) ? "#B0BEC5" : "#053B90" },
-                ]}
-              >
-                Didn't get it?{" "}
-                <Text style={{ fontWeight: "bold" }}>Send Again</Text>
+            <TouchableOpacity style={styles.resendButton} onPress={handleResendOtp} disabled={timerActive || loading}>
+              <Text style={[styles.resendButtonText, { color: (timerActive || loading) ? "#B0BEC5" : "#053B90" }]}>
+                Didn't get it? <Text style={{ fontWeight: "bold" }}>Send Again</Text>
               </Text>
             </TouchableOpacity>
-
-            <View style={styles.footerTextContainer}>
-              <Text style={styles.footerText}>
-                Don’t have an account?{" "}
-                <Text
-                  style={styles.signUpText}
-                  onPress={() => navigation.navigate("Register")}
-                >
-                  Sign Up
-                </Text>
-              </Text>
-            </View>
           </Animated.View>
         </View>
       </ScrollView>
@@ -489,40 +325,20 @@ const RegisterOtpVerify = ({ route }) => {
 };
 
 const inputWidthPercentage = "90%";
-
 const styles = StyleSheet.create({
-  flex1: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#053B90",
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-    justifyContent: "space-between",
-  },
+  flex1: { flex: 1 },
+  container: { flex: 1, backgroundColor: "#053B90" },
+  scrollViewContent: { flexGrow: 1, justifyContent: "space-between" },
   topSection: {
     flex: 0.6,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#053B90",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
     paddingTop: 20,
     paddingBottom: 10,
   },
-  logo: {
-    width: 100,
-    height: 100,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 30,
-    fontWeight: "700",
-    textAlign: "center",
-    letterSpacing: 1,
-  },
+  logo: { width: 100, height: 100 },
+  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "700", textAlign: "center", letterSpacing: 1 },
   bottomSection: {
     flex: 1.4,
     backgroundColor: "#C7E3EF",
@@ -531,25 +347,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: "center",
   },
-  enterOtpText: {
-    fontSize: 20,
-    color: "#000000",
-    fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  instructionText: {
-    fontSize: 14,
-    color: "#455A64",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  otpInputContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: inputWidthPercentage,
-    marginBottom: 30,
-  },
+  enterOtpText: { fontSize: 20, color: "#000000", fontWeight: "bold", marginBottom: 10 },
+  instructionText: { fontSize: 14, color: "#455A64", textAlign: "center", marginBottom: 20 },
+  otpInputContainer: { flexDirection: "row", justifyContent: "space-between", width: inputWidthPercentage, marginBottom: 30 },
   otpInput: {
     width: 45,
     height: 50,
@@ -562,11 +362,7 @@ const styles = StyleSheet.create({
     color: "#053B90",
     marginHorizontal: 2,
   },
-  timerText: {
-    fontSize: 16,
-    color: "#053B90",
-    marginBottom: 40,
-  },
+  timerText: { fontSize: 16, color: "#053B90", marginBottom: 40 },
   verifyButton: {
     backgroundColor: "#FFFFFF",
     borderRadius: 120,
@@ -574,31 +370,10 @@ const styles = StyleSheet.create({
     width: "70%",
     alignItems: "center",
     marginBottom: 25,
-    justifyContent: "center",
   },
-  verifyButtonText: {
-    color: "#1A237E",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  resendButton: {
-    marginTop: 10,
-  },
-  resendButtonText: {
-    fontSize: 14,
-  },
-  footerTextContainer: {
-    marginTop: 30,
-  },
-  footerText: {
-    fontSize: 14,
-    color: "#455A64",
-  },
-  signUpText: {
-    color: "#00000",
-    fontWeight: "bold",
-  },
+  verifyButtonText: { color: "#1A237E", fontSize: 16, fontWeight: "600" },
+  resendButton: { marginTop: 10 },
+  resendButtonText: { fontSize: 14 },
   toastContainer: {
     position: "absolute",
     top: 40,
@@ -611,20 +386,9 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     alignItems: "center",
   },
-  toastContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  toastText: {
-    color: "#053B90",
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 10,
-  },
-  toastImage: {
-    width: 30,
-    height: 30,
-  },
+  toastContent: { flexDirection: "row", alignItems: "center" },
+  toastText: { color: "#053B90", fontSize: 14, fontWeight: "600", marginLeft: 10 },
+  toastImage: { width: 30, height: 30 },
 });
 
 export default RegisterOtpVerify;
