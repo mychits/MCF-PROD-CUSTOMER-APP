@@ -299,7 +299,7 @@ const AuctionRecordsView = ({
 
       {/* --- ADDED BEAUTIFUL BOX AROUND GROUP NAME AND VALUE --- */}
       <View style={styles.groupHeaderBox}>
-        <Text style={styles.headerGroupName}>{selectedGroupName}</Text>
+        <Text style={styles.headerGroupName}> {selectedGroupName}</Text>
         {selectedGroupValue && (
           <Text style={styles.headerGroupValue}>
             ₹ {formatNumberIndianStyle(selectedGroupValue)}

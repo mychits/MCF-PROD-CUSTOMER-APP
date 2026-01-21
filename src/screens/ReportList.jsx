@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ContextProvider } from "../context/UserProvider";
 import Toast from "react-native-toast-message";
 import axios from "axios";
-import url from "../data/url"; // must export "https://mychits.online/api"
+import url from "../data/url"; 
 
 // --- STYLISTIC COLORS MATCHING MyLoan.jsx, but with Pigme Accent ---
 const Colors = {
