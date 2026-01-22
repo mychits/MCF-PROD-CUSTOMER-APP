@@ -1,399 +1,212 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, Platform, Dimensions, Alert } from 'react-native';
-import { MaterialCommunityIcons, MaterialIcons, Feather } from '@expo/vector-icons';
+import React, { useState, useContext, useEffect } from 'react';
+import { 
+    View, Text, StyleSheet, ScrollView, TouchableOpacity, 
+    StatusBar, Alert, ActivityIndicator, RefreshControl, Dimensions 
+} from 'react-native';
+import { MaterialCommunityIcons, MaterialIcons, Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import axios from 'axios';
 
-// Import the Header component and context
-// import Header from "../components/layouts/Header"; 
+// Import configurations
+import url from "../data/url"; 
 import { ContextProvider } from "../context/UserProvider";
 
-// Get screen width for responsive design
 const { width } = Dimensions.get('window');
-const PRIMARY_BLUE = "#053B90"; // Defined blue color
-const LIGHT_TEXT = "#fff";
+const PRIMARY_BLUE = "#053B90"; 
+const DEEP_NAVY = "#03255a";
+const ACCENT_GOLD = "#FFD700";
 
 const RewardsScreen = ({ navigation }) => {
     const insets = useSafeAreaInsets();
-    const [rewardPoints, setRewardPoints] = useState(1500);
-    const [activeTab, setActiveTab] = useState('redeem'); // 'redeem' or 'history'
-
-    // Get user ID from context
     const [appUser] = useContext(ContextProvider);
-    const userId = appUser.userId || 'GuestUser';
+    
+    const userId = appUser?.userId || 'Guest'; 
 
-    const rewards = [
-        { id: '1', title: 'Unlock a special chits group!', points: 1000, color: '#3182CE' },
-        { id: '2', title: 'Get 5% off your next contribution (Voucher)', points: 2500, color: '#48BB78' },
-        { id: '3', title: 'Join a lucky draw (Gift entry)', points: 500, color: '#D53F8C' },
-        { id: '4', title: 'Gift a friend 100 points', points: 100, color: '#F6AD55' },
-    ];
+    const [rewardData, setRewardData] = useState(null);
+    const [rewardSettings, setRewardSettings] = useState(null); 
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [activeTab, setActiveTab] = useState('earn'); 
 
-    const pointsActivity = [
-        { id: 'a1', description: 'Joined new Chit Group', points: +250, type: 'credit', date: 'Nov 25, 2025' },
-        { id: 'a2', description: 'Redeemed: Gift a friend', points: -100, type: 'debit', date: 'Nov 24, 2025' },
-        { id: 'a3', description: 'Completed first contribution', points: +500, type: 'credit', date: 'Nov 20, 2025' },
-        { id: 'a4', description: 'Daily login bonus', points: +50, type: 'credit', date: 'Nov 19, 2025' },
-        { id: 'a5', description: 'Invited a friend', points: +300, type: 'credit', date: 'Nov 15, 2025' },
-    ];
+    const GET_URL = `${url}/customer-rewards/customer-reward-points/${userId}`;
+    const SETTINGS_URL = `${url}/reward-points/reward-settings`; 
 
-    const handleRedeem = (rewardId, pointsCost, rewardTitle) => {
-        if (rewardPoints >= pointsCost) {
-            // Deduct points
-            setRewardPoints(prevPoints => prevPoints - pointsCost);
-            
-            // Navigate to the details screen for gift/voucher confirmation
-            navigation.navigate('RedemptionDetails', {
-                rewardTitle: rewardTitle,
-                cost: pointsCost,
-                // Conceptual data to pass for the next screen
-                redemptionCode: `VOUCHER-${rewardId}-${Math.floor(Math.random() * 1000)}`,
-                redemptionType: rewardTitle.includes('Voucher') || rewardTitle.includes('off') ? 'Voucher' : 'Gift/Item',
-                userId: userId,
-            });
+    const fetchData = async () => {
+        try {
+            const [pointsRes, settingsRes] = await Promise.all([
+                axios.get(GET_URL),
+                axios.get(SETTINGS_URL)
+            ]);
 
-        } else {
-            Alert.alert('Not Enough Points', 'You do not have enough points to redeem this reward.', [{ text: "OK" }]);
+            if (pointsRes.data.success) setRewardData(pointsRes.data);
+            if (settingsRes.data.success) setRewardSettings(settingsRes.data.settings);
+        } catch (err) {
+            console.error("Fetch Error:", err.message);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
         }
     };
 
-    const renderPointsHistory = () => (
-        <View style={styles.historyContainer}>
-            <Text style={styles.sectionHeader}>Points History</Text>
-            {pointsActivity.map(activity => (
-                <View key={activity.id} style={styles.historyItem}>
-                    <View style={styles.historyIconWrapper}>
-                        <MaterialIcons 
-                            name={activity.type === 'credit' ? 'add-circle-outline' : 'remove-circle-outline'} 
-                            size={20} 
-                            color={activity.type === 'credit' ? '#48BB78' : '#D53F8C'} 
-                        />
-                    </View>
-                    <View style={styles.historyDetails}>
-                        <Text style={styles.historyDescription}>{activity.description}</Text>
-                        <Text style={styles.historyDate}>{activity.date}</Text>
-                    </View>
-                    <Text style={[
-                        styles.historyPoints, 
-                        { color: activity.type === 'credit' ? '#48BB78' : '#D53F8C' }
-                    ]}>
-                        {activity.type === 'credit' ? '+' : ''}{activity.points}
+    useEffect(() => { fetchData(); }, [userId]);
+
+    const renderEarnRules = () => {
+        const rules = [
+            { 
+                id: 1, 
+                name: 'Refer a Friend', 
+                desc: 'Earn points for every new customer you refer.', 
+                pts: rewardSettings?.customer_reward_point || 0, 
+                icon: 'account-multiple-plus', 
+                color: '#10b981' 
+            },
+            { 
+                id: 2, 
+                name: 'Payment Link', 
+                desc: 'Earn points by paying via our secure links.', 
+                pts: rewardSettings?.payment_link_reward_point || 0, 
+                icon: 'link-variant', 
+                color: '#3b82f6' 
+            },
+            { 
+                id: 3, 
+                name: 'Early Auction Pay', 
+                desc: 'Pay before the auction date for bonus points.', 
+                pts: rewardSettings?.auction_pay_reward_point || 0, 
+                icon: 'clock-fast', 
+                color: '#f59e0b' 
+            },
+        ];
+
+        return (
+            <View style={styles.contentSection}>
+                {/* Simple 1-line explanation box */}
+                <View style={styles.infoBox}>
+                    <Text style={styles.infoText}>
+                         Collect points by inviting friends, using payment links, or paying your dues before the auction date!
                     </Text>
                 </View>
-            ))}
-        </View>
-    );
 
-    const renderRedeemRewards = () => (
-        <View style={styles.redeemContainer}>
-            <Text style={styles.sectionHeader}>Available Rewards</Text>
-            {rewards.map(reward => (
-                <View key={reward.id} style={styles.rewardCardNew}>
-                    <LinearGradient
-                        colors={[reward.color, reward.color + 'aa']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.rewardCardContentNew}
-                    >
-                        <View style={styles.rewardDetailsNew}>
-                            <Text style={styles.rewardTitleNew}>{reward.title}</Text>
-                            <Text style={styles.rewardPointsNew}>
-                                <MaterialCommunityIcons name="trophy-award" size={14} color="#fff" /> {reward.points} Points
-                            </Text>
+                <Text style={styles.sectionTitle}>Ways to Earn</Text>
+                {rules.map(item => (
+                    <View key={item.id} style={styles.ruleCard}>
+                        <View style={[styles.rewardIconBadge, { backgroundColor: item.color + '15' }]}>
+                            <MaterialCommunityIcons name={item.icon} size={28} color={item.color} />
                         </View>
-                        <TouchableOpacity 
-                            style={styles.redeemButtonNew}
-                            onPress={() => handleRedeem(reward.id, reward.points, reward.title)}
-                        >
-                            <Text style={styles.redeemButtonTextNew}>Redeem</Text>
-                        </TouchableOpacity>
-                    </LinearGradient>
-                </View>
-            ))}
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.rewardName}>{item.name}</Text>
+                            <Text style={styles.rewardDesc}>{item.desc}</Text>
+                        </View>
+                        <View style={styles.pointsBadge}>
+                            <Text style={[styles.pointsValue, { color: item.color }]}>+{item.pts}</Text>
+                        </View>
+                    </View>
+                ))}
+            </View>
+        );
+    };
+
+    const renderHistory = () => (
+        <View style={styles.contentSection}>
+            <Text style={styles.sectionTitle}>Recent Activity</Text>
+            {rewardData?.reward_breakup?.length > 0 ? (
+                rewardData.reward_breakup.map((log, i) => (
+                    <View key={i} style={styles.historyCard}>
+                        <View style={styles.historyIcon}><MaterialIcons name="receipt-long" size={20} color={PRIMARY_BLUE} /></View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.historyName}>{log.source_type || "Point Redemption"}</Text>
+                            <Text style={styles.historyDate}>Ref: {log.reward_id?.slice(-8).toUpperCase()}</Text>
+                        </View>
+                        <Text style={styles.historyPoints}>-{log.points_used} pts</Text>
+                    </View>
+                ))
+            ) : (
+                <Text style={styles.emptyText}>No redemption history available.</Text>
+            )}
         </View>
     );
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            {/* Set Status Bar style for dark background */}
-            <StatusBar barStyle="light-content" backgroundColor={PRIMARY_BLUE} /> 
-            
-            {/* --- Stylized Header Area --- */}
-            <View style={[styles.customHeader, { paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : insets.top }]}>
-                <View style={styles.profileSection}>
-                    <View style={styles.profileAvatar}>
-                        {/* Icon color changed to white */}
-                        <MaterialCommunityIcons name="account-circle" size={40} color={PRIMARY_BLUE} />
-                    </View>
-                    <View style={styles.profileText}>
-                        {/* Text color changed to white */}
-                        <Text style={styles.profileGreeting}>Welcome, Chit User!</Text>
-                       
-                    </View>
+        <View style={styles.container}>
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+            <LinearGradient colors={[PRIMARY_BLUE, DEEP_NAVY]} style={[styles.heroHeader, { paddingTop: insets.top + 10 }]}>
+                <View style={styles.headerNav}>
+                    <Text style={styles.brandText}>ChitRewards</Text>
+                    <TouchableOpacity style={styles.roundBtn}><Ionicons name="notifications-outline" size={22} color="#fff" /></TouchableOpacity>
                 </View>
-                <View style={styles.headerIcons}>
-                    <TouchableOpacity style={styles.iconButton}>
-                        {/* Icon color changed to white */}
-                        <Feather name="settings" size={24} color={LIGHT_TEXT} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                        {/* Icon color changed to white */}
-                        <Feather name="bell" size={24} color={LIGHT_TEXT} />
-                    </TouchableOpacity>
+                <View style={styles.balanceContainer}>
+                    <Text style={styles.balanceLabel}>Total available points</Text>
+                    {/* Unified Balance Row */}
+                    <View style={styles.balanceRow}>
+                        <Text style={styles.pointsTotal}>{rewardData?.balance_points || 0}</Text>
+                        <MaterialCommunityIcons name="trophy-variant" size={24} color={ACCENT_GOLD} style={{ marginLeft: 10 }} />
+                    </View>
+                    <View style={styles.cashBadge}><Text style={styles.cashText}>Value: ₹{rewardData?.total_redeemed_amount || 0}</Text></View>
+                </View>
+            </LinearGradient>
+
+            <View style={styles.tabWrapper}>
+                <View style={styles.tabBar}>
+                    {['earn', 'history'].map((tab) => (
+                        <TouchableOpacity 
+                            key={tab} 
+                            onPress={() => setActiveTab(tab)}
+                            style={[styles.tabItem, activeTab === tab && styles.activeTabItem]}
+                        >
+                            <Text style={[styles.tabLabel, activeTab === tab && styles.activeTabLabel]}>
+                                {tab === 'earn' ? 'Earn' : 'History'}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={styles.container}>
-                {/* --- Points Card --- */}
-                <View style={styles.pointsCardNew}>
-                    <View>
-                        <Text style={styles.pointsLabelNew}>Total Redeemable Points</Text>
-                        <Text style={styles.pointsTextNew}>{rewardPoints}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.redeemNowButton}>
-                        <Text style={styles.redeemNowButtonText}>Redeem Now</Text>
-                    </TouchableOpacity>
-                </View>
-                {/* ------------------------------------------ */}
-
-                {/* --- Tab Selector --- */}
-                <View style={styles.tabContainer}>
-                    <TouchableOpacity 
-                        style={[styles.tabButton, activeTab === 'redeem' && styles.activeTab]}
-                        onPress={() => setActiveTab('redeem')}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'redeem' && styles.activeTabText]}>
-                            Redeem Rewards
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={[styles.tabButton, activeTab === 'history' && styles.activeTab]}
-                        onPress={() => setActiveTab('history')}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
-                            Points History
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-                {/* ------------------------------------------ */}
-                
-                {activeTab === 'redeem' ? renderRedeemRewards() : renderPointsHistory()}
-
+            <ScrollView 
+                contentContainerStyle={styles.scrollBody}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true); fetchData();}} tintColor={PRIMARY_BLUE} />}
+            >
+                {loading && !refreshing ? (
+                    <ActivityIndicator size="large" color={PRIMARY_BLUE} style={{ marginTop: 40 }} />
+                ) : activeTab === 'earn' ? renderEarnRules() : renderHistory()}
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: PRIMARY_BLUE, // Primary blue background
-    },
-    container: {
-        flexGrow: 1,
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-        backgroundColor: PRIMARY_BLUE, // Primary blue background
-    },
-    // --- Custom Header Styles ---
-    customHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingBottom: 15,
-        backgroundColor: PRIMARY_BLUE, // Primary blue background
-        // Shadow/Elevation removed as the header blends with the main background
-    },
-    profileSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    profileAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: LIGHT_TEXT, // White background for the icon container
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    profileText: {
-        marginLeft: 10,
-    },
-    profileGreeting: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: LIGHT_TEXT, // White text
-    },
-    profileStatus: {
-        fontSize: 12,
-        color: '#e0e0e0', // Light grey text
-    },
-    headerIcons: {
-        flexDirection: 'row',
-    },
-    iconButton: {
-        marginLeft: 15,
-    },
-    // --- Points Card New Styles (Contrast maintained with white) ---
-    pointsCardNew: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: LIGHT_TEXT, // White card for contrast
-        borderRadius: 15,
-        padding: 20,
-        marginTop: 20,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    pointsLabelNew: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
-    },
-    pointsTextNew: {
-        fontSize: 36,
-        fontWeight: '900',
-        color: PRIMARY_BLUE,
-    },
-    redeemNowButton: {
-        backgroundColor: '#FF6347', // Tomato red for attention
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 25,
-    },
-    redeemNowButtonText: {
-        color: LIGHT_TEXT,
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    // --- Tab Styles (Contrast maintained) ---
-    tabContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        backgroundColor: 'rgba(255, 255, 255, 0.2)', // Semi-transparent white for contrast
-        borderRadius: 10,
-        marginBottom: 20,
-        padding: 4,
-    },
-    tabButton: {
-        flex: 1,
-        paddingVertical: 10,
-        alignItems: 'center',
-        borderRadius: 8,
-    },
-    activeTab: {
-        backgroundColor: LIGHT_TEXT, // White active tab
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    tabText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: LIGHT_TEXT, // White inactive text
-    },
-    activeTabText: {
-        color: PRIMARY_BLUE, // Blue active text
-        fontWeight: 'bold',
-    },
-    // --- General Section Header ---
-    sectionHeader: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: LIGHT_TEXT, // White header text
-        marginBottom: 15,
-    },
-    rewardCardNew: {
-        borderRadius: 12,
-        marginBottom: 12,
-        overflow: 'hidden',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-    },
-    rewardCardContentNew: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15,
-    },
-    rewardDetailsNew: {
-        flex: 1,
-    },
-    rewardTitleNew: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: LIGHT_TEXT,
-    },
-    rewardPointsNew: {
-        fontSize: 12,
-        color: LIGHT_TEXT,
-        opacity: 0.9,
-        marginTop: 5,
-    },
-    redeemButtonNew: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        borderRadius: 20,
-        paddingVertical: 6,
-        paddingHorizontal: 15,
-        minWidth: 80,
-        alignItems: 'center',
-    },
-    redeemButtonTextNew: {
-        color: '#333',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    // --- History Styles (for History tab) (Contrast maintained with white) ---
-    historyContainer: {
-        paddingVertical: 10,
-    },
-    historyItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: LIGHT_TEXT, // White item background
-        paddingVertical: 15,
-        paddingHorizontal: 10,
-        borderRadius: 10,
-        marginBottom: 10,
-        borderLeftWidth: 4,
-        borderLeftColor: PRIMARY_BLUE,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    historyIconWrapper: {
-        marginRight: 10,
-    },
-    historyDetails: {
-        flex: 1,
-    },
-    historyDescription: {
-        fontSize: 15,
-        color: '#333',
-        fontWeight: '500',
-    },
-    historyDate: {
-        fontSize: 12,
-        color: '#999',
-        marginTop: 2,
-    },
-    historyPoints: {
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+    container: { flex: 1, backgroundColor: '#F8FAFC' },
+    heroHeader: { paddingHorizontal: 25, paddingBottom: 60, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 },
+    headerNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    brandText: { fontSize: 18, fontWeight: '800', color: '#fff' },
+    roundBtn: { backgroundColor: 'rgba(255,255,255,0.15)', padding: 10, borderRadius: 15 },
+    balanceContainer: { alignItems: 'center', marginTop: 10 },
+    balanceLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: '700' },
+    balanceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    pointsTotal: { fontSize: 60, fontWeight: '900', color: '#fff' },
+    cashBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, marginTop: 5 },
+    cashText: { color: '#fff', fontWeight: '600' },
+    tabWrapper: { alignItems: 'center', marginTop: -30 },
+    tabBar: { flexDirection: 'row', backgroundColor: '#fff', width: '85%', borderRadius: 20, padding: 6, elevation: 12 },
+    tabItem: { flex: 1, paddingVertical: 14, alignItems: 'center', borderRadius: 15 },
+    activeTabItem: { backgroundColor: PRIMARY_BLUE },
+    tabLabel: { fontSize: 14, color: '#64748B', fontWeight: '700' },
+    activeTabLabel: { color: '#fff' },
+    scrollBody: { padding: 25, paddingTop: 40 },
+    infoBox: { backgroundColor: '#E0E7FF', padding: 12, borderRadius: 12, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: PRIMARY_BLUE },
+    infoText: { color: '#3730A3', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    sectionTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 20 },
+    ruleCard: { flexDirection: 'row', backgroundColor: '#fff', padding: 18, borderRadius: 24, marginBottom: 15, alignItems: 'center', elevation: 2 },
+    rewardIconBadge: { padding: 12, borderRadius: 18, marginRight: 15 },
+    rewardName: { fontSize: 16, fontWeight: '700', color: '#334155' },
+    rewardDesc: { fontSize: 12, color: '#64748B', marginTop: 4 },
+    pointsBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, marginLeft: 10 },
+    pointsValue: { fontWeight: '800', fontSize: 14 },
+    historyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 18, borderRadius: 20, marginBottom: 12, borderLeftWidth: 5, borderLeftColor: PRIMARY_BLUE },
+    historyIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    historyName: { fontSize: 15, fontWeight: '700', color: '#334155' },
+    historyPoints: { color: '#EF4444', fontWeight: '800' },
+    emptyText: { textAlign: 'center', color: '#94A3B8', marginTop: 50 }
 });
 
 export default RewardsScreen;

@@ -19,7 +19,8 @@ import {
     Animated,
     PanResponder,
 } from 'react-native';
-import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
 import url from '../data/url';
@@ -46,6 +47,18 @@ const Home = ({ route, navigation }) => {
     const { isConnected, isInternetReachable } = useContext(NetworkContext);
     const [isHelpModalVisible, setHelpModalVisible] = useState(false);
     const [isSideMenuVisible, setSideMenuVisible] = useState(false);
+    const openLink = async (url) => {
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+            } else {
+                Alert.alert("Error", "Don't know how to open this URL: " + url);
+            }
+        } catch (error) {
+            console.error("An error occurred", error);
+        }
+    };
 
     // Animation and PanResponder setup
     const slideAnim = useRef(new Animated.Value(-screenWidth)).current;
@@ -1057,6 +1070,42 @@ const Home = ({ route, navigation }) => {
                             </Text>
                         </TouchableOpacity>
 
+                        {/* Social Media Section */}
+                        <View style={styles.socialMediaContainer}>
+                            <TouchableOpacity onPress={() => openLink('https://www.facebook.com/MyChits')} style={styles.socialIcon} activeOpacity={0.7}>
+                                <LinearGradient
+                                    colors={['#3b5998', '#4267B2']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.gradientIcon}
+                                >
+                                    <FontAwesome name="facebook" size={20} color="#fff" />
+                                </LinearGradient>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={() => openLink('https://www.instagram.com/my_chits/')} style={styles.socialIcon} activeOpacity={0.7}>
+                                <LinearGradient
+                                    colors={['#833AB4', '#C13584', '#FD1D1D', '#F56040', '#FFDC80']}
+                                    start={{ x: 0.0, y: 1.0 }}
+                                    end={{ x: 1.0, y: 0.0 }}
+                                    style={styles.gradientIcon}
+                                >
+                                    <FontAwesome name="instagram" size={20} color="#fff" />
+                                </LinearGradient>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={handleWhatsAppPress} style={styles.socialIcon} activeOpacity={0.7}>
+                                <LinearGradient
+                                    colors={['#25D366', '#128C7E']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.gradientIcon}
+                                >
+                                    <FontAwesome name="whatsapp" size={20} color="#fff" />
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+
                         <View style={styles.madeWithLoveContainer}>
                             <Text style={styles.appInfoMadeWithLove}>
                                 Made with <Text style={{ color: '#E53935' }}>❤️</Text> in India
@@ -1366,6 +1415,27 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         marginLeft: 8, // Small gap between logo and text
+    },
+    socialMediaContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginVertical: 15,
+    },
+    socialIcon: {
+        marginHorizontal: 10,
+    },
+    gradientIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
     modalMenuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#f5f5f5', backgroundColor: 'transparent' },
     modalMenuItemLeft: { flexDirection: 'row', alignItems: 'center' },
