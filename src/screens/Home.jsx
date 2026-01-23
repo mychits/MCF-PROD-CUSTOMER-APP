@@ -986,11 +986,12 @@ const Home = ({ route, navigation }) => {
                         </TouchableOpacity>
                     </View>
                     <View style={styles.benefitsSection}>
-                        <Text style={styles.benefitsTitle}>Why Choose MyChits?</Text>
+                        <Text style={Platform.OS === "android" ? styles.benefitsTitle : styles.benefitsTitleText}>Why Choose MyChits?</Text>
                         <View style={styles.benefitItem}>
                             <View style={[styles.benefitIconCircle, { backgroundColor: '#FFEDEE' }]}>
                                 <MaterialIcons name="touch-app" size={28} color="#D32F2F" />
                             </View>
+
                             <View style={styles.benefitTextContent}>
                                 <Text style={styles.benefitHeading}>Easy Accessibility</Text>
                                 <Text style={styles.benefitDescription}>
@@ -1288,6 +1289,11 @@ const Home = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#053B90' },
     header: { flexDirection: 'row', alignItems: 'center', paddingBottom: 10, paddingHorizontal: 15, justifyContent: 'space-between', backgroundColor: '#053B90' },
+
+
+
+
+    
     headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginLeft: 10, marginTop: 10 },
     hamburgerIconContainer: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: 10, marginLeft: 7 },
     hamburgerLine: { width: 23, height: 2, backgroundColor: '#fff', borderRadius: 2, marginVertical: 3 },
@@ -1666,6 +1672,17 @@ const styles = StyleSheet.create({
         overflow: 'visible'
     },
     benefitsTitle: { position: 'absolute', top: -20, left: '60%', transform: [{ translateX: -150 }], backgroundColor: '#053B90', width: 300, height: 55, borderRadius: 30, textAlign: 'center', textAlignVertical: 'center', color: 'white', fontWeight: '900', fontSize: 16, lineHeight: 22, textTransform: 'uppercase', letterSpacing: 1.5, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 12, zIndex: 10, borderWidth: 2, borderColor: '#F8F9FA' },
+
+    benefitsTitleText: {
+        backgroundColor: "#053B90",
+        color: '#fff',
+        fontWeight: '900',
+        fontSize: 16,
+        textTransform: 'uppercase',
+        letterSpacing: 1.5,
+        padding: 10,
+        borderRadius: 10
+    },
     benefitItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, padding: 12, backgroundColor: '#F8F9FA', borderRadius: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 6, borderWidth: 1, borderColor: '#EFEFEF' },
     benefitIconCircle: { width: 45, height: 45, borderRadius: 32.5, justifyContent: 'center', alignItems: 'center', marginRight: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 3 },
     benefitTextContent: { flex: 1 },

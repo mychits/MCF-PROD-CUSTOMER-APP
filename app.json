@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "cusapp",
-    "slug": "cusapp",
+    "name": "MyChits",
+    "slug": "MyChits",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gagansk.cusapp"
+      "bundleIdentifier": "customer.mychits.co.in"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +24,7 @@
       "android": {
         "buildType": "apk"
       },
-      "package": "com.gagansk.cusapp"
+      "package": "customer.mychits.co.in"
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Animated,
   Easing,
+  Platform
 } from "react-native";
 import { Ionicons, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
@@ -104,7 +105,7 @@ const Header = ({ userId, navigation }) => {
                   <Ionicons name="arrow-back" size={28} color="#fff" />
                 </TouchableOpacity>
               )}
-              
+
               <TouchableOpacity
                 activeOpacity={1}
                 style={[
@@ -117,10 +118,10 @@ const Header = ({ userId, navigation }) => {
                   style={styles.profileImage}
                   resizeMode="cover"
                 />
-                <View style={{ flexShrink: 1 }}> 
-                  <Text 
-                    style={styles.profileName} 
-                    numberOfLines={1} 
+                <View style={{ flexShrink: 1 }}>
+                  <Text
+                    style={styles.profileName}
+                    numberOfLines={1}
                     ellipsizeMode="tail"
                   >
                     {getShortenedName(userData.full_name)}
