@@ -46,9 +46,16 @@ const CONTACT_EMAIL = 'info.mychits@gmail.com';
 const CONTACT_PHONE = '+919483900777';
 
 const ReportList = ({ route, navigation }) => {
+  console.log("🚀 ReportList Component Initialized");
+  console.log("📍 Route params:", route?.params);
+  console.log("🧭 Navigation object:", navigation ? "Available" : "Not Available");
+  
   const insets = useSafeAreaInsets();
   const [appUser] = useContext(ContextProvider);
   const userId = appUser?.userId;
+
+  console.log("👤 User Context - appUser:", appUser);
+  console.log("🆔 User ID:", userId);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,96 +73,189 @@ const ReportList = ({ route, navigation }) => {
 
   // Helper functions to handle linking
   const handleEmailPress = () => {
+    console.log("📧 Email link pressed - Opening:", CONTACT_EMAIL);
     Linking.openURL(`mailto:${CONTACT_EMAIL}`);
   };
 
   const handlePhonePress = () => {
+    console.log("📞 Phone link pressed - Calling:", CONTACT_PHONE);
     Linking.openURL(`tel:${CONTACT_PHONE}`);
   };
 
   // ✅ 1. Fetch Pigme accounts list
   useEffect(() => {
-    if (!userId) return;
+    console.log("🔄 [Effect 1] Fetch Pigme Accounts triggered");
+    console.log("🔍 [Effect 1] Current userId:", userId);
+    
+    if (!userId) {
+      console.log("⚠️ [Effect 1] No userId found, skipping fetch");
+      return;
+    }
+    
     const fetchPigme = async () => {
+      console.log("🌐 [Fetch Pigme] Starting API call...");
       setIsLoading(true);
+      
       try {
         const apiUrl = `${url}/pigme/get-pigme-customer-by-user-id/${userId}`;
+        console.log("🔗 [Fetch Pigme] API URL:", apiUrl);
+        
         const response = await axios.get(apiUrl);
+        console.log("✅ [Fetch Pigme] Response received:", response.data);
+        console.log("📊 [Fetch Pigme] Response status:", response.status);
+        console.log("📦 [Fetch Pigme] Raw data:", JSON.stringify(response.data, null, 2));
+        
         // Normalize the structure
         const accounts = (response.data || []).map(item => ({
             ...item,
             _id: item._id || item.pigme?._id,
             pigme_id: item.pigme_id || item.pigme?.pigme_id,
         }));
+        
+        console.log("🔄 [Fetch Pigme] Normalized accounts:", accounts);
+        console.log("📈 [Fetch Pigme] Total accounts found:", accounts.length);
+        
         setPigmeAccounts(accounts);
+        console.log("✅ [Fetch Pigme] State updated with accounts");
+        
       } catch (err) {
-        console.error("❌ Failed to fetch Pigme list:", err.message);
+        console.error("❌ [Fetch Pigme] Error occurred:", err);
+        console.error("❌ [Fetch Pigme] Error message:", err.message);
+        console.error("❌ [Fetch Pigme] Error response:", err.response?.data);
+        console.error("❌ [Fetch Pigme] Error status:", err.response?.status);
+        
         setError("Failed to fetch Pigme data.");
         Toast.show({ type: "error", text1: "Error", text2: "Could not load Pigme accounts." });
       } finally {
+        console.log("🏁 [Fetch Pigme] Request completed, setting isLoading to false");
         setIsLoading(false);
       }
     };
+    
     fetchPigme();
   }, [userId]);
 
   // ✅ 2. Fetch Pigme summary and payments
   useEffect(() => {
-    if (!userId || !selectedPigme) return;
+    console.log("🔄 [Effect 2] Fetch Pigme Summary & Payments triggered");
+    console.log("🔍 [Effect 2] Current userId:", userId);
+    console.log("🔍 [Effect 2] Selected Pigme:", selectedPigme);
+    console.log("🔍 [Effect 2] Current Page:", currentPage);
+    
+    if (!userId || !selectedPigme) {
+      console.log("⚠️ [Effect 2] Missing userId or selectedPigme, skipping fetch");
+      return;
+    }
+    
     const fetchData = async () => {
+      console.log("🌐 [Fetch Summary] Starting API calls...");
       setIsDataLoading(true);
-      const pigmeId = selectedPigme._id; 
+      
+      const pigmeId = selectedPigme._id;
+      console.log("🆔 [Fetch Summary] Using Pigme ID:", pigmeId);
+      
       try {
         const summaryApiUrl = `${url}/payment/user/${userId}/pigme/${pigmeId}/summary`;
         const paymentsApiUrl = `${url}/payment/pigme/${pigmeId}/user/${userId}/total-docs/${DOCS_PER_PAGE}/page/${currentPage}`;
+
+        console.log("🔗 [Fetch Summary] Summary API URL:", summaryApiUrl);
+        console.log("🔗 [Fetch Summary] Payments API URL:", paymentsApiUrl);
 
         const [summaryResponse, paymentsResponse] = await Promise.all([
           axios.get(summaryApiUrl),
           axios.get(paymentsApiUrl),
         ]);
 
+        console.log("✅ [Fetch Summary] Summary response:", summaryResponse.data);
+        console.log("✅ [Fetch Summary] Payments response:", paymentsResponse.data);
+        console.log("📊 [Fetch Summary] Summary status:", summaryResponse.status);
+        console.log("📊 [Fetch Summary] Payments status:", paymentsResponse.status);
+
         const summary = Array.isArray(summaryResponse.data) ? summaryResponse.data[0] : summaryResponse.data;
+        console.log("🔄 [Fetch Summary] Processed summary:", summary);
         setPaymentsSummary(summary);
 
         const payments = paymentsResponse.data || [];
+        console.log("🔄 [Fetch Summary] Processed payments:", payments);
+        console.log("📈 [Fetch Summary] Total payments on this page:", payments.length);
         setTotalPayments(payments);
 
         if (payments.length > 0) {
           const sorted = [...payments].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          console.log("🔄 [Fetch Summary] Sorted payments by date");
+          console.log("📌 [Fetch Summary] Latest payment:", sorted[0]);
           setLatestPayment(sorted[0]);
         } else {
+          console.log("⚠️ [Fetch Summary] No payments found");
           setLatestPayment(null);
         }
+        
+        console.log("✅ [Fetch Summary] All states updated successfully");
+        
       } catch (err) {
-        console.error("❌ Failed to fetch Pigme payment data:", err.message);
+        console.error("❌ [Fetch Summary] Error occurred:", err);
+        console.error("❌ [Fetch Summary] Error message:", err.message);
+        console.error("❌ [Fetch Summary] Error response:", err.response?.data);
+        console.error("❌ [Fetch Summary] Error status:", err.response?.status);
+        
         Toast.show({ type: "error", text1: "Error", text2: "Failed to load Pigme payment history." });
       } finally {
+        console.log("🏁 [Fetch Summary] Request completed, setting isDataLoading to false");
         setIsDataLoading(false);
       }
     };
+    
     fetchData();
   }, [userId, selectedPigme, currentPage]);
 
   // ✅ 3. Fetch total pages
   useEffect(() => {
-    if (!userId || !selectedPigme) return;
+    console.log("🔄 [Effect 3] Fetch Total Pages triggered");
+    console.log("🔍 [Effect 3] Current userId:", userId);
+    console.log("🔍 [Effect 3] Selected Pigme:", selectedPigme);
+    
+    if (!userId || !selectedPigme) {
+      console.log("⚠️ [Effect 3] Missing userId or selectedPigme, skipping fetch");
+      return;
+    }
+    
     const fetchTotalPages = async () => {
-      const pigmeId = selectedPigme._id; 
+      console.log("🌐 [Fetch Pages] Starting API call...");
+      const pigmeId = selectedPigme._id;
+      console.log("🆔 [Fetch Pages] Using Pigme ID:", pigmeId);
+      
       try {
         const apiUrl = `${url}/payment/pigme/totalPages/user/${userId}/pigme/${pigmeId}/total-docs/${DOCS_PER_PAGE}`;
+        console.log("🔗 [Fetch Pages] API URL:", apiUrl);
+        
         const res = await axios.get(apiUrl);
+        console.log("✅ [Fetch Pages] Response received:", res.data);
+        console.log("📊 [Fetch Pages] Response status:", res.status);
+        console.log("📄 [Fetch Pages] Total pages:", res.data.totalPages);
+        
         setTotalPages(res.data.totalPages || 0);
+        console.log("✅ [Fetch Pages] State updated with total pages");
+        
       } catch (err) {
-        console.error("❌ Failed to fetch total pages:", err.message);
+        console.error("❌ [Fetch Pages] Error occurred:", err);
+        console.error("❌ [Fetch Pages] Error message:", err.message);
+        console.error("❌ [Fetch Pages] Error response:", err.response?.data);
+        console.error("❌ [Fetch Pages] Error status:", err.response?.status);
       }
     };
+    
     fetchTotalPages();
   }, [userId, selectedPigme]);
 
   // ✅ Format number in Indian style (UNTOUCHED)
   const formatNumberIndianStyle = (num) => {
-    if (num === null || num === undefined) return "0.00";
+    console.log("💰 [Format Number] Input:", num);
+    if (num === null || num === undefined) {
+      console.log("⚠️ [Format Number] Null/undefined input, returning 0.00");
+      return "0.00";
+    }
     const safeNum = isNaN(parseFloat(num)) ? 0 : parseFloat(num);
+    console.log("🔢 [Format Number] Parsed number:", safeNum);
     const number = safeNum.toFixed(2);
     const parts = number.toString().split(".");
     let integerPart = parts[0];
@@ -168,14 +268,24 @@ const ReportList = ({ route, navigation }) => {
       otherNumbers !== ""
         ? otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree
         : lastThree;
-    return (isNegative ? "-" : "") + formatted + decimalPart;
+    const result = (isNegative ? "-" : "") + formatted + decimalPart;
+    console.log("✅ [Format Number] Formatted result:", result);
+    return result;
   };
 
   const getPaginationNumbers = () => {
+    console.log("📄 [Pagination] Calculating pagination numbers");
+    console.log("📄 [Pagination] Current page:", currentPage);
+    console.log("📄 [Pagination] Total pages:", totalPages);
+    
     const pages = [];
     const limit = 3;
     const start = Math.max(1, currentPage - Math.floor(limit / 2));
     const end = Math.min(totalPages, start + limit - 1);
+    
+    console.log("📄 [Pagination] Start page:", start);
+    console.log("📄 [Pagination] End page:", end);
+    
     if (start > 1) {
       pages.push(1);
       if (start > 2) pages.push("...");
@@ -185,178 +295,222 @@ const ReportList = ({ route, navigation }) => {
       if (end < totalPages - 1) pages.push("...");
       pages.push(totalPages);
     }
-    return pages.filter((v, i, a) => a.indexOf(v) === i);
+    
+    const result = pages.filter((v, i, a) => a.indexOf(v) === i);
+    console.log("✅ [Pagination] Generated pages:", result);
+    return result;
   };
   
   // Renders a single Pigme account card (STYLED LIKE MyLoan CARD)
-  const renderPigmeAccountCard = (pigme) => (
-    <View
-      key={pigme._id}
-      style={styles.loanCard} // Using the new, stylish card base
-    >
-        {/* Loan Card Header Bar */}
-        <View style={[styles.loanCardHeaderBar, { backgroundColor: Colors.softPigmeAccent }]}>
-            <Ionicons name="save-outline" size={24} color={Colors.accentColor} style={{ marginRight: 10 }} />
-            <View style={styles.cardTitleContainer}>
-              <Text style={styles.cardTitle}>Pigmy Account</Text>
-              <Text style={styles.cardSubtitle}>ID: {pigme.pigme_id || "N/A"}</Text>
-            </View>
-        </View>
-        
-        {/* Vertical Details List */}
-        <View style={styles.detailsList}>
-            {/* Account ID Row */}
-            <View style={styles.detailItemVertical}>
-                <Ionicons name="finger-print-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
-                <Text style={styles.detailLabelVertical}>Account ID</Text>
-                <Text style={styles.detailValueVertical}>
-                  {pigme.pigme_id || "N/A"}
-                </Text>
-            </View>
-           
-            <View style={styles.detailItemVertical}>
-                <Ionicons name="checkmark-circle-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
-                <Text style={styles.detailLabelVertical}>Status</Text>
-                <Text style={styles.detailValueVertical}>
-                    Active
-                </Text>
-            </View>
-        </View>
-        
-        <TouchableOpacity
-          style={[styles.viewPaymentsButton, { backgroundColor: Colors.accentColor }]}
-          onPress={() => {
-            setSelectedPigme(pigme);
-            setCurrentPage(1);
-          }}
-        >
-          <Text style={styles.viewPaymentsButtonText}>View Deposits & Summary</Text>
-        </TouchableOpacity>
-    </View>
-  );
+  const renderPigmeAccountCard = (pigme) => {
+    console.log("🎨 [Render Card] Rendering Pigme account card");
+    console.log("🎨 [Render Card] Pigme data:", pigme);
+    
+    return (
+      <View
+        key={pigme._id}
+        style={styles.loanCard}
+      >
+          {/* Loan Card Header Bar */}
+          <View style={[styles.loanCardHeaderBar, { backgroundColor: Colors.softPigmeAccent }]}>
+              <Ionicons name="save-outline" size={24} color={Colors.accentColor} style={{ marginRight: 10 }} />
+              <View style={styles.cardTitleContainer}>
+                <Text style={styles.cardTitle}>Pigmy Account</Text>
+                <Text style={styles.cardSubtitle}>ID: {pigme.pigme_id || "N/A"}</Text>
+              </View>
+          </View>
+          
+          {/* Vertical Details List */}
+          <View style={styles.detailsList}>
+              {/* Account ID Row */}
+              <View style={styles.detailItemVertical}>
+                  <Ionicons name="finger-print-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
+                  <Text style={styles.detailLabelVertical}>Account ID</Text>
+                  <Text style={styles.detailValueVertical}>
+                    {pigme.pigme_id || "N/A"}
+                  </Text>
+              </View>
+             
+              <View style={styles.detailItemVertical}>
+                  <Ionicons name="checkmark-circle-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon}/>
+                  <Text style={styles.detailLabelVertical}>Status</Text>
+                  <Text style={styles.detailValueVertical}>
+                      Active
+                  </Text>
+              </View>
+          </View>
+          
+          <TouchableOpacity
+            style={[styles.viewPaymentsButton, { backgroundColor: Colors.accentColor }]}
+            onPress={() => {
+              console.log("👆 [Button Press] View Deposits button pressed");
+              console.log("👆 [Button Press] Selected Pigme:", pigme);
+              setSelectedPigme(pigme);
+              setCurrentPage(1);
+              console.log("✅ [Button Press] State updated - selectedPigme and currentPage reset");
+            }}
+          >
+            <Text style={styles.viewPaymentsButtonText}>View Deposits & Summary</Text>
+          </TouchableOpacity>
+      </View>
+    );
+  };
 
   // Renders the summary details view (STYLED LIKE MyLoan Summary Card)
-  const renderPigmeDetails = () => (
-    <>
-      {/* UPDATED TOTAL SAVINGS SUMMARY CARD */}
-      <View style={[styles.loanCard, styles.summaryCard, { borderColor: Colors.accentColor }]}>
-        <View style={styles.cardHeader}>
-          <View style={[styles.iconContainer, { backgroundColor: Colors.accentColor }]}>
-            <Ionicons name="trending-up-outline" size={28} color={Colors.cardBackground} />
-          </View>
-          <View style={styles.cardTitleContainer}>
-            <Text style={styles.cardTitle}>Total Savings</Text>
-          </View>
-        </View>
-        <Text style={[styles.detailValue, styles.summaryValue, { color: Colors.accentColor }]}>
-          ₹ {formatNumberIndianStyle(currentSavings)}
-        </Text>
-      </View>
-      {/* END UPDATED TOTAL SAVINGS SUMMARY CARD */}
-
-      {/* Payment History */}
-      <View>
-        <Text style={styles.paymentHistoryTitle}>Deposit History</Text>
-        {totalPayments.length > 0 ? (
-          totalPayments.map((pay) => (
-            <View key={pay._id} style={styles.paymentCard}>
-              <Ionicons name="wallet-outline" size={22} color={Colors.accentColor} />
-              <View style={styles.paymentDetailsRow}>
-                <View style={{ flex: 2 }}>
-                  <Text style={styles.receiptText} numberOfLines={1}>Receipt: {pay.receipt_no}</Text>
-                  <Text style={styles.dateText}>{new Date(pay.pay_date).toLocaleDateString()}</Text>
-                </View>
-                <View style={{ flex: 1, alignItems: "flex-end" }}>
-                  <Text style={[styles.amountText, { color: Colors.accentColor }]}>₹ {formatNumberIndianStyle(pay.amount)}</Text>
-                </View>
-              </View>
+  const renderPigmeDetails = () => {
+    console.log("🎨 [Render Details] Rendering Pigme details view");
+    console.log("🎨 [Render Details] Current savings:", currentSavings);
+    console.log("🎨 [Render Details] Total payments:", totalPayments.length);
+    console.log("🎨 [Render Details] Total pages:", totalPages);
+    
+    return (
+      <>
+        {/* UPDATED TOTAL SAVINGS SUMMARY CARD */}
+        <View style={[styles.loanCard, styles.summaryCard, { borderColor: Colors.accentColor }]}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.iconContainer, { backgroundColor: Colors.accentColor }]}>
+              <Ionicons name="trending-up-outline" size={28} color={Colors.cardBackground} />
             </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>No deposits found for this Pigmy account.</Text>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <View style={styles.paginationContainer}>
-            <TouchableOpacity
-              disabled={currentPage === 1}
-              onPress={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              style={styles.paginationArrowButton}
-            >
-              <Ionicons name="chevron-back" size={24} color={currentPage === 1 ? Colors.mediumText : Colors.darkText} />
-            </TouchableOpacity>
-
-            {getPaginationNumbers().map((pageNumber, index) =>
-              pageNumber === "..." ? (
-                <Text key={`ellipsis-${index}`} style={styles.paginationEllipsis}>...</Text>
-              ) : (
-                <TouchableOpacity
-                  key={pageNumber}
-                  style={[ styles.paginationBox, currentPage === pageNumber && styles.paginationBoxActive, ]}
-                  onPress={() => setCurrentPage(pageNumber)}
-                >
-                  <Text
-                    style={[ styles.paginationBoxText, currentPage === pageNumber && styles.paginationBoxTextActive, ]}
-                  >
-                    {pageNumber}
-                  </Text>
-                </TouchableOpacity>
-              )
-            )}
-
-            <TouchableOpacity
-              disabled={currentPage === totalPages}
-              onPress={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              style={styles.paginationArrowButton}
-            >
-              <Ionicons name="chevron-forward" size={24} color={currentPage === totalPages ? Colors.mediumText : Colors.darkText} />
-            </TouchableOpacity>
+            <View style={styles.cardTitleContainer}>
+              <Text style={styles.cardTitle}>Total Savings</Text>
+            </View>
           </View>
-        )}
-      </View>
-    </>
-  );
+          <Text style={[styles.detailValue, styles.summaryValue, { color: Colors.accentColor }]}>
+            ₹ {formatNumberIndianStyle(currentSavings)}
+          </Text>
+        </View>
+        {/* END UPDATED TOTAL SAVINGS SUMMARY CARD */}
+
+        {/* Payment History */}
+        <View>
+          <Text style={styles.paymentHistoryTitle}>Deposit History</Text>
+          {totalPayments.length > 0 ? (
+            totalPayments.map((pay, index) => {
+              console.log(`🎨 [Render Payment ${index}] Receipt:`, pay.receipt_no);
+              return (
+                <View key={pay._id} style={styles.paymentCard}>
+                  <Ionicons name="wallet-outline" size={22} color={Colors.accentColor} />
+                  <View style={styles.paymentDetailsRow}>
+                    <View style={{ flex: 2 }}>
+                      <Text style={styles.receiptText} numberOfLines={1}>Receipt: {pay.receipt_no}</Text>
+                      <Text style={styles.dateText}>{new Date(pay.pay_date).toLocaleDateString()}</Text>
+                    </View>
+                    <View style={{ flex: 1, alignItems: "flex-end" }}>
+                      <Text style={[styles.amountText, { color: Colors.accentColor }]}>₹ {formatNumberIndianStyle(pay.amount)}</Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>No deposits found for this Pigmy account.</Text>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <View style={styles.paginationContainer}>
+              <TouchableOpacity
+                disabled={currentPage === 1}
+                onPress={() => {
+                  console.log("◀️ [Pagination] Previous button pressed");
+                  const newPage = Math.max(1, currentPage - 1);
+                  console.log("◀️ [Pagination] Moving to page:", newPage);
+                  setCurrentPage(newPage);
+                }}
+                style={styles.paginationArrowButton}
+              >
+                <Ionicons name="chevron-back" size={24} color={currentPage === 1 ? Colors.mediumText : Colors.darkText} />
+              </TouchableOpacity>
+
+              {getPaginationNumbers().map((pageNumber, index) =>
+                pageNumber === "..." ? (
+                  <Text key={`ellipsis-${index}`} style={styles.paginationEllipsis}>...</Text>
+                ) : (
+                  <TouchableOpacity
+                    key={pageNumber}
+                    style={[ styles.paginationBox, currentPage === pageNumber && styles.paginationBoxActive, ]}
+                    onPress={() => {
+                      console.log("🔢 [Pagination] Page button pressed:", pageNumber);
+                      setCurrentPage(pageNumber);
+                    }}
+                  >
+                    <Text
+                      style={[ styles.paginationBoxText, currentPage === pageNumber && styles.paginationBoxTextActive, ]}
+                    >
+                      {pageNumber}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
+
+              <TouchableOpacity
+                disabled={currentPage === totalPages}
+                onPress={() => {
+                  console.log("▶️ [Pagination] Next button pressed");
+                  const newPage = Math.min(totalPages, currentPage + 1);
+                  console.log("▶️ [Pagination] Moving to page:", newPage);
+                  setCurrentPage(newPage);
+                }}
+                style={styles.paginationArrowButton}
+              >
+                <Ionicons name="chevron-forward" size={24} color={currentPage === totalPages ? Colors.mediumText : Colors.darkText} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </>
+    );
+  };
   
   // Renders the no Pigme account section (STYLED LIKE MyLoan NO LOAN SECTION)
-  const renderNoPigmeFound = () => (
-    <View style={[styles.noLoanContainer, {backgroundColor: Colors.accentColor, shadowColor: Colors.accentColor}]}>
-        <View style={[styles.noLoanHeader, {backgroundColor: Colors.accentColor, borderBottomColor: 'rgba(255, 255, 255, 0.2)'}]}>
-      <Ionicons name="wallet-outline" size={60} color={Colors.cardBackground} />
+  const renderNoPigmeFound = () => {
+    console.log("🎨 [Render No Pigme] Rendering 'No Pigme Found' section");
+    
+    return (
+      <View style={[styles.noLoanContainer, {backgroundColor: Colors.accentColor, shadowColor: Colors.accentColor}]}>
+          <View style={[styles.noLoanHeader, {backgroundColor: Colors.accentColor, borderBottomColor: 'rgba(255, 255, 255, 0.2)'}]}>
+        <Ionicons name="wallet-outline" size={60} color={Colors.cardBackground} />
 
-          <Text style={styles.noLoanTitle}>Start Your Savings Journey</Text>
-        </View>
-        
-        <Text style={styles.noLoanMessage}>
-            You currently have no active Pigmy savings accounts. Start saving now and see your money grow.
-        </Text>
+            <Text style={styles.noLoanTitle}>Start Your Savings Journey</Text>
+          </View>
+          
+          <Text style={styles.noLoanMessage}>
+              You currently have no active Pigmy savings accounts. Start saving now and see your money grow.
+          </Text>
 
-        <Text style={[styles.requestLoanSentence, {backgroundColor: Colors.primaryBlue}]}>
-            Request your new Pigmy account by contacting our executive now!
-        </Text>
-        
-        <View style={styles.contactGroup}>
-            <Text style={styles.noLoanSubMessage}>
-                Contact our executive to get started:
-            </Text>
-            
-            <TouchableOpacity onPress={handlePhonePress} style={styles.contactButtonPhone}>
-                <Ionicons name="call-outline" size={20} color={Colors.cardBackground} />
-                <Text style={styles.contactButtonText}>
-                    Request Pigmy: {CONTACT_PHONE}
-                </Text>
-            </TouchableOpacity>
+          <Text style={[styles.requestLoanSentence, {backgroundColor: Colors.primaryBlue}]}>
+              Request your new Pigmy account by contacting our executive now!
+          </Text>
+          
+          <View style={styles.contactGroup}>
+              <Text style={styles.noLoanSubMessage}>
+                  Contact our executive to get started:
+              </Text>
+              
+              <TouchableOpacity onPress={handlePhonePress} style={styles.contactButtonPhone}>
+                  <Ionicons name="call-outline" size={20} color={Colors.cardBackground} />
+                  <Text style={styles.contactButtonText}>
+                      Request Pigmy: {CONTACT_PHONE}
+                  </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleEmailPress} style={[styles.contactButtonEmail, {borderColor: Colors.accentColor}]}>
-                <Ionicons name="mail-outline" size={20} color={Colors.accentColor} />
-                <Text style={styles.contactButtonTextEmail}>
-                    Email: {CONTACT_EMAIL}
-                </Text>
-            </TouchableOpacity>
-        </View>
-    </View>
-  );
+              <TouchableOpacity onPress={handleEmailPress} style={[styles.contactButtonEmail, {borderColor: Colors.accentColor}]}>
+                  <Ionicons name="mail-outline" size={20} color={Colors.accentColor} />
+                  <Text style={styles.contactButtonTextEmail}>
+                      Email: {CONTACT_EMAIL}
+                  </Text>
+              </TouchableOpacity>
+          </View>
+      </View>
+    );
+  };
 
+  console.log("🎨 [Main Render] Component rendering...");
+  console.log("📊 [Main Render] Current state - isLoading:", isLoading);
+  console.log("📊 [Main Render] Current state - error:", error);
+  console.log("📊 [Main Render] Current state - pigmeAccounts count:", pigmeAccounts.length);
+  console.log("📊 [Main Render] Current state - selectedPigme:", selectedPigme ? "Selected" : "None");
+  console.log("📊 [Main Render] Current state - isDataLoading:", isDataLoading);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -371,8 +525,11 @@ const ReportList = ({ route, navigation }) => {
               {selectedPigme && (
                 <TouchableOpacity
                   onPress={() => {
+                    console.log("🔙 [Back Button] Back button pressed");
+                    console.log("🔙 [Back Button] Clearing selectedPigme");
                     setSelectedPigme(null);
                     setCurrentPage(1);
+                    console.log("✅ [Back Button] State reset complete");
                   }}
                   style={styles.backButton}
                 >

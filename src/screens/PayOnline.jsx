@@ -181,6 +181,13 @@ export default function CustomerPaymentLink({ route, navigation }) {
       payment_group_tickets = [`pigme-${selectedItem.pigme_db_id}`];
 
     try {
+      console.log({
+        user_id: customer?._id,
+        amount: Number(amount),
+        payment_group_tickets,
+        admin_type: "68904ce8ef406d77cbc074f3",
+        purpose: `${selectedItem.type.toUpperCase()} Payment`,
+      },"this is payload");
       const response = await axios.post(`${baseUrl}/paymentapi/generate-payment-link`, {
         user_id: customer?._id,
         amount: Number(amount),
@@ -209,6 +216,8 @@ export default function CustomerPaymentLink({ route, navigation }) {
       }
     } catch (err) {
       console.error("Payment API Error:", err);
+      console.log(err,"this is error");
+      console.log(err.response,"this is error response");
       const msg = err.response?.data?.message || "Failed to process payment link.";
       Alert.alert("Error", msg);
     } finally {

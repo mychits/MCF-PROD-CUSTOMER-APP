@@ -46,13 +46,24 @@ const CONTACT_EMAIL = 'info.mychits@gmail.com';
 const CONTACT_PHONE = '+919483900777';
 
 // --- PURPOSE OPTIONS ---
-const PURPOSE_OPTIONS = ["Personal", "Medical", "Education", "Business", "Others"];
+const PURPOSE_OPTIONS = [ "Medical", "Education", "Business", "Others"];
 
 const MyLoan = ({ route, navigation }) => {
-  const { groupFilter } = route.params;
+  console.log("🚀 MyLoan Component Initialized");
+
+  // 1. Log Route Params immediately
+  const { groupFilter } = route.params || {};
+  console.log("📍 [Route Params] Params received:", route.params);
+  console.log("📍 [Route] Group Filter:", groupFilter);
+  
+  // 2. Log User Context
   const [appUser] = useContext(ContextProvider);
   const userId = appUser?.userId;
+  console.log("👤 [Context] User ID:", userId);
+
+  // 3. Log Network Status
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
+  console.log("🌐 [Network] Status:", isConnected ? "Connected" : "Disconnected");
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -80,15 +91,20 @@ const MyLoan = ({ route, navigation }) => {
     phoneNumber: "",
     loanAmount: "", 
     loanPurpose: "",
-    otherPurpose: "", // To store the custom reason if "Others" is selected
+    otherPurpose: "", 
   });
 
   // --- 1. AUTO-FILL USER DATA ---
   useEffect(() => {
+    console.log("🔄 [Effect 1] Fetch Fresh Profile Triggered");
     const fetchFreshProfile = async () => {
-      if (!userId || !url) return;
+      if (!userId || !url) {
+        console.log("⚠️ [Effect 1] Missing userId or url, skipping profile fetch.");
+        return;
+      }
       try {
         const profileUrl = `${url}/user/get-user-by-id/${userId}`;
+        console.log("🔗 [Effect 1] Fetching Profile URL:", profileUrl);
         const response = await axios.get(profileUrl);
         const userData = response.data;
 
@@ -98,9 +114,10 @@ const MyLoan = ({ route, navigation }) => {
             fullName: userData.full_name || prev.fullName,
             phoneNumber: userData.phone_number || prev.phoneNumber,
           }));
+          console.log("✅ [Effect 1] Profile Data Auto-filled successfully.");
         }
       } catch (err) {
-        console.error("Failed to fetch fresh user profile:", err);
+        console.error("❌ [Effect 1] Failed to fetch fresh user profile:", err.message);
       }
     };
 
@@ -109,17 +126,25 @@ const MyLoan = ({ route, navigation }) => {
 
   // --- 2. FETCH LOAN HISTORY ---
   useEffect(() => {
+    console.log("🔄 [Effect 2] Fetch Loan History Triggered");
     if (!userId) return;
+    
     const fetchLoans = async () => {
       setIsLoading(true);
+      console.log("🌐 [Effect 2] Fetching loan list for user...");
       try {
         const apiUrl = `${url}/loans/get-borrower-by-user-id/${userId}`;
+        console.log("🔗 [Effect 2] API URL:", apiUrl);
+        
         const response = await axios.get(apiUrl);
         setLoans(response.data || []); 
+        console.log(`✅ [Effect 2] Successfully fetched ${response.data?.length || 0} loans.`);
       } catch (err) {
+        console.error("❌ [Effect 2] Error fetching loan data:", err.message);
         setError("Failed to fetch loan data.");
         Toast.show({ type: "error", text1: "Error", text2: "Could not load loan data.", position: 'bottom' });
       } finally {
+        console.log("🏁 [Effect 2] Set isLoading to false.");
         setIsLoading(false);
       }
     };
@@ -128,21 +153,36 @@ const MyLoan = ({ route, navigation }) => {
 
   // --- 3. FETCH SPECIFIC LOAN SUMMARY & PAYMENTS ---
   useEffect(() => {
-    if (!userId || !loanId) return;
+    console.log("🔄 [Effect 3] Fetch Loan Details Triggered");
+    console.log("🔍 [Effect 3] Target Loan ID:", loanId);
+    console.log("📄 [Effect 3] Target Page:", currentPage);
+    
+    if (!userId || !loanId) {
+      console.log("⚠️ [Effect 3] Missing userId or loanId, skipping detail fetch.");
+      return;
+    }
+
     const fetchData = async () => {
       setIsDataLoading(true);
       setIsSummaryExpanded(false); 
       try {
         const summaryApiUrl = `${url}/payment/user/${userId}/loan/${loanId}/summary`;
+        console.log("🔗 [Effect 3] Fetching Summary:", summaryApiUrl);
+        
         const summaryResponse = await axios.get(summaryApiUrl);
         const summary = Array.isArray(summaryResponse.data) ? summaryResponse.data[0] : summaryResponse.data;
         setPaymentsSummary(summary);
+        console.log("✅ [Effect 3] Summary fetched:", summary);
         
         const paymentsApiUrl = `${url}/payment/loan/${loanId}/user/${userId}/total-docs/7/page/${currentPage}`;
+        console.log("🔗 [Effect 3] Fetching Payments:", paymentsApiUrl);
+        
         const paymentsResponse = await axios.get(paymentsApiUrl);
         setTotalPayments(paymentsResponse.data);
+        console.log(`✅ [Effect 3] Payments fetched. Count: ${paymentsResponse.data?.length || 0}`);
         
       } catch (err) {
+        console.error("❌ [Effect 3] Error fetching loan details:", err.message);
         setPaymentsError("Failed to fetch loan data.");
         setTotalPaymentsError("Failed to fetch total payments.");
       } finally {
@@ -154,14 +194,19 @@ const MyLoan = ({ route, navigation }) => {
 
   // --- 4. FETCH PAGINATION ---
   useEffect(() => {
+    console.log("🔄 [Effect 4] Fetch Pagination Triggered");
     if (!userId || !loanId) return;
+    
     const fetchTotalPages = async () => {
       try {
         const apiUrl = `${url}/payment/loan/totalPages/user/${userId}/loan/${loanId}/total-docs/7`;
+        console.log("🔗 [Effect 4] API URL:", apiUrl);
+        
         const res = await axios.get(apiUrl);
         setTotalPages(res.data.totalPages || 0);
+        console.log("✅ [Effect 4] Total Pages:", res.data.totalPages);
       } catch (err) {
-        console.error("Failed to fetch total pages", err);
+        console.error("❌ [Effect 4] Failed to fetch total pages", err.message);
       }
     };
     fetchTotalPages();
@@ -208,21 +253,23 @@ const MyLoan = ({ route, navigation }) => {
   };
 
   const handlePhonePress = () => {
+    console.log("📞 [Contact] Phone link pressed:", CONTACT_PHONE);
     Linking.openURL(`tel:${CONTACT_PHONE}`);
   };
 
   const handleEmailPress = () => {
+    console.log("📧 [Contact] Email link pressed:", CONTACT_EMAIL);
     Linking.openURL(`mailto:${CONTACT_EMAIL}`);
   };
 
   // --- 5. API SUBMISSION LOGIC ---
   const handleFormSubmit = async () => {
-    // Determine the final purpose string
     const finalPurpose = formData.loanPurpose === "Others" 
         ? formData.otherPurpose 
         : formData.loanPurpose;
 
     if(!formData.loanAmount || !finalPurpose || !formData.fullName || !formData.phoneNumber) {
+      console.log("⚠️ [Form] Validation Failed - Missing fields");
       Toast.show({ 
         type: "error", 
         text1: "Required Details", 
@@ -239,15 +286,15 @@ const MyLoan = ({ route, navigation }) => {
       loan_purpose: finalPurpose,
     };
 
-    // --- CONSOLE LOG FOR TERMINAL ---
     console.log("----------------------------");
-    console.log("LOAN APPLICATION SUBMITTED");
+    console.log("📤 [Form] LOAN APPLICATION SUBMITTED");
     console.log("Data:", JSON.stringify(payload, null, 2));
     console.log("----------------------------");
 
     try {
       const res = await axios.post(`${url}/loans/loan-approval-request`, payload);
       if (res.status === 201 || res.status === 200) {
+        console.log("✅ [Form] Application Successful. Server Response:", res.data);
         setIsFormVisible(false);
         setTimeout(() => {
             Toast.show({ 
@@ -261,6 +308,7 @@ const MyLoan = ({ route, navigation }) => {
         setFormData({ ...formData, loanAmount: "", loanPurpose: "", otherPurpose: "" });
       }
     } catch (err) {
+      console.error("❌ [Form] Submission Error:", err);
       Toast.show({ 
         type: "error", 
         text1: "Submission Failed", 
@@ -272,21 +320,26 @@ const MyLoan = ({ route, navigation }) => {
     }
   };
 
+  // Calculate balance
   let totalLoanBalance = 0;
   let loanAmount = 0;
   let totalRepayment = 0;
 
   if (loanId && !isDataLoading) {
     const currentLoan = loans.find(loan => loan._id === loanId);
-    loanAmount = parseFloat(currentLoan?.loan_amount || 0);
-    totalRepayment = parseFloat(paymentsSummary?.totalPaidAmount || 0);
-    totalLoanBalance = loanAmount - totalRepayment;
+    if (currentLoan) {
+        loanAmount = parseFloat(currentLoan.loan_amount || 0);
+        totalRepayment = parseFloat(paymentsSummary?.totalPaidAmount || 0);
+        totalLoanBalance = loanAmount - totalRepayment;
+        console.log(`🧮 [Calc] Balance calculated: ${loanAmount} - ${totalRepayment} = ${totalLoanBalance}`);
+    }
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.primaryBlue} />
       
+      {/* Header visibility controlled by loanId (Navigation state) */}
       {!loanId && <Header userId={userId} navigation={navigation} />}
 
       <View style={styles.outerBoxContainer}>
@@ -294,6 +347,7 @@ const MyLoan = ({ route, navigation }) => {
               {loanId && (
                 <TouchableOpacity
                   onPress={() => {
+                    console.log("🔙 [Nav] Back Button Pressed. Resetting to Loan List.");
                     setLoanId(null);
                     setCurrentPage(1);
                   }}
@@ -311,6 +365,7 @@ const MyLoan = ({ route, navigation }) => {
         {isLoading ? (
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color={Colors.primaryBlue} />
+            <Text style={{marginTop:10, color:Colors.mediumText}}>Loading Loans...</Text>
           </View>
         ) : error ? (
           <Text style={styles.errorText}>{error}</Text>
@@ -318,9 +373,11 @@ const MyLoan = ({ route, navigation }) => {
           <ScrollView contentContainerStyle={styles.scrollableContentArea} showsVerticalScrollIndicator={false}>
 
             {loanId ? (
+              // --- DETAIL VIEW ---
               isDataLoading ? (
                 <View style={styles.loaderContainer}>
                   <ActivityIndicator size="large" color={Colors.primaryBlue} />
+                  <Text style={{marginTop:10, color:Colors.mediumText}}>Loading Details...</Text>
                 </View>
               ) : (
                 <>
@@ -328,7 +385,10 @@ const MyLoan = ({ route, navigation }) => {
                   <View style={[styles.loanCard, styles.summaryCard]}>
                     <TouchableOpacity
                       style={styles.accordionHeader}
-                      onPress={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                      onPress={() => {
+                        console.log("👇 [UI] Toggled Summary Accordion:", !isSummaryExpanded);
+                        setIsSummaryExpanded(!isSummaryExpanded);
+                      }}
                       activeOpacity={0.8}
                     >
                       <View style={styles.cardHeader}>
@@ -409,7 +469,10 @@ const MyLoan = ({ route, navigation }) => {
                       <View style={styles.paginationContainer}>
                         <TouchableOpacity
                           disabled={currentPage === 1}
-                          onPress={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          onPress={() => {
+                            console.log("◀️ [Pagination] Previous Page");
+                            setCurrentPage(Math.max(1, currentPage - 1));
+                          }}
                           style={styles.paginationArrowButton}
                         >
                           <Ionicons name="chevron-back" size={24} color={currentPage === 1 ? Colors.mediumText : Colors.darkText} />
@@ -421,7 +484,10 @@ const MyLoan = ({ route, navigation }) => {
                             <TouchableOpacity
                               key={pageNumber}
                               style={[styles.paginationBox, currentPage === pageNumber && styles.paginationBoxActive]}
-                              onPress={() => setCurrentPage(pageNumber)}
+                              onPress={() => {
+                                console.log(`🔢 [Pagination] Jumped to page ${pageNumber}`);
+                                setCurrentPage(pageNumber);
+                              }}
                             >
                               <Text style={[styles.paginationBoxText, currentPage === pageNumber && styles.paginationBoxTextActive]}>
                                 {pageNumber}
@@ -431,7 +497,10 @@ const MyLoan = ({ route, navigation }) => {
                         )}
                         <TouchableOpacity
                           disabled={currentPage === totalPages}
-                          onPress={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          onPress={() => {
+                            console.log("▶️ [Pagination] Next Page");
+                            setCurrentPage(Math.min(totalPages, currentPage + 1));
+                          }}
                           style={styles.paginationArrowButton}
                         >
                           <Ionicons name="chevron-forward" size={24} color={currentPage === totalPages ? Colors.mediumText : Colors.darkText} />
@@ -442,11 +511,15 @@ const MyLoan = ({ route, navigation }) => {
                 </>
               )
             ) : (
+              // --- LIST VIEW ---
               <>
                 {loans.length > 0 && (
                    <TouchableOpacity 
                      style={styles.applyAnotherLoanHeaderBtn}
-                     onPress={() => setIsFormVisible(true)}
+                     onPress={() => {
+                       console.log("📂 [Nav] Open Loan Application Form");
+                       setIsFormVisible(true);
+                     }}
                    >
                      <Ionicons name="add-circle-outline" size={22} color={Colors.cardBackground} />
                      <Text style={styles.applyAnotherLoanHeaderText}>Need another loan? Apply Here</Text>
@@ -484,7 +557,11 @@ const MyLoan = ({ route, navigation }) => {
                       </View>
                       <TouchableOpacity
                         style={styles.viewPaymentsButton}
-                        onPress={() => { setLoanId(loan._id); setCurrentPage(1); }}
+                        onPress={() => { 
+                          console.log(`👆 [Card] Selected Loan ID: ${loan._id}`);
+                          setLoanId(loan._id); 
+                          setCurrentPage(1); 
+                        }}
                       >
                         <Text style={styles.viewPaymentsButtonText}>View Payments & Details</Text>
                       </TouchableOpacity>
@@ -503,9 +580,12 @@ const MyLoan = ({ route, navigation }) => {
                         Request your next loan instantly by applying below!
                       </Text>
                       <View style={styles.contactGroup}>
-                          <TouchableOpacity onPress={() => setIsFormVisible(true)} style={styles.contactButtonPhone}>
+                          <TouchableOpacity onPress={() => {
+                            console.log("📂 [Nav] Open Loan Application Form (No Loans View)");
+                            setIsFormVisible(true);
+                          }} style={styles.contactButtonPhone}>
                               <Ionicons name="document-text-outline" size={20} color={Colors.cardBackground} />
-                              <Text style={styles.contactButtonText}>Apply for Personal Loan</Text>
+                              <Text style={styles.contactButtonText}>Apply for Loan</Text>
                           </TouchableOpacity>
                           <TouchableOpacity onPress={handlePhonePress} style={styles.contactButtonEmail}>
                               <Ionicons name="call-outline" size={20} color={Colors.accentColor} />
@@ -521,12 +601,23 @@ const MyLoan = ({ route, navigation }) => {
       </View>
 
       {/* --- FORM MODAL --- */}
-      <Modal animationType="slide" transparent={true} visible={isFormVisible} onRequestClose={() => setIsFormVisible(false)}>
+      <Modal 
+        animationType="slide" 
+        transparent={true} 
+        visible={isFormVisible} 
+        onRequestClose={() => {
+            console.log("❌ [Modal] Closed via Android Back Button");
+            setIsFormVisible(false);
+        }}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Personal Loan Request Form</Text>
-              <TouchableOpacity onPress={() => setIsFormVisible(false)}>
+              <Text style={styles.modalTitle}> Loan Request Form</Text>
+              <TouchableOpacity onPress={() => {
+                console.log("❌ [Modal] Closed via X Button");
+                setIsFormVisible(false);
+              }}>
                 <Ionicons name="close-circle" size={30} color={Colors.mediumText} />
               </TouchableOpacity>
             </View>
@@ -551,7 +642,10 @@ const MyLoan = ({ route, navigation }) => {
                       styles.purposeChip, 
                       formData.loanPurpose === option && styles.purposeChipSelected
                     ]}
-                    onPress={() => setFormData({...formData, loanPurpose: option})}
+                    onPress={() => {
+                      console.log(`🏷️ [Form] Selected Purpose: ${option}`);
+                      setFormData({...formData, loanPurpose: option});
+                    }}
                   >
                     <Text style={[
                       styles.purposeChipText, 
