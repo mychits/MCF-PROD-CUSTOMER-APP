@@ -510,7 +510,7 @@ const MyPassbookScreen = ({ navigation, route }) => {
                     <View style={styles.statItem}>
                       <FontAwesome5 name="piggy-bank" size={24} color="#0c7596ff" />
                       <Text style={styles.statValue}>{activePigmeCount}</Text>
-                      <Text style={styles.statLabel}>Pigmy</Text>
+                      <Text style={styles.statLabel}>Pigmy </Text>
                     </View>
                   )}
                   {pigmeAccounts.length > 0 && loans.length > 0 && (
@@ -520,7 +520,7 @@ const MyPassbookScreen = ({ navigation, route }) => {
                     <View style={styles.statItem}>
                       <MaterialIcons name="account-balance" size={28} color="#E67E22" />
                       <Text style={styles.statValue}>{activeLoanCount}</Text>
-                      <Text style={styles.statLabel}>Active Loans</Text>
+                      <Text style={styles.statLabel}>Loans</Text>
                     </View>
                   )}
                 </View>
@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
     borderWidth: 1, borderColor: "rgba(255,255,255,0.1)"
   },
-  cardTitle: { fontSize: 19, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5 },
+  cardTitle: { fontSize: 13, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.5 },
   viewAllBtn: { paddingHorizontal: 14, paddingVertical: 7, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 25, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
   viewAllText: { fontSize: 12, fontWeight: "700", color: "#FFFFFF", letterSpacing: 0.3 },
 
@@ -631,16 +631,12 @@ const styles = StyleSheet.create({
     borderRadius: 25, 
     padding: 20, 
     marginBottom: 10,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    backdropFilter: "blur(10)"
+    
+
   },
   statItem: { alignItems: "center", flex: 1 },
   statValue: { fontSize: 24, fontWeight: "800", marginTop: 8, marginBottom: 2, color: "#0f172a" },
-  statLabel: { fontSize: 12, color: "#64748b", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
+  statLabel: { fontSize: 8, color: "#64748b", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   statDivider: { width: 1, backgroundColor: "#E2E8F0" },
 });
 

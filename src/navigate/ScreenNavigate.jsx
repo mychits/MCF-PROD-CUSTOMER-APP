@@ -293,7 +293,7 @@ export default function ScreenNavigate() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
-            name="LicenseAndCertificate"
+            name="LicenseAndCertificateScreen"
             component={LicenseAndCertificateScreen}
             options={{ headerShown: false }}
           />

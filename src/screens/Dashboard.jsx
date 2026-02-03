@@ -9,14 +9,13 @@ import {
   Dimensions,
   Linking,
   Animated,
-  ImageBackground,
   StatusBar,
   Image,
   Modal,
   FlatList,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import axios from "axios";
 import url from "../data/url";
 import { ContextProvider } from "../context/UserProvider";
@@ -30,57 +29,118 @@ const SOCIAL_LINKS = {
   whatsapp: "https://wa.me/+919483900777",
 };
 
-// --- REVIEW DATA ---
-const customerReviews = [
-  { id: '1', name: 'Prakash ', rating: 5, review: 'Great service! The app is easy to use, and I got my money on time.', location: 'Bangalore' },
-  { id: '2', name: 'Geetha Kumari', rating: 4, review: 'Very transparent and trustworthy. The team is always available to help.', location: 'Chamarajanagr' },
-  { id: '3', name: 'Ravi Kumar', rating: 5, review: 'A good app for managing my investments. The interface is easy to understand.', location: 'Bangalore' },
-  { id: '4', name: 'Nisha Singh', rating: 4, review: 'The best chit fund experience I’ve had. Secure, simple, and transparent.', location: 'Davanagere' },
-  { id: '5', name: 'Raja Reddy', rating: 5, review: 'The good service and clear papers made me trust this app. Very happy.', location: 'Mysore' },
-  { id: '6', name: 'Sangeeta Rao', rating: 4, review: 'The app is good and the people who help customers answer fast.', location: 'Mandya' },
-  { id: '7', name: 'Vikram Patel', rating: 5, review: 'The process of joining and managing my chit fund is so simple.', location: 'Bidar' },
-  { id: '8', name: 'Anjali Desai', rating: 5, review: 'Excellent app! It’s simple, secure, and I can manage everything from my phone.', location: 'Bangalore' },
-  { id: '9', name: 'Mukesh Choudhary', rating: 4, review: 'A reliable and easy-to-use platform. Highly satisfied with my experience.', location: 'Davanagere' },
-  { id: '10', name: 'Priya Reddy', rating: 5, review: 'The best way to save money for my future goals. Highly recommended.', location: 'Bangalore' },
-  { id: '11', name: 'Suresh Kumar', rating: 5, review: 'I love how easy it is to track my chit progress and auction status. Great job!', location: 'Mandya' },
-  { id: '12', name: 'Kavita Singh', rating: 4, review: 'A very good overall experience with the team.', location: 'Bangalore' },
-  { id: '13', name: 'Rajesh Nair', rating: 5, review: 'Superb platform for my savings needs. The app is fast and reliable.', location: 'Mysore' },
-  { id: '14', name: 'Sneha Sharma', rating: 4, review: 'I appreciate transparency and constant support from the team.', location: 'Bangalore' },
+const joinSteps = [
+  {
+    id: 1,
+    title: 'Select a Chit Plan',
+    desc: 'Browse our diverse range of chit plans tailored to your financial goals.',
+    icon: 'list'
+  },
+  {
+    id: 2,
+    title: 'Check Eligibility',
+    desc: 'Instantly check your eligibility based on your income and credit score.',
+    icon: 'checkmark-circle'
+  },
+  {
+    id: 3,
+    title: 'Secure Payment',
+    desc: 'Pay via our encrypted banking gateway. 100% Safe.',
+    icon: 'card'
+  },
+  {
+    id: 4,
+    title: 'E-Sign Agreement',
+    desc: 'Securely register with OTP and digital signatures.',
+    icon: 'document-text'
+  }
 ];
 
-// --- MOVED OUTSIDE DASHBOARDSCREEN TO PREVENT HOOK ERRORS ---
-const ToolCard = ({ title, icon, color1, color2, index, onPress, pulseAnim }) => {
-  const scale = useRef(new Animated.Value(1)).current;
-  const handlePressIn = () => Animated.spring(scale, { toValue: 0.94, useNativeDriver: true }).start();
-  const handlePressOut = () => {
-    Animated.spring(scale, { toValue: 1, friction: 4, tension: 50, useNativeDriver: true }).start();
-    if (onPress) onPress();
-  };
+const growthStats = [
+  { id: 1, label: 'In Savings', value: '100 Cr+', icon: 'briefcase', color: '#053B90' },
+  { id: 2, label: 'Auction Turnover', value: '50 Cr+', icon: 'chart-line', color: '#00897B' },
+  { id: 3, label: 'Happy Families', value: '10,000+', icon: 'users', color: '#FF6F00' },
+  { id: 4, label: 'Years of Trust', value: '12+', icon: 'calendar-alt', color: '#C62828' },
+  { id: 5, label: 'Physical Branches', value: '2+', icon: 'map-marker-alt', color: '#AD1457' },
+  { id: 6, label: 'Application Users', value: '500+', icon: 'mobile-alt', color: '#4527A0' },
+];
+
+const customerReviews = [
+  {
+    id: '1', name: 'Prakash ', rating: 5, verified: true,
+    review: 'Great service! The app is easy to use, and I got my money on time.',
+    location: 'Bangalore'
+  },
+  {
+    id: '2', name: 'Geetha Kumari', rating: 4, verified: true,
+    review: 'Very transparent and trustworthy. The team is always available to help.',
+    location: 'Chamarajanagr'
+  },
+  {
+    id: '3', name: 'Ravi Kumar', rating: 5, verified: true,
+    review: 'A good app for managing my investments. The interface is easy to understand.',
+    location: 'Bangalore'
+  },
+  {
+    id: '4', name: 'Nisha Singh', rating: 4, verified: true,
+    review: 'The best chit fund experience I’ve had. Secure, simple, and transparent.',
+    location: 'Davanagere'
+  },
+  {
+    id: '5', name: 'Raja Reddy', rating: 5, verified: true,
+    review: 'I was not sure at first, but good service and clear papers made me trust this app.',
+    location: 'Mysore'
+  },
+];
+
+const mychitsAdvantages = [
+  {
+    icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00', action: 'navigate', targetScreen: 'Enrollment' // Navigates to Enrollment
+  },
+  {
+    icon: 'gavel', text1: 'In app ', text2: 'Auctions', iconColor: '#795548', action: 'navigate', targetScreen: 'AuctionList' // Navigates to AuctionList
+  },
+  {
+    icon: 'verified-user', text1: '100% ', text2: 'Secure Data', iconColor: '#2E7D32' }, 
+  {
+    icon: 'support-agent', text1: '24/7 Customer', text2: 'support', iconColor: '#607D8B', action: 'call', phoneNumber: '+919483900777' // Calls Number
+  },
+  { icon: 'gavel', text1: 'Compliant as', text2: 'per Chit Act', iconColor: '#3F51B5' },
+  {
+    icon: 'groups', text1: 'Chit Plans for', text2: 'everyone', iconColor: '#4CAF50', action: 'navigate', targetScreen: 'Enrollment' // Navigates to Enrollment
+  },
+];
+
+// --- COMPONENT: ANIMATED SLANT LINE ---
+const SlantLine = ({ delay = 0, color = '#FFF', opacity = 0.05 }) => {
+  const translateX = useRef(new Animated.Value(-300)).current;
+
+  useEffect(() => {
+    const animate = () => {
+      Animated.timing(translateX, {
+        toValue: width + 300,
+        duration: 4000 + Math.random() * 2000,
+        delay: delay,
+        useNativeDriver: true,
+      }).start(() => {
+        translateX.setValue(-300);
+        animate();
+      });
+    };
+    animate();
+  }, []);
 
   return (
-    <Animated.View style={{ marginRight: 20, transform: [{ scale }] }}>
-      <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut} activeOpacity={0.9}>
-        <LinearGradient
-          colors={[color1, color2]}
-          style={styles.toolCardNew}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.toolCardBorder} />
-          <View style={[styles.toolGlow, { backgroundColor: color1 }]} />
-          <View style={[styles.toolGlowRight, { backgroundColor: color2 }]} />
-          <View style={styles.toolIconContainerNew}>
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <Ionicons name={icon} size={26} color="#FFF" />
-            </Animated.View>
-          </View>
-          <Text style={styles.toolTextNew}>{title}</Text>
-          <View style={styles.toolActionIndicator}>
-             <Ionicons name="arrow-forward" size={14} color="#FFF" />
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    </Animated.View>
+    <Animated.View
+      style={[
+        styles.slantLineStyle,
+        {
+          backgroundColor: color,
+          opacity: opacity,
+          transform: [{ translateX }, { rotate: '25deg' }],
+        },
+      ]}
+    />
   );
 };
 
@@ -88,31 +148,24 @@ const ReviewsSection = () => {
   const renderStarRating = (rating) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <Ionicons
-          key={i}
-          name={i <= rating ? "star" : "star-outline"}
-          size={14}
-          color={i <= rating ? "#FFA500" : "#e0e0e0"}
-          style={styles.reviewStar}
-        />
-      );
+      stars.push(<Ionicons key={i} name={i <= rating ? "star" : "star-outline"} size={14} color={i <= rating ? "#FFA500" : "#e0e0e0"} style={{ marginRight: 2 }} />);
     }
-    return <View style={styles.reviewRatingContainer}>{stars}</View>;
+    return <View style={{ flexDirection: 'row', marginTop: 4 }}>{stars}</View>;
   };
 
   const renderReviewCard = ({ item }) => (
     <View style={styles.reviewCard}>
-      <View style={styles.reviewHeader}>
-        <View style={styles.reviewerInfo}>
-           <View style={styles.reviewAvatar}>
-              <Text style={styles.reviewAvatarText}>{item.name.charAt(0)}</Text>
-           </View>
-           <View style={{ flex: 1 }}> 
-             <Text style={styles.reviewName}>{item.name}</Text>
-             <Text style={styles.reviewLocation}>{item.location}</Text>
-             {renderStarRating(item.rating)}
-           </View>
+      <View style={styles.reviewerInfo}>
+        <View style={[styles.reviewAvatar, { backgroundColor: '#E3F2FD' }]}>
+          <Text style={[styles.reviewAvatarText, { color: '#1565C0' }]}>{item.name.charAt(0)}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.reviewName}>{item.name}</Text>
+            {item.verified && <FontAwesome name="check-circle" size={12} color="#2E7D32" style={{ marginLeft: 5 }} />}
+          </View>
+          <Text style={styles.reviewLocation}>{item.location}</Text>
+          {renderStarRating(item.rating)}
         </View>
       </View>
       <Text style={styles.reviewText}>{item.review}</Text>
@@ -122,22 +175,10 @@ const ReviewsSection = () => {
   return (
     <View style={styles.reviewsContainer}>
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleContainer}>
-          <Text style={styles.sectionTitle}>Customer Reviews</Text>
-        </View>
-        <TouchableOpacity style={styles.seeAllBtn}>
-          <Text style={styles.seeAllText}>See All</Text>
-          <Ionicons name="chevron-forward" size={16} color="#053B90" />
-        </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Trusted by 10,000+ Families</Text>
+        <TouchableOpacity style={styles.seeAllBtn}><Text style={styles.seeAllText}>See All</Text><Ionicons name="chevron-forward" size={16} color="#053B90" /></TouchableOpacity>
       </View>
-      <FlatList
-        data={customerReviews}
-        renderItem={renderReviewCard}
-        keyExtractor={item => item.id}
-        horizontal={true}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 5, paddingRight: 20 }}
-      />
+      <FlatList data={customerReviews} renderItem={renderReviewCard} keyExtractor={item => item.id} horizontal={true} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 5, paddingRight: 20 }} />
     </View>
   );
 };
@@ -145,1035 +186,567 @@ const ReviewsSection = () => {
 const SocialBtn = ({ icon, color }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.85, useNativeDriver: true }).start();
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true }).start();
-    Linking.openURL(SOCIAL_LINKS[icon]);
-  };
-
+  const handlePressOut = () => { Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start(); Linking.openURL(SOCIAL_LINKS[icon]); };
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut} activeOpacity={1}>
-        <LinearGradient colors={[color, color + 'DD']} style={styles.socialBtn}>
+        <View style={[styles.socialBtn, { backgroundColor: color }]}>
           <FontAwesome5 name={icon} size={20} color="#FFF" />
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
-// --- MAIN COMPONENT ---
 const DashboardScreen = ({ navigation }) => {
   const [appUser, setAppUser] = useContext(ContextProvider);
   const userId = appUser?.userId;
-
-  const [userData, setUserData] = useState({
-    full_name: '',
-    email: '',
-    phone: ''
-  });
-
+  const [userData, setUserData] = useState({ full_name: '', email: '', phone: '' });
   const [isProfileVisible, setProfileVisible] = useState(false);
+  const [zoomImage, setZoomImage] = useState(null);
   const slideAnim = useRef(new Animated.Value(height)).current;
 
-  const toggleProfileModal = () => {
-    if (isProfileVisible) {
-      Animated.timing(slideAnim, {
-        toValue: height,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setProfileVisible(false));
-    } else {
-      setProfileVisible(true);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  };
+  // Header Animations
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const cardAnimations = useRef([...Array(8)].map(() => new Animated.Value(0))).current;
+  const floatingAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
-  const handleLogout = () => {
-    toggleProfileModal();
-    setAppUser(null);
-    navigation.replace('Login');
-  };
+  // Professional Animations
+  const pulseAnim = useRef(new Animated.Value(1)).current; 
+  const progressAnim = useRef(new Animated.Value(0)).current; 
+  const statsAnims = useRef([...Array(6)].map(() => new Animated.Value(0))).current; 
 
-  const fetchUserData = async () => {
-    if (userId) {
-      try {
-        const response = await axios.get(`${url}/user/get-user-by-id/${userId}`);
-        setUserData(response.data);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    }
+  const cardData = [
+    { image: require("../../assets/1lakh.png") }, { image: require("../../assets/1lakhg.png") }, { image: require("../../assets/1lakhr.png") },
+    { image: require("../../assets/2lakhb.png") }, { image: require("../../assets/2lakhg.png") }, { image: require("../../assets/2lakhr.png") },
+    { image: require("../../assets/3lakhb.png") }, { image: require("../../assets/3lakhg.png") }, { image: require("../../assets/3lakhr.png") },
+    { image: require("../../assets/5lakhb.png") }, { image: require("../../assets/5lakhg.png") }, { image: require("../../assets/5lakhr.png") },
+    { image: require("../../assets/10lakhb.png") }, { image: require("../../assets/10lakhg.png") }, { image: require("../../assets/10lakhr.png") },
+    { image: require("../../assets/25lakhb.png") }, { image: require("../../assets/25lakhg.png") }, { image: require("../../assets/25lakhr.png") },
+  ];
+
+  const scrollRef = useRef(null);
+  const CARD_WIDTH = 340 + 18;
+
+  // Helper handlers for the new footer
+  const openLink = (url) => Linking.openURL(url);
+  const handleWebsiteLink = () => openLink('https://mychits.co.in');
+  const handleWhatsAppPress = () => openLink('https://wa.me/919483900777');
+
+  const handleAdvantagePress = (item) => {
+    if (item.action === 'call' && item.phoneNumber) { Linking.openURL(`tel:${item.phoneNumber}`); }
+    else if (item.action === 'navigate' && item.targetScreen) { navigation.navigate(item.targetScreen); }
   };
 
   useEffect(() => {
     fetchUserData();
-  }, [userId]);
-
-  const MENU_ITEMS = [
-    { title: "About Us", icon: "info", link: "About" },
-    { title: "Privacy Policy", icon: "privacy-tip", link: "Privacy" },
-    { title: "Help", icon: "help-outline", link: "Help" },
-    { title: "F&Q", icon: "question-answer", link: "Fq" },
-    { title: "Reset Password", icon: "lock-reset", link: "ConformNewPassword" },
-  ];
-
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const isApproved = false;
-
-  const headerAnim = useRef(new Animated.Value(0)).current;
-  // INCREASED TO 8 TO ACCOMMODATE ALL SECTIONS
-  const cardAnimations = useRef([...Array(8)].map(() => new Animated.Value(0))).current;
-  const floatingAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-
-  const cardData = [
-    { image: require("../../assets/1lakh.png"), },
-    { image: require("../../assets/1lakhg.png"), gradient: ["#f093fb", "#f5576c"] },
-    { image: require("../../assets/1lakhr.png"), gradient: ["#4facfe", "#00f2fe"] },
-    { image: require("../../assets/2lakhb.png"), gradient: ["#43e97b", "#38f9d7"] },
-    { image: require("../../assets/2lakhg.png"), gradient: ["#fa709a", "#fee140"] },
-    { image: require("../../assets/2lakhr.png"), gradient: ["#30cfd0", "#330867"] },
-    { image: require("../../assets/3lakhb.png"), gradient: ["#a8edea", "#fed6e3"] },
-    { image: require("../../assets/3lakhg.png"), gradient: ["#ff9a56", "#ff6a88"] },
-    { image: require("../../assets/3lakhr.png"), gradient: ["#ffecd2", "#fcb69f"] },
-    { image: require("../../assets/5lakhb.png"), gradient: ["#667eea", "#764ba2"] },
-    { image: require("../../assets/5lakhg.png"), gradient: ["#f093fb", "#f5576c"] },
-    { image: require("../../assets/5lakhr.png"), gradient: ["#4facfe", "#00f2fe"] },
-    { image: require("../../assets/10lakhb.png"), gradient: ["#43e97b", "#38f9d7"] },
-    { image: require("../../assets/10lakhg.png"), gradient: ["#fa709a", "#fee140"] },
-    { image: require("../../assets/10lakhr.png"), gradient: ["#30cfd0", "#330867"] },
-    { image: require("../../assets/25lakhb.png"), gradient: ["#a8edea", "#fed6e3"] },
-    { image: require("../../assets/25lakhg.png"), gradient: ["#ff9a56", "#ff6a88"] },
-    { image: require("../../assets/25lakhr.png"), gradient: ["#ffecd2", "#fcb69f"] },
-    { image: require("../../assets/50lakhb.png"), gradient: ["#f093fb", "#f5576c"] },
-    { image: require("../../assets/50lakhg.png"), gradient: ["#4facfe", "#00f2fe"] },
-    { image: require("../../assets/50lakhr.png"), gradient: ["#43e97b", "#38f9d7"] },
-  ];
-
-  const scrollRef = useRef(null);
-  const CARD_WIDTH = 310;
-
-  useEffect(() => {
-    Animated.spring(headerAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }).start();
-
-    const cardAnims = cardAnimations.map((anim, index) =>
-      Animated.spring(anim, { toValue: 1, delay: index * 100, friction: 7, tension: 50, useNativeDriver: true })
+    
+    // 1. Header & Card Entrance
+    Animated.spring(headerAnim, { toValue: 1, useNativeDriver: true }).start();
+    const cardAnims = cardAnimations.map((anim, index) => 
+      Animated.spring(anim, { toValue: 1, delay: index * 100, useNativeDriver: true })
     );
     Animated.stagger(100, cardAnims).start();
 
+    // 2. Continuous Loops
+    Animated.loop(Animated.sequence([
+      Animated.timing(floatingAnim, { toValue: 1, duration: 3000, useNativeDriver: true }), 
+      Animated.timing(floatingAnim, { toValue: 0, duration: 3000, useNativeDriver: true })
+    ])).start();
+    Animated.loop(Animated.timing(rotateAnim, { toValue: 1, duration: 20000, useNativeDriver: true })).start();
+
+    // 3. Stats Stagger Animation
+    const statsSequence = statsAnims.map((anim, i) => 
+      Animated.timing(anim, { toValue: 1, duration: 400, delay: i * 100, useNativeDriver: true })
+    );
+    Animated.stagger(100, statsSequence).start();
+
+    // 4. Status Card Pulse
     Animated.loop(
       Animated.sequence([
-        Animated.timing(floatingAnim, { toValue: 1, duration: 3000, useNativeDriver: true }),
-        Animated.timing(floatingAnim, { toValue: 0, duration: 3000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.02, duration: 1500, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true })
       ])
     ).start();
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.08, duration: 1200, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
-      ])
-    ).start();
+    // 5. Progress Bar Fill
+    Animated.timing(progressAnim, { toValue: 25, duration: 1500, delay: 500, useNativeDriver: false }).start();
 
-    Animated.loop(Animated.timing(shimmerAnim, { toValue: 1, duration: 2500, useNativeDriver: true })).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(glowAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.timing(rotateAnim, { toValue: 1, duration: 20000, useNativeDriver: true })
-    ).start();
-
+    // Auto Scroll
     let currentIndex = 0;
-    const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % cardData.length;
-      scrollRef.current?.scrollTo({ x: currentIndex * CARD_WIDTH, animated: true });
-    }, 4000);
-
+    const interval = setInterval(() => { currentIndex = (currentIndex + 1) % cardData.length; scrollRef.current?.scrollTo({ x: currentIndex * CARD_WIDTH, animated: true }); }, 4000);
     return () => clearInterval(interval);
   }, []);
 
-  const translateY = floatingAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -12] });
-  const shimmerTranslate = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [-width, width] });
-  const glowOpacity = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.9] });
+  const fetchUserData = async () => {
+    if (userId) {
+      try { const response = await axios.get(`${url}/user/get-user-by-id/${userId}`); setUserData(response.data); } catch (error) { console.error('Error:', error); }
+    }
+  };
+
+  const toggleProfileModal = () => {
+    if (isProfileVisible) { Animated.timing(slideAnim, { toValue: height, duration: 300, useNativeDriver: true }).start(() => setProfileVisible(false)); }
+    else { setProfileVisible(true); Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(); }
+  };
+
+  const translateY = floatingAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
   const rotate = rotateAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const progressWidth = progressAnim.interpolate({ inputRange: [0, 25], outputRange: ['0%', '25%'] });
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#053B90" />
       <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView showsVerticalScrollIndicator={false} bounces={true}>
-          <View>
-            <LinearGradient colors={["#053B90", "#0d4ba8", "#1560c0"]} style={styles.headerCurve}>
-              <Animated.View style={[styles.bgCircle1, { transform: [{ rotate }] }]} />
-              <Animated.View style={[styles.bgCircle2, { transform: [{ rotate }] }]} />
-
-              <Animated.View style={[styles.headerRow, { opacity: headerAnim, transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
-                <View style={[styles.logoContainer, { flex: 1 }]}>
-                  <Image
-                    source={require("../../assets/splash-icon.png")}
-                    style={styles.logoImage}
-                    resizeMode="contain"
-                  />
-                  <View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
+          
+          {/* STYLED HEADER: Corporate Blue Gradient */}
+          <LinearGradient colors={["#0A2463", "#053B90", "#3E64FF"]} style={styles.headerCurve}>
+            <SlantLine delay={0} opacity={0.1} color="#FFFFFF" />
+            <SlantLine delay={2000} opacity={0.08} />
+            
+            <Animated.View style={[styles.bgCircle1, { transform: [{ rotate }] }]} />
+            <Animated.View style={[styles.headerRow, { opacity: headerAnim }]}>
+              <View style={styles.logoContainer}>
+                <Image source={require("../../assets/splash-icon.png")} style={styles.logoImage} resizeMode="contain" />
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={styles.logo}>MyChits</Text>
-                    <LinearGradient colors={["#FFD700", "#FFA500"]} style={styles.tagBadge}>
-                      <Text style={styles.headerTagText}>TRUSTED PLATFORM</Text>
-                    </LinearGradient>
+                    <View style={styles.regBadge}>
+                      <FontAwesome5 name="check-circle" size={10} color="#FFF" />
+                      <Text style={styles.regBadgeText}>Govt Registered</Text>
+                    </View>
                   </View>
+                  <Text style={styles.headerTagText}>Trusted by 10,000+ Families</Text>
                 </View>
-                <View style={styles.headerIcons}>
-                  <TouchableOpacity style={[styles.iconCircleHeader, { marginRight: 12 }]}>
-                    <Ionicons name="notifications-outline" size={24} color="#FFF" />
-                    <Animated.View style={[styles.notificationDot, { opacity: pulseAnim }]} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconCircleHeader} onPress={toggleProfileModal}>
-                    <Ionicons name="person-outline" size={24} color="#FFF" />
-                  </TouchableOpacity>
-                </View>
-              </Animated.View>
-
-              <Animated.View style={[styles.welcomeSection, { opacity: headerAnim, transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
-                <Text style={styles.welcome}>Welcome </Text>
-                <Text style={styles.userName}>{userData.full_name || 'User'} ! 👋</Text>
-                <Text style={styles.subWelcome}>Let's grow your wealth together</Text>
-              </Animated.View>
-            </LinearGradient>
-
-            <Animated.View style={[styles.floatingWrapper, { transform: [{ translateY }] }]}>
-              <ScrollView
-                ref={scrollRef}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                snapToInterval={CARD_WIDTH}
-                decelerationRate="fast"
-                contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 5 }}
-              >
-                {cardData.map((card, index) => (
-                  <TouchableOpacity key={index} style={styles.floatingCard} activeOpacity={0.95}>
-                    <ImageBackground
-                      source={card.image}
-                      style={styles.bgImage}
-                      resizeMode="cover"
-                    >
-                      <View style={styles.cardGradient}>
-                        <View style={styles.cardTopRow}>
-                          {card.popular && (
-                            <LinearGradient colors={["#FFD700", "#FFA500"]} style={styles.badgePopular}>
-                              <Text style={styles.badgeText}>⭐ POPULAR</Text>
-                            </LinearGradient>
-                          )}
-                          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                            <Ionicons name="star" size={22} color="#FFD700" />
-                          </Animated.View>
-                        </View>
-                        <Text style={styles.cardTitle}>{card.title}</Text>
-                        <Text style={styles.cardSub}>{card.sub}</Text>
-                        <View style={styles.cardFooter}>
-                          <TouchableOpacity
-                            style={styles.cardBtn}
-                            onPress={() => navigation.navigate('Enrollment')}
-                          >
-                            <Text style={styles.cardBtnText}>View Details</Text>
-                            <Ionicons name="arrow-forward" size={14} color="#FFF" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </ImageBackground>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </Animated.View>
-
-            <View style={styles.contentPadding}>
-              <Animated.View style={{ transform: [{ scale: cardAnimations[0] }] }}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Your Journey</Text>
-                  <Ionicons name="trending-up" size={22} color="#053B90" />
-                </View>
-              </Animated.View>
-
-              <Animated.View style={{ transform: [{ scale: cardAnimations[1] }] }}>
-                <View style={styles.statusCard}>
-                  <Animated.View style={[styles.shimmerOverlay, { transform: [{ translateX: shimmerTranslate }] }]} />
-
-                  <View style={styles.statusHeader}>
-                    <LinearGradient colors={["#FF9800", "#FF5722"]} style={styles.statusIconCircle}>
-                      <Ionicons name="hourglass-outline" size={26} color="#FFF" />
-                    </LinearGradient>
-                    <View style={{ marginLeft: 16, flex: 1 }}>
-                      <Text style={styles.statusTitle}>Application Under Review</Text>
-                      <View style={styles.statusBadge}>
-                        <Animated.View style={[styles.pulseDot, { opacity: glowOpacity }]} />
-                        <Text style={styles.statusSubTitle}>Processing in progress</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
-                      <LinearGradient colors={["#FF9800", "#FF5722"]} style={styles.progressFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />
-                    </View>
-                    <Text style={styles.progressText}>20% Complete</Text>
-                  </View>
-
-                  <Text style={styles.statusDesc}>
-                    Our team is carefully reviewing your application. You'll receive a notification once approved!
-                  </Text>
-
-                  <View style={styles.featureGrid}>
-                    <View style={styles.featureItem}>
-                      <LinearGradient colors={["#E3F2FD", "#BBDEFB"]} style={styles.featureIcon}>
-                        <Ionicons name="shield-checkmark" size={24} color="#1976D2" />
-                      </LinearGradient>
-                      <Text style={styles.featureText}>Secure</Text>
-                    </View>
-                    <View style={styles.featureItem}>
-                      <LinearGradient colors={["#F3E5F5", "#E1BEE7"]} style={styles.featureIcon}>
-                        <Ionicons name="flash" size={24} color="#7B1FA2" />
-                      </LinearGradient>
-                      <Text style={styles.featureText}>Fast</Text>
-                    </View>
-                    <View style={styles.featureItem}>
-                      <LinearGradient colors={["#E8F5E9", "#C8E6C9"]} style={styles.featureIcon}>
-                        <Ionicons name="people" size={24} color="#388E3C" />
-                      </LinearGradient>
-                      <Text style={styles.featureText}>Trusted</Text>
-                    </View>
-                  </View>
-                </View>
-              </Animated.View>
-
-              {/* --- HOW IT WORKS (Index 2) --- */}
-              <Animated.View style={{ transform: [{ scale: cardAnimations[2] }] }}>
-                <View style={styles.howItWorksCard}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>How It Works</Text>
-                    <Ionicons name="information-circle" size={22} color="#053B90" />
-                  </View>
-
-                  {[
-                    { step: "1", title: "Choose a Plan", desc: "Select a chit plan that fits your budget" },
-                    { step: "2", title: "Complete KYC", desc: "Submit your documents for verification" },
-                    { step: "3", title: "Start Saving", desc: "Begin your monthly contributions" },
-                    { step: "4", title: "Grow Wealth", desc: "Watch your savings grow over time" },
-                  ].map((item, idx) => (
-                    <View key={idx} style={styles.stepItem}>
-                      <View style={styles.stepNumber}>
-                        <Text style={styles.stepNumberText}>{item.step}</Text>
-                      </View>
-                      <View style={styles.stepContent}>
-                        <Text style={styles.stepTitle}>{item.title}</Text>
-                        <Text style={styles.stepDesc}>{item.desc}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </Animated.View>
-
-              {!isApproved && (
-                <Animated.View style={{ transform: [{ scale: cardAnimations[3] }] }}>
-                  <View style={styles.afterCard}>
-                    <Text style={[styles.sectionTitle, { fontSize: 18, marginBottom: 16, color: '#053B90' }]}>
-                      After Approval, You'll Unlock:
-                    </Text>
-                    {[
-                      { icon: "wallet", text: "Access to all premium chit plans" },
-                      { icon: "bar-chart", text: "Real-time investment tracking" },
-                      { icon: "gift", text: "Exclusive rewards & cashback" },
-                      { icon: "headset", text: "Priority customer support" },
-                    ].map((item, idx) => (
-                      <View key={idx} style={styles.unlockItem}>
-                        <View style={styles.unlockIconWrapper}>
-                          <Ionicons name={item.icon} size={18} color="#053B90" />
-                        </View>
-                        <Text style={styles.unlockText}>{item.text}</Text>
-                        <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                      </View>
-                    ))}
-                  </View>
-                </Animated.View>
-              )}
-
-              <Animated.View style={{ transform: [{ scale: cardAnimations[4] }] }}>
-                <TouchableOpacity
-                  style={styles.mainCTA}
-                  activeOpacity={0.9}
-                  onPress={() => navigation.navigate('Enrollment')}
-                >
-                  <LinearGradient colors={["#053B90", "#1560c0", "#2976d4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaGradient}>
-                    <Ionicons name="rocket" size={24} color="#FFF" style={{ marginRight: 10 }} />
-                    <Text style={styles.mainCTAText}>Explore All Chit Plans</Text>
-                    <Ionicons name="arrow-forward" size={22} color="#FFF" />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
-
-              <Animated.View style={{ transform: [{ scale: cardAnimations[5] }] }}>
-                <View style={styles.toolsSectionWrapper}>
-                  <View style={styles.toolsBgBlob} />
-                  <View style={[styles.toolsBgBlob, styles.toolsBgBlob2]} />
-                  <View style={styles.sectionHeader}>
-                    <View style={styles.sectionTitleContainer}>
-                      <Text style={styles.sectionTitle}>Financial Tools</Text>
-                    </View>
-                    <TouchableOpacity style={styles.seeAllBtn}>
-                      <Text style={styles.seeAllText}>See All</Text>
-                      <Ionicons name="chevron-forward" size={16} color="#053B90" />
-                    </TouchableOpacity>
-                  </View>
-
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 5, paddingRight: 20, paddingTop: 10, paddingBottom: 5 }}>
-                    <ToolCard
-                      title="EMI Calculator"
-                      icon="calculator"
-                      color1="#FF9F1C"
-                      color2="#FFBF69"
-                      index={0}
-                      pulseAnim={pulseAnim}
-                      onPress={() => navigation.navigate('EMICalculator')}
-                    />
-                    <ToolCard title="Savings Tracker" icon="wallet" color1="#3D84A8" color2="#1E6091" index={1} pulseAnim={pulseAnim} />
-                    <ToolCard title="Goal Planner" icon="flag" color1="#8338EC" color2="#7209B7" index={2} pulseAnim={pulseAnim} />
-                    <ToolCard
-                      title="Refer & Earn"
-                      icon="share-social"
-                      color1="#FF5C8D"
-                      color2="#FF3F6C"
-                      index={3}
-                      pulseAnim={pulseAnim}
-                      onPress={() => navigation.navigate('IntroduceNewCustomers')}
-                    />
-                  </ScrollView>
-                </View>
-              </Animated.View>
-
-              {/* --- REVIEWS (Index 6) --- */}
-              <Animated.View style={{ transform: [{ scale: cardAnimations[6] }] }}>
-                 <ReviewsSection />
-              </Animated.View>
-
-              <Animated.View style={{ transform: [{ scale: cardAnimations[7] }] }}>
-                <LinearGradient colors={["#053B90", "#0d4ba8", "#1560c0"]} style={styles.addressCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                  <View style={styles.addressHeader}>
-                    <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                      <View style={styles.locationIconWrapper}>
-                        <Ionicons name="location" size={32} color="#FFD700" />
-                      </View>
-                    </Animated.View>
-                    <Text style={styles.addressTitle}>Head Office</Text>
-                  </View>
-                  <Text style={styles.addressText}>
-                    11/36-25, Third Floor, 2nd Main, Kathriguppe Main Road, Banashankari Stage 3, Bengaluru Karnataka - 560085
-                  </Text>
-                  <View style={styles.divider} />
-                  <Text style={styles.connectText}>Let's Connect</Text>
-                  <View style={styles.socialRow}>
-                    <SocialBtn icon="facebook" color="#3b5998" />
-                    <SocialBtn icon="instagram" color="#E1306C" />
-                    <SocialBtn icon="youtube" color="#FF0000" />
-                    <SocialBtn icon="whatsapp" color="#25D366" />
-                  </View>
-                </LinearGradient>
-              </Animated.View>
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-
-      <Modal
-        visible={isProfileVisible}
-        transparent={true}
-        animationType="none"
-        onRequestClose={toggleProfileModal}
-      >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={toggleProfileModal}
-          />
-          <Animated.View style={[styles.modalContent, { transform: [{ translateY: slideAnim }] }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Profile</Text>
-              <TouchableOpacity onPress={toggleProfileModal}>
-                <Ionicons name="close-circle" size={28} color="#888" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.profileInfoContainer}>
-              <View style={styles.avatarContainer}>
-                <Ionicons name="person" size={40} color="#053B90" />
               </View>
-              <Text style={styles.profileName}>{userData.full_name || "Guest User"}</Text>
-
+              <TouchableOpacity style={styles.iconCircleHeader} onPress={toggleProfileModal}><Ionicons name="person-outline" size={24} color="#FFF" /></TouchableOpacity>
+            </Animated.View>
+            <View style={styles.welcomeSection}>
+              <Text style={styles.welcome}>Welcome </Text>
+              <Text style={styles.userName}>{userData.full_name || 'User'} ! 👋</Text>
+              <Text style={styles.subWelcome}>Secure your future with us.</Text>
             </View>
+          </LinearGradient>
 
-            <View style={styles.modalDivider} />
-
-            <View style={styles.menuContainer}>
-              {MENU_ITEMS.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.menuItem}
-                  onPress={() => {
-                    toggleProfileModal();
-                    navigation.navigate(item.link);
-                  }}
-                >
-                  <View style={styles.menuIconBox}>
-                    <MaterialIcons name={item.icon} size={24} color="#053B90" />
-                  </View>
-                  <Text style={styles.menuText}>{item.title}</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#ccc" />
+          <Animated.View style={[styles.floatingWrapper, { transform: [{ translateY }] }]}>
+            <ScrollView ref={scrollRef} horizontal showsVerticalScrollIndicator={false} snapToInterval={CARD_WIDTH} decelerationRate="fast" contentContainerStyle={{ paddingHorizontal: 20 }}>
+              {cardData.map((card, index) => (
+                <TouchableOpacity key={index} style={styles.floatingCard} onPress={() => setZoomImage(card.image)} activeOpacity={0.9}>
+                  <Image source={card.image} style={styles.bgImage} resizeMode="stretch" />
                 </TouchableOpacity>
               ))}
+            </ScrollView>
+          </Animated.View>
+
+          <View style={styles.contentPadding}>
+            
+            {/* --- TRUST BAR --- */}
+            <View style={styles.trustBarContainer}>
+              <View style={styles.trustItem}>
+                <Ionicons name="shield-checkmark" size={22} color="#2E7D32" />
+                <Text style={styles.trustText}>100% Secure</Text>
+              </View>
+              <View style={styles.trustDivider} />
+              <View style={styles.trustItem}>
+                <FontAwesome5 name="file-contract" size={20} color="#053B90" />
+                <Text style={styles.trustText}>Chit Fund Act</Text>
+              </View>
+              <View style={styles.trustDivider} />
+              <View style={styles.trustItem}>
+                <FontAwesome5 name="university" size={20} color="#FF6F00" />
+                <Text style={styles.trustText}>Bank Grade</Text>
+              </View>
             </View>
 
-            <View style={styles.logoutContainer}>
-              <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                <LinearGradient colors={["#FF416C", "#FF4B2B"]} style={styles.logoutGradient}>
-                  <MaterialIcons name="logout" size={22} color="#FFF" />
-                  <Text style={styles.logoutText}>Logout</Text>
-                </LinearGradient>
+            {/* --- COMPLIANCE SECTION --- */}
+            <View style={styles.complianceCard}>
+              <View style={styles.complianceHeaderRow}>
+                <Ionicons name="shield-checkmark" size={24} color="#053B90" />
+                <Text style={styles.complianceTitle}>Fully Compliant & Registered</Text>
+              </View>
+              <Text style={styles.complianceSubtitle}>Registered under The Chit Funds Act, 1982. Your investments are legally protected.</Text>
+              
+              <View style={styles.complianceRow}>
+                <View style={styles.complianceColumn}>
+                  <View style={styles.complianceIconBox}>
+                    <FontAwesome5 name="landmark" size={30} color="#053B90" />
+                  </View>
+                  <Text style={styles.complianceLabel}>Registered with</Text>
+                  <Text style={styles.complianceValue}>Ministry of Corporate</Text>
+                  <Text style={styles.complianceValue}>Affairs (MCA)</Text>
+                </View>
+                <View style={styles.complianceDivider} />
+                <View style={styles.complianceColumn}>
+                  <View style={styles.complianceIconBox}>
+                    <FontAwesome5 name="hands-helping" size={30} color="#053B90" />
+                  </View>
+                  <Text style={styles.complianceLabel}>Recognised By</Text>
+                  <Text style={styles.complianceValue}>Bharti Inclusion</Text>
+                  <Text style={styles.complianceValue}>Initiative</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* --- CORRECTED LINK BUTTON --- */}
+            <TouchableOpacity
+              style={styles.viewLicenseBtnExternal}
+              onPress={() => navigation.navigate('LicenseAndCertificateScreen')}
+            >
+              <View style={styles.viewLicenseContentRow}>
+                <MaterialIcons name="open-in-new" size={20} color="#053B90" />
+                <Text style={styles.viewLicenseText}>View Government Licenses & Certificates</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* --- PARTNERS --- */}
+            <View style={styles.partnersCard}>
+               <Text style={styles.partnersTitle}>Our Banking & Payment Partners</Text>
+               <View style={styles.partnerLogoBox}><Image source={require("../../assets/b.png")} style={styles.partnerLogoImage} resizeMode="contain" /></View>
+            </View>
+
+            {/* --- JOIN STEPS --- */}
+            <View style={styles.sectionBlock}>
+              <View style={styles.headerBlock}><Text style={styles.headerBlockText}>How It Works</Text><View style={styles.blockUnderline} /></View>
+              
+              <View style={styles.timelineContainer}>
+                <View style={styles.timelineLine} />
+                {joinSteps.map((step, index) => (
+                  <View key={step.id} style={styles.timelineItem}>
+                    <View style={styles.timelineCircleWrapper}>
+                      <View style={styles.timelineCircle}>
+                        <Text style={styles.timelineNumber}>{step.id}</Text>
+                      </View>
+                      {index !== joinSteps.length - 1 && <View style={styles.timelineConnector} />}
+                    </View>
+                    <View style={styles.timelineContentCard}>
+                      <View style={styles.timelineIconRow}>
+                        <Ionicons name={step.icon} size={20} color="#6200EA" style={{ marginRight: 10 }} />
+                        <Text style={styles.timelineTitle}>{step.title}</Text>
+                      </View>
+                      <Text style={styles.timelineDesc}>{step.desc}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* --- GROW WITH US --- */}
+            <View style={styles.sectionBlock}>
+              <View style={styles.headerBlock}><Text style={styles.headerBlockText}>Our Track Record</Text><View style={styles.blockUnderline} /></View>
+              <View style={styles.statsGrid}>
+                {growthStats.map((item, index) => (
+                  <Animated.View 
+                    key={item.id} 
+                    style={[
+                      styles.statBoxClean,
+                      {
+                        opacity: statsAnims[index],
+                        transform: [{ scale: statsAnims[index] }],
+                        borderTopColor: item.color,
+                        borderTopWidth: 3 
+                      }
+                    ]}
+                  >
+                    <View style={[styles.statIconClean, { backgroundColor: item.color + '15' }]}>
+                      <FontAwesome5 name={item.icon} size={14} color={item.color} />
+                    </View>
+                    <Text style={styles.statValueClean}>{item.value}</Text>
+                    <Text style={styles.statLabelClean}>{item.label}</Text>
+                  </Animated.View>
+                ))}
+              </View>
+            </View>
+
+            {/* --- ADVANTAGES --- */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitleText}>Why Choose MyChits?</Text>
+              <View style={styles.advantagesCleanGrid}>
+                {mychitsAdvantages.map((item, index) => (
+                  <TouchableOpacity key={index} style={styles.advantageCleanBox} onPress={() => handleAdvantagePress(item)} activeOpacity={0.8}>
+                    <View style={[styles.advantageIconBox, { backgroundColor: item.iconColor + '20' }]}>
+                       <MaterialIcons name={item.icon} size={22} color={item.iconColor} />
+                    </View>
+                    <Text style={styles.advantageText}>{item.text1} <Text style={{fontWeight:'400'}}>{item.text2}</Text></Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Status Card */}
+            <Animated.View style={[styles.statusCleanCard, { transform: [{ scale: pulseAnim }] }]}>
+              <View style={styles.statusRow}>
+                <View style={[styles.statusIcon, { backgroundColor: '#FF6F00' }]}><Ionicons name="hourglass-outline" size={24} color="#FFF" /></View>
+                <View style={{flex:1, marginLeft: 15}}>
+                  <Text style={[styles.statusTitle, { color: '#D84315' }]}>Application Under Review</Text>
+                  <Text style={styles.statusSub}>We are verifying your KYC documents.</Text>
+                </View>
+              </View>
+              <View style={styles.progressBarTrack}>
+                <Animated.View style={[styles.progressBarFill, { width: progressWidth, backgroundColor: '#FF6F00' }]} />
+              </View>
+            </Animated.View>
+
+            <ReviewsSection />
+
+            {/* Address Section */}
+            <LinearGradient colors={["#053B90", "#6200EA"]} style={styles.addressCard}>
+              <View style={styles.addressHeader}><Ionicons name="location" size={28} color="#FFD700" /><Text style={styles.addressTitle}>Head Office</Text></View>
+              <Text style={styles.addressText}>11/36-25, Third Floor, Kathriguppe Main Road, Banashankari Stage 3, Bengaluru - 560085</Text>
+              
+              <View style={styles.contactRow}>
+                 <TouchableOpacity style={styles.contactBtn} onPress={() => Linking.openURL(`tel:+919483900777`)}>
+                    <Ionicons name="call" size={16} color="#FFF" />
+                    <Text style={styles.contactBtnText}>Call Us</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity style={styles.contactBtn} onPress={() => Linking.openURL('mailto:support@mychits.com')}>
+                    <Ionicons name="mail" size={16} color="#FFF" />
+                    <Text style={styles.contactBtnText}>Email Us</Text>
+                 </TouchableOpacity>
+              </View>
+            </LinearGradient>
+
+            {/* --- NEW BEAUTIFUL APP INFO FOOTER --- */}
+            <LinearGradient
+                colors={['#F0F8FF', '#F8F8F8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.appInfoFooter}
+            >
+                <TouchableOpacity
+                    onPress={handleWebsiteLink}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.appInfoWebsiteLink}>
+                        Visit our Website: <Text style={{ fontWeight: 'bold', color: '#053B90' }}>mychits.co.in</Text>
+                    </Text>
+                </TouchableOpacity>
+
+                {/* Social Media Section */}
+                <View style={styles.socialMediaContainer}>
+                    <TouchableOpacity onPress={() => openLink('https://www.facebook.com/MyChits')} style={styles.socialIcon} activeOpacity={0.7}>
+                        <LinearGradient
+                            colors={['#3b5998', '#4267B2']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.gradientIcon}
+                        >
+                            <FontAwesome name="facebook" size={20} color="#fff" />
+                        </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={() => openLink('https://www.instagram.com/my_chits/')} style={styles.socialIcon} activeOpacity={0.7}>
+                        <LinearGradient
+                            colors={['#833AB4', '#C13584', '#FD1D1D', '#F56040', '#FFDC80']}
+                            start={{ x: 0.0, y: 1.0 }}
+                            end={{ x: 1.0, y: 0.0 }}
+                            style={styles.gradientIcon}
+                        >
+                            <FontAwesome name="instagram" size={20} color="#fff" />
+                        </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={handleWhatsAppPress} style={styles.socialIcon} activeOpacity={0.7}>
+                        <LinearGradient
+                            colors={['#25D366', '#128C7E']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.gradientIcon}
+                        >
+                            <FontAwesome name="whatsapp" size={20} color="#fff" />
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.madeWithLoveContainer}>
+                    <Text style={styles.appInfoMadeWithLove}>
+                        Made with <Text style={{ color: '#E53935' }}>❤️</Text> in India
+                    </Text>
+                    <MaterialIcons name="public" size={16} color="#4CAF50" style={styles.madeInIndiaIcon} />
+                </View>
+            </LinearGradient>
+            
+          </View>
+        </ScrollView>
+
+        {/* FIXED BOTTOM BUTTON */}
+        <View style={styles.fixedButtonContainer}>
+          <TouchableOpacity activeOpacity={0.9}>
+            <LinearGradient colors={["#053B90", "#FF6F00"]} start={[0, 0]} end={[1, 0]} style={styles.fixedButton}>
+              <Text style={styles.fixedButtonText}>Explore Chit Plans</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+
+      {/* Profile Modal */}
+      <Modal visible={isProfileVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={{ flex: 1 }} onPress={toggleProfileModal} />
+          <Animated.View style={[styles.modalContent, { transform: [{ translateY: slideAnim }] }]}>
+            <View style={styles.modalHeaderRow}>
+              <View style={styles.profileHeaderInfo}>
+                <Text style={styles.modalTitle}>My Profile</Text>
+                <Text style={styles.profileName}>{userData.full_name || 'Guest User'}</Text>
+              </View>
+              <TouchableOpacity onPress={toggleProfileModal} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={28} color="#333" />
               </TouchableOpacity>
             </View>
+            
+             {/* Modal Status Card */}
+             <Animated.View style={[styles.statusCleanCard, { transform: [{ scale: pulseAnim }] }]}>
+              <View style={styles.statusRow}>
+                <View style={[styles.statusIcon, { backgroundColor: '#FF6F00' }]}><Ionicons name="hourglass-outline" size={24} color="#FFF" /></View>
+                <View style={{flex:1, marginLeft: 15}}>
+                  <Text style={[styles.statusTitle, { color: '#D84315' }]}>Application Under Review</Text>
+                  <Text style={styles.statusSub}>We are verifying your details.</Text>
+                </View>
+              </View>
+              <View style={styles.progressBarTrack}>
+                 <Animated.View style={[styles.progressBarFill, { width: progressWidth, backgroundColor: '#FF6F00' }]} />
+              </View>
+            </Animated.View>
+
+            <TouchableOpacity style={styles.menuItem} onPress={() => { toggleProfileModal(); setAppUser(null); navigation.replace('Login'); }}><MaterialIcons name="logout" size={24} color="#FF416C" /><Text style={[styles.menuText, { color: '#FF416C' }]}>Logout</Text></TouchableOpacity>
           </Animated.View>
         </View>
+      </Modal>
+
+      <Modal visible={!!zoomImage} transparent={true} animationType="fade">
+        <View style={styles.zoomContainer}><TouchableOpacity style={styles.closeZoomBtn} onPress={() => setZoomImage(null)}><Ionicons name="close-circle" size={35} color="#FFF" /></TouchableOpacity><Image source={zoomImage} style={styles.zoomedImage} resizeMode="contain" /></View>
       </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F7FA' },
-  headerCurve: {
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 80,
-    borderBottomLeftRadius: 45,
-    borderBottomRightRadius: 45,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 6 },
-  },
-  bgCircle1: {
-    position: 'absolute',
-    top: -120,
-    right: -60,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.1)'
-  },
-  bgCircle2: {
-    position: 'absolute',
-    bottom: -90,
-    left: -70,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.1)'
-  },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", zIndex: 10 },
+  container: { flex: 1, backgroundColor: '#F4F6F9' },
+  headerCurve: { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 80, borderBottomLeftRadius: 45, borderBottomRightRadius: 45, overflow: 'hidden' },
+  bgCircle1: { position: 'absolute', top: -120, right: -60, width: 280, height: 280, borderRadius: 140, backgroundColor: 'rgba(255, 255, 255, 0.05)' },
+  slantLineStyle: { position: 'absolute', top: 0, bottom: 0, width: 40, zIndex: 0 },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", zIndex: 2 },
   logoContainer: { flexDirection: 'row', alignItems: 'center' },
   logoImage: { width: 50, height: 50, marginRight: 12 },
-  logo: { fontSize: 28, fontWeight: "900", color: "#FFF", letterSpacing: 1.8 },
-  tagBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10, marginTop: 5, alignSelf: 'flex-start' },
-  headerTagText: { color: "#FFF", fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
-  headerIcons: { flexDirection: 'row' },
-  iconCircleHeader: {
-    backgroundColor: "rgba(255,255,255,0.18)",
-    padding: 11,
-    borderRadius: 16,
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)'
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: '#FF4757',
-    borderWidth: 2,
-    borderColor: '#FFF'
-  },
-  welcomeSection: { marginTop: 32, zIndex: 10 },
-  welcome: { fontSize: 26, fontWeight: "900", color: "#FFF", letterSpacing: 0.5 },
-  userName: { fontSize: 20, fontWeight: "800", color: "#FFF", marginTop: 4 },
-  subWelcome: { fontSize: 15, color: "#E8E8E8", marginTop: 6, letterSpacing: 0.3 },
-  floatingWrapper: { marginTop: -60, zIndex: 100 },
-  floatingCard: {
-    width: 340,
-    height: 190,
-    marginRight: 18,
-    borderRadius: 24,
-    backgroundColor: 'transparent',
-    elevation: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 }
-  },
-  bgImage: {
-    flex: 1,
-    justifyContent: "flex-end",
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
-    overflow: 'hidden'
-  },
-  cardGradient: {
-    padding: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)'
-  },
-  cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  badgePopular: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  badgeText: { color: "#FFF", fontSize: 10, fontWeight: "900", letterSpacing: 0.5 },
-  cardTitle: { color: "#FFF", fontSize: 20, fontWeight: "900", marginTop: 6, letterSpacing: 0.3 },
-  cardSub: { color: "#E8E8E8", fontSize: 13, marginTop: 5, fontWeight: '500' },
-  cardFooter: { marginTop: 14 },
-  cardBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)'
-  },
-  cardBtnText: { color: '#FFF', fontSize: 13, fontWeight: '700', marginRight: 6 },
-  contentPadding: { paddingHorizontal: 20, marginTop: 30 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  sectionTitle: { fontSize: 22, fontWeight: "900", color: "#1A237E", letterSpacing: 0.3 },
-  statusCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 28,
-    padding: 26,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 6 },
-    marginBottom: 24,
-    overflow: 'hidden',
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: '#f0f0f0'
-  },
-  shimmerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: 120, backgroundColor: 'rgba(255,255,255,0.4)' },
-  statusHeader: { flexDirection: "row", alignItems: "center" },
-  statusIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-    shadowColor: "#FF9800",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  statusTitle: { fontSize: 18, fontWeight: "900", color: "#1A1A1A", letterSpacing: 0.2 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  pulseDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#FF9800', marginRight: 7 },
-  statusSubTitle: { fontSize: 13, color: "#FF9800", fontWeight: "700" },
-  progressContainer: { marginTop: 24 },
-  progressBar: { height: 11, backgroundColor: "#F5F5F5", borderRadius: 6, overflow: "hidden" },
-  progressFill: { width: "20%", height: "100%", borderRadius: 6 },
-  progressText: { fontSize: 13, color: "#888", marginTop: 10, textAlign: "right", fontWeight: '700' },
-  statusDesc: { fontSize: 14, color: "#555", marginTop: 20, lineHeight: 22, fontWeight: '500' },
-  featureGrid: { flexDirection: "row", justifyContent: "space-between", marginTop: 26 },
-  featureItem: { alignItems: "center", flex: 1 },
-  featureIcon: { padding: 14, borderRadius: 16, marginBottom: 10 },
-  featureText: { fontSize: 13, fontWeight: "800", color: "#444", letterSpacing: 0.2 },
+  logo: { fontSize: 26, fontWeight: "900", color: "#FFF", letterSpacing: 0.5 },
+  regBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8, marginTop: 4 },
+  regBadgeText: { color: "#FFF", fontSize: 9, fontWeight: "700", marginLeft: 4 },
+  headerTagText: { color: "#E3F2FD", fontSize: 11, fontWeight: "600", marginTop: 4, letterSpacing: 0.5 },
+  iconCircleHeader: { backgroundColor: "rgba(255,255,255,0.15)", padding: 10, borderRadius: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  welcomeSection: { marginTop: 30, zIndex: 2 },
+  welcome: { fontSize: 22, fontWeight: "700", color: "#FFF" },
+  userName: { fontSize: 24, color: "#FFF", fontWeight: "800" },
+  subWelcome: { fontSize: 14, color: "#E3F2FD", marginTop: 5 },
+  floatingWrapper: { marginTop: -60 },
+  floatingCard: { width: 340, height: 190, marginRight: 18, borderRadius: 20, backgroundColor: '#FFF', elevation: 12, shadowColor: "#053B90", shadowOpacity: 0.25, shadowRadius: 15, shadowOffset: { width: 0, height: 10 }, overflow: 'hidden', borderWidth: 1, borderColor: '#E0E0E0' },
+  bgImage: { width: '100%', height: '100%' },
+  contentPadding: { paddingHorizontal: 20, marginTop: 30, paddingBottom: 40 },
+  trustBarContainer: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 12, paddingVertical: 15, marginBottom: 20, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, borderWidth: 1, borderColor: '#EEE' },
+  trustItem: { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
+  trustText: { fontSize: 11, fontWeight: '700', color: '#333', marginTop: 5, textAlign: 'center' },
+  trustDivider: { width: 1, height: '70%', backgroundColor: '#EEE' },
+  complianceCard: { backgroundColor: "#FFF", borderRadius: 20, padding: 20, marginBottom: 15, borderWidth: 1, borderColor: '#E0E0E0', elevation: 4, shadowColor: "#053B90", shadowOpacity: 0.08, shadowRadius: 10 },
+  complianceHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  complianceTitle: { fontSize: 16, fontWeight: "800", color: "#053B90", marginLeft: 10, flex: 1 },
+  complianceSubtitle: { fontSize: 13, color: '#555', marginLeft: 34, marginBottom: 20, lineHeight: 18 },
+  complianceRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginTop: 10 },
+  complianceColumn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  complianceDivider: { width: 1, height: '80%', backgroundColor: '#F0F0F0' },
+  complianceIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E8EAF6', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  complianceLabel: { fontSize: 10, color: '#888', fontWeight: '600', marginTop: 5 },
+  complianceValue: { fontSize: 11, color: '#333', fontWeight: '800', textAlign: 'center' },
   
-  // --- How It Works ---
-  howItWorksCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  stepNumber: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#053B90',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-    elevation: 3,
-    shadowColor: "#053B90",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  stepNumberText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  stepContent: {
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#1A237E',
-    marginBottom: 2,
-  },
-  stepDesc: {
-    fontSize: 13,
-    color: '#666',
-    lineHeight: 18,
-  },
+  // STYLES FOR LINK BUTTON
+  viewLicenseBtnExternal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 0, marginBottom: 25, paddingVertical: 14, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1.5, borderColor: '#053B90', elevation: 2 },
+  viewLicenseContentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  viewLicenseText: { color: '#053B90', fontWeight: '800', fontSize: 13.5, marginLeft: 8 },
 
-  afterCard: {
-    backgroundColor: "#F8FAFF",
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 2,
-    borderColor: "#E1E8FF",
-    borderStyle: "dashed",
-    marginBottom: 6
-  },
-  unlockItem: { flexDirection: "row", alignItems: "center", marginBottom: 18 },
-  unlockIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  unlockText: { fontSize: 14, color: "#333", fontWeight: "700", marginLeft: 14, flex: 1 },
-  mainCTA: {
-    marginTop: 24,
-    marginBottom: 32,
-    borderRadius: 18,
-    elevation: 8,
-    shadowColor: "#053B90",
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 }
-  },
-  ctaGradient: {
-    height: 62,
-    borderRadius: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  mainCTAText: { color: "#FFF", fontSize: 18, fontWeight: "900", marginRight: 10, letterSpacing: 0.3 },
-  toolsSectionWrapper: { marginBottom: 30, position: 'relative', zIndex: 1 },
-  toolsBgBlob: {
-    position: 'absolute',
-    top: -20,
-    right: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(5, 59, 144, 0.03)',
-    zIndex: -1
-  },
-  toolsBgBlob2: { top: 50, left: -40, backgroundColor: 'rgba(255, 159, 28, 0.05)' },
-  sectionTitleContainer: {
-    backgroundColor: '#FFF',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  seeAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F4F8',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20
-  },
-  seeAllText: { fontSize: 13, fontWeight: '700', color: '#053B90', marginRight: 4 },
-  toolCardNew: {
-    width: 160,
-    height: 130,
-    borderRadius: 24,
-    justifyContent: 'space-between',
-    padding: 18,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-  },
-  toolCardBorder: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)'
-  },
-  toolGlow: {
-    position: 'absolute',
-    top: -20,
-    left: -20,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    opacity: 0.2,
-  },
-  toolGlowRight: {
-    position: 'absolute',
-    bottom: -20,
-    right: -20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    opacity: 0.3,
-  },
-  toolIconContainerNew: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  toolTextNew: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#FFF',
-    letterSpacing: 0.3,
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2
-  },
-  toolActionIndicator: {
-    alignSelf: 'flex-end',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
+  partnersCard: { backgroundColor: '#FFF', alignItems: 'center', padding: 20, marginBottom: 30, borderRadius: 20, borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5 },
+  partnersTitle: { fontSize: 12, fontWeight: '700', color: '#555555', marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1.5 },
+  partnerLogoBox: { width: '100%', alignItems: 'center', justifyContent: 'center' },
+  partnerLogoImage: { width: 280, height: 50 },
+  sectionBlock: { marginBottom: 30 },
+  headerBlock: { alignItems: 'center', marginBottom: 20 },
+  headerBlockText: { fontSize: 20, fontWeight: "900", color: '#1A237E', textTransform: 'uppercase' },
+  blockUnderline: { width: 60, height: 4, backgroundColor: '#053B90', marginTop: 8, borderRadius: 2 },
+  timelineContainer: { paddingHorizontal: 10 },
+  timelineLine: { position: 'absolute', left: 24, top: 20, bottom: 20, width: 2, backgroundColor: '#E0E0E0', zIndex: 0 },
+  timelineItem: { flexDirection: 'row', marginBottom: 25, zIndex: 1 },
+  timelineCircleWrapper: { alignItems: 'center', width: 48 },
+  timelineCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#053B90', justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#F4F6F8', zIndex: 2, elevation: 2 },
+  timelineNumber: { color: '#FFF', fontWeight: '800', fontSize: 14 },
+  timelineConnector: { position: 'absolute', top: 32, bottom: -25, width: 2, backgroundColor: '#053B90' },
+  timelineContentCard: { flex: 1, backgroundColor: '#FFF', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#EEE', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 5, elevation: 2 },
+  timelineIconRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  timelineTitle: { fontSize: 15, fontWeight: '800', color: '#333' },
+  timelineDesc: { fontSize: 12, color: '#666', lineHeight: 18, textAlign: 'justify' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 2 },
+  statBoxClean: { width: '31%', backgroundColor: '#FFF', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 5, marginBottom: 8, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 2, borderWidth: 1, borderColor: '#F5F5F5' },
+  statIconClean: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  statValueClean: { fontSize: 14, fontWeight: '800', color: '#333', marginBottom: 2, textAlign: 'center' },
+  statLabelClean: { fontSize: 9, fontWeight: '600', color: '#777', textAlign: 'center' },
+  sectionTitleText: { fontSize: 18, fontWeight: "900", color: "#333", marginBottom: 15, textAlign: 'center' },
+  advantagesCleanGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  advantageCleanBox: { width: '31%', backgroundColor: '#FFF', borderRadius: 12, padding: 10, alignItems: 'center', marginBottom: 10, elevation: 1, borderWidth: 1, borderColor: '#F5F5F5' },
+  advantageIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  advantageText: { fontSize: 10, fontWeight: '700', color: '#444', textAlign: 'center', marginTop: 4, lineHeight: 13 },
+  statusCleanCard: { backgroundColor: '#FFF8E1', borderRadius: 15, padding: 20, marginBottom: 25, elevation: 3, shadowColor: '#FF6F00', shadowOpacity: 0.15, shadowRadius: 8, borderWidth: 1, borderColor: '#FFECB3' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  statusIcon: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  statusTitle: { fontSize: 16, fontWeight: '800', color: '#333' },
+  statusSub: { fontSize: 13, color: '#666', marginTop: 2 },
+  progressBarTrack: { height: 6, backgroundColor: '#FFE0B2', borderRadius: 3, overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: 3 },
+  reviewsContainer: { marginBottom: 25 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  sectionTitle: { fontSize: 20, fontWeight: "900", color: "#333" },
+  reviewCard: { width: 260, backgroundColor: "#FFF", borderRadius: 20, padding: 15, marginRight: 15, elevation: 3, borderWidth: 1, borderColor: '#F0F0F0' },
+  reviewerInfo: { flexDirection: 'row', marginBottom: 10 },
+  reviewAvatar: { width: 35, height: 35, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  reviewAvatarText: { fontWeight: '800' },
+  reviewName: { fontWeight: '800', color: '#333', fontSize: 14 },
+  reviewLocation: { fontSize: 11, color: '#888' },
+  reviewText: { fontSize: 12, color: '#555', lineHeight: 18 },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center' },
+  seeAllText: { color: '#053B90', fontWeight: '700', marginRight: 2 },
+  addressCard: { borderRadius: 25, padding: 25, marginBottom: 20 },
+  addressHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  addressTitle: { fontSize: 18, color: '#FFF', fontWeight: '900', marginLeft: 10 },
+  addressText: { color: '#E8E8E8', lineHeight: 22, marginBottom: 20 },
+  contactRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  contactBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
+  contactBtnText: { color: '#FFF', fontWeight: '700', marginLeft: 5 },
+  
+  // --- NEW FOOTER STYLES ---
+  appInfoFooter: { marginTop: 10, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 30, paddingBottom: 30, paddingHorizontal: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  appInfoWebsiteLink: { fontSize: 14, color: '#555', marginBottom: 20, textDecorationLine: 'underline' },
+  socialMediaContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
+  socialIcon: { marginHorizontal: 10 },
+  gradientIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4 },
+  madeWithLoveContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  appInfoMadeWithLove: { fontSize: 12, color: '#777', marginRight: 5 },
+  madeInIndiaIcon: { marginBottom: 2 },
 
-  // --- Review Styles (Fixed) ---
-  reviewsContainer: {
-    marginBottom: 30,
-  },
-  reviewCard: {
-    width: 280,
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    padding: 16,
-    marginRight: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  reviewHeader: {
-    marginBottom: 8,
-  },
-  reviewerInfo: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8
-  },
-  reviewAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-    marginTop: 2 // Slight adjustment to align with top of text
-  },
-  reviewAvatarText: {
-    color: '#053B90',
-    fontWeight: '800',
-    fontSize: 14
-  },
-  reviewName: { fontSize: 16, fontWeight: '800', color: '#333' },
-  reviewLocation: { fontSize: 12, color: '#888', fontWeight: '600' },
-  reviewRatingContainer: {
-    flexDirection: 'row',
-    marginTop: 4, // Clean spacing from location text
-  },
-  reviewStar: { 
-    marginRight: 2,
-  },
-  reviewText: { fontSize: 13, color: '#555', lineHeight: 20, fontWeight: '500' },
-
-  addressCard: {
-    borderRadius: 30,
-    padding: 30,
-    marginTop: 18,
-    marginBottom: 45,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 }
-  },
-  addressHeader: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-  locationIconWrapper: {
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    padding: 8,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 215, 0, 0.3)'
-  },
-  addressTitle: { fontSize: 22, fontWeight: "900", color: "#FFF", marginLeft: 14, letterSpacing: 0.3 },
-  addressText: { color: "#E8E8E8", lineHeight: 24, fontSize: 15, fontWeight: '500' },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.25)', marginVertical: 24 },
-  connectText: { fontSize: 14, color: '#D0D0D0', marginBottom: 16, fontWeight: '700', letterSpacing: 0.5 },
-  socialRow: { flexDirection: "row", justifyContent: 'flex-start' },
-  socialBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)'
-  },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalBackdrop: { position: 'absolute', top: 0, left: 0, bottom: 0, right: 0, },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 24,
-    paddingBottom: 40,
-    height: '90%',
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -5 }
-  },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 24, fontWeight: '900', color: '#1A237E' },
-  profileInfoContainer: { alignItems: 'center', marginVertical: 10 },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#BBDEFB'
-  },
-  profileName: { fontSize: 22, fontWeight: '800', color: '#333' },
-  profileSub: { fontSize: 14, color: '#777', marginTop: 4, fontWeight: '500' },
-  modalDivider: { height: 1, backgroundColor: '#EEE', marginVertical: 20 },
-  menuContainer: { marginBottom: 20 },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  menuIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: '#F5F7FA',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  menuText: { flex: 1, fontSize: 16, fontWeight: '600', color: '#444' },
-  logoutContainer: { marginTop: 10 },
-  logoutBtn: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: "#FF416C",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 }
-  },
-  logoutGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  logoutText: { color: '#FFF', fontSize: 18, fontWeight: '800', marginLeft: 10 },
+  socialRow: { flexDirection: 'row', marginTop: 20 },
+  socialBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  dividerLine: { height: 1, width: '30%', backgroundColor: '#D0D0D0', marginVertical: 15, alignSelf: 'center' },
+  madeWithLove: { fontSize: 12, color: '#999', fontWeight: '500', letterSpacing: 0.5, textAlign: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFF', padding: 30, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  profileHeaderInfo: { flex: 1 },
+  modalTitle: { fontSize: 22, fontWeight: "900", color: '#333' },
+  profileName: { fontSize: 18, fontWeight: '700', color: '#333', marginTop: 4 },
+  profilePhone: { fontSize: 14, fontWeight: '400', color: '#666', marginTop: 2 },
+  modalCloseBtn: { padding: 4 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
+  menuText: { marginLeft: 15, fontSize: 16, fontWeight: '700' },
+  zoomContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  zoomedImage: { width: width, height: height * 0.7 },
+  closeZoomBtn: { position: 'absolute', top: 40, right: 20, zIndex: 1 },
+  fixedButtonContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#F4F6F9', paddingHorizontal: 20, paddingVertical: 20, borderTopLeftRadius: 25, borderTopRightRadius: 25, shadowColor: '#053B90', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 20, zIndex: 1000 },
+  fixedButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', elevation: 5 },
+  fixedButtonText: { color: "#FFFFFF", fontSize: 18, fontWeight: "800", letterSpacing: 0.5 },
 });
 
 export default DashboardScreen;
