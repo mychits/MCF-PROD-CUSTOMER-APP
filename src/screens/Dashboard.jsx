@@ -518,7 +518,10 @@ const DashboardScreen = ({ navigation }) => {
         </ScrollView>
 
         <View style={styles.fixedButtonContainer}>
-          <TouchableOpacity activeOpacity={0.9}>
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            onPress={() => navigation.navigate('Enrollment')}
+          >
             <LinearGradient colors={["#053B90", "#FF6F00"]} start={[0, 0]} end={[1, 0]} style={styles.fixedButton}>
               <Text style={styles.fixedButtonText}>Explore Chit Plans</Text>
             </LinearGradient>
