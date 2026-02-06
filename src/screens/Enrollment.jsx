@@ -1,6 +1,6 @@
-// Enrollment.jsx
 
-import React, { useState, useEffect, useContext } from "react";
+
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
     View,
     Text,
@@ -13,78 +13,146 @@ import {
     SafeAreaView,
     Platform,
     Image,
-    Alert, // Kept, but only for legacy errors, not the main join flow
+    Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import url from "../data/url";
-import axios from "axios";
 import Header from "../components/layouts/Header";
 import { NetworkContext } from '../context/NetworkProvider';
 import Toast from 'react-native-toast-message';
 import { ContextProvider } from "../context/UserProvider"
 
 // START: LOTTIE IMPORT PLACEHOLDER
-// IMPORTANT: To use a Lottie animation, you need to:
-// 1. Install the dependency: npm install lottie-react-native
-// 2. Uncomment the following lines:
 // import LottieView from 'lottie-react-native'; 
 // const enrollmentLottie = require('../../assets/animations/enrollment-confirm.json'); 
 // END: LOTTIE IMPORT PLACEHOLDER
 
 const formatNumberIndianStyle = (num) => {
-    if (num === null || num === undefined) {
-        return "0";
-    }
-    // Fixed split on '.' for standard number formatting, not ',' as was in the original snippet
+    if (num === null || num === undefined) return "0";
     const parts = num.toString().split('.');
     let integerPart = parts[0];
     let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
     let isNegative = false;
-    if (integerPart.startsWith('-')) {
-        isNegative = true;
-        integerPart = integerPart.substring(1);
-    }
-    
-    // Logic for Indian style (2-digit grouping after the first 3)
+    if (integerPart.startsWith('-')) { isNegative = true; integerPart = integerPart.substring(1); }
     const lastThree = integerPart.substring(integerPart.length - 3);
     const otherNumbers = integerPart.substring(0, integerPart.length - 3);
-    
     if (otherNumbers !== '') {
         const formattedOtherNumbers = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
         integerPart = formattedOtherNumbers + ',' + lastThree;
-    } else {
-        integerPart = lastThree;
-    }
-    
+    } else { integerPart = lastThree; }
     return (isNegative ? '-' : '') + integerPart + decimalPart;
 };
 
-// **NEW HELPER FUNCTION FOR CONDITIONAL VACANT SEATS**
 const getVacantSeats = (card) => {
-    // 1. Prioritize the new app_display_vacany_seat field
     const appDisplaySeats = parseInt(card.app_display_vacany_seat, 10);
-    if (!isNaN(appDisplaySeats) && appDisplaySeats > 0) {
-        return appDisplaySeats;
-    }
-
-    // 2. Fallback: Calculate vacant seats using old logic
+    if (!isNaN(appDisplaySeats) && appDisplaySeats > 0) return appDisplaySeats;
     const totalMembers = parseInt(card.number_of_members, 10) || 0;
-    // Assuming 'enrolled_members' exists on the card object for the fallback calculation
     const enrolledMembers = parseInt(card.enrolled_members, 10) || 0; 
-    
     const calculatedSeats = totalMembers - enrolledMembers;
-    
-    // Ensure the result is not negative
     return Math.max(0, calculatedSeats);
 };
+
+// START: STYLISH POSTER COMPONENT (UNIQUE COLOR LINES)
+const StylishPosterSlider = ({ data, onPress }) => {
+    const scrollRef = useRef(null);
+    const screenWidth = Dimensions.get('window').width;
+    
+    const CARD_WIDTH = screenWidth; 
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        if (data.length <= 1) return;
+        const timer = setInterval(() => {
+            const nextIndex = (currentIndex + 1) % data.length;
+            setCurrentIndex(nextIndex);
+            scrollRef.current?.scrollTo({
+                x: nextIndex * CARD_WIDTH,
+                animated: true,
+            });
+        }, 3500); 
+        return () => clearInterval(timer);
+    }, [currentIndex, data.length, CARD_WIDTH]);
+
+    if (!data || data.length === 0) return null;
+
+    return (
+        <View style={styles.posterContainer}>
+            <ScrollView
+                ref={scrollRef}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                snapToInterval={CARD_WIDTH}
+                snapToAlignment="start"
+            >
+                {data.map((item, index) => (
+                    <TouchableOpacity
+                        key={item._id}
+                        activeOpacity={0.9}
+                        onPress={() => onPress(item)}
+                        style={[styles.posterCard, { width: CARD_WIDTH }]}
+                    >
+                        {/* 1. Base Background */}
+                        <View style={styles.posterBackground} />
+                        
+                        {/* 2. UNIQUE SLANT LINES */}
+                        {/* Line 1: Vibrant Pink (Top Left) */}
+                        <View style={styles.slantLinePink} />
+                        
+                        {/* Line 2: Soft Gold (Middle Accent) */}
+                        <View style={styles.slantLineGold} />
+
+                        {/* Line 3: Electric Cyan (Bottom Right) */}
+                        <View style={styles.slantLineCyan} />
+
+                        {/* 3. Content Layout */}
+                        <View style={styles.posterContentLayout}>
+                            
+                            {/* Left: Text Area */}
+                            <View style={styles.posterTextSection}>
+                             
+                                
+                                <Text style={styles.offerTextLine1}>
+                                    Get ₹ {formatNumberIndianStyle(item.group_value)}
+                                </Text>
+
+                                <View style={styles.offerTextLine2Container}>
+                                    <Text style={styles.offerTextLine2Prefix}>By investing </Text>
+                                    <Text style={styles.offerTextLine2Amount}>₹ {formatNumberIndianStyle(item.monthly_installment)}</Text>
+                                    <Text style={styles.offerTextLine2Suffix}>/monthly</Text>
+                                </View>
+                            </View>
+
+                            {/* Right: Image Area */}
+                            <View style={styles.posterImageSection}>
+                                <View style={styles.imageShadowBg} />
+                                <Image 
+                                    source={require('../../assets/GIRL-IMGES.png')} 
+                                    style={styles.posterImage} 
+                                    resizeMode="contain"
+                                />
+                                <View style={styles.floatingPriceTag}>
+                                    <Text style={styles.floatingPriceText}>
+                                        {item.group_members} Members
+                                    </Text>
+                                </View>
+                            </View>
+
+                        </View>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+        </View>
+    );
+};
+// END: STYLISH POSTER COMPONENT
 
 
 const Enrollment = ({ route, navigation }) => {
     const { groupFilter } = route.params || {};
     const [appUser, setAppUser] = useContext(ContextProvider);
     const userId = appUser?.userId || appUser?.user_id; 
-    // ADDED: Define userName here for use in Toast and Modal
-    const userName = appUser?.name || appUser?.user_name || "User"; 
     const [selectedCardIndex, setSelectedCardIndex] = useState(null);
     const [cardsData, setCardsData] = useState([]);
 
@@ -99,7 +167,6 @@ const Enrollment = ({ route, navigation }) => {
 
     const [isJoining, setIsJoining] = useState(false);
     const [joinGroupId, setJoinGroupId] = useState(null);
-    // REMOVED: [customEnrollModalVisible, setCustomEnrollModalVisible] and [enrollmentConfirmationData, setEnrollmentConfirmationData]
 
     const groupColors = {
         new: { primary: '#E0F7FA', secondary: '#00BCD4', text: '#00BCD4', darkText: '#263238', buttonBackground: '#00BCD4', selectedBorder: '#00BCD4', iconColor: '#00BCD4' },
@@ -131,77 +198,41 @@ const Enrollment = ({ route, navigation }) => {
 
     const fetchGroups = async () => {
         if (!isConnected || !isInternetReachable) {
-            setIsLoading(false);
-            setError("No internet connection. Please check your network and try again.");
-            setCardsData([]);
-            Toast.show({
-                type: 'error',
-                text1: 'Offline',
-                text2: 'Cannot load groups without internet connection.',
-                position: 'bottom',
-                visibilityTime: 4000,
-            });
+            setIsLoading(false); setError("No internet connection. Please check your network and try again."); setCardsData([]);
+            Toast.show({ type: 'error', text1: 'Offline', text2: 'Cannot load groups without internet connection.', position: 'bottom', visibilityTime: 4000 });
             return;
         }
-        setIsLoading(true);
-        setError(null);
+        setIsLoading(true); setError(null);
         let endpoint = `${url}/group/get-group/`;
-        if (selectedGroup === "AllGroups") {
-            endpoint = `${url}/group/filter/AllGroups`;
-        }
-        if (selectedGroup === "NewGroups") {
-            endpoint = `${url}/group/filter/NewGroups`;
-        } else if (selectedGroup === "OngoingGroups") {
-            endpoint = `${url}/group/filter/OngoingGroups`;
-        }else if (selectedGroup === "VacantGroups") {
-            endpoint = `${url}/group/filter/VacantGroups`;
-        }
+        if (selectedGroup === "AllGroups") endpoint = `${url}/group/filter/AllGroups`;
+        if (selectedGroup === "NewGroups") endpoint = `${url}/group/filter/NewGroups`;
+        else if (selectedGroup === "OngoingGroups") endpoint = `${url}/group/filter/OngoingGroups`;
+        else if (selectedGroup === "VacantGroups") endpoint = `${url}/group/filter/VacantGroups`;
         try {
             const response = await fetch(endpoint);
             if (response.ok) {
                 const data = await response.json();
-                
                 let groupsData = data?.groups || [];
-
                 if (selectedGroup === "VacantGroups") {
-                    // Filter using the new helper function that applies the fallback logic
-                    const vacantGroups = groupsData.filter(group => {
-                        return getVacantSeats(group) > 0;
-                    });
+                    const vacantGroups = groupsData.filter(group => getVacantSeats(group) > 0);
                     setCardsData(vacantGroups);
-                } else {
-                    setCardsData(groupsData);
-                }
-                
+                } else { setCardsData(groupsData); }
                 setIsLoading(false);
             } else {
                 const errorData = await response.json();
-                setError(errorData.message || "Failed to load groups. Please try again.");
-                setIsLoading(false);
+                setError(errorData.message || "Failed to load groups. Please try again."); setIsLoading(false);
             }
         } catch (error) {
-            setError("An unexpected error occurred while fetching groups. Please retry.");
-            setIsLoading(false);
-            Toast.show({
-                type: 'error',
-                text1: 'Data Load Error',
-                text2: 'Could not fetch groups. Please retry.',
-                position: 'bottom',
-                visibilityTime: 4000,
-            });
+            setError("An unexpected error occurred while fetching groups. Please retry."); setIsLoading(false);
+            Toast.show({ type: 'error', text1: 'Data Load Error', text2: 'Could not fetch groups. Please retry.', position: 'bottom', visibilityTime: 4000 });
         }
     };
 
-    useEffect(() => {
-        fetchGroups();
-    }, [selectedGroup, isConnected, isInternetReachable]);
-
+    useEffect(() => { fetchGroups(); }, [selectedGroup, isConnected, isInternetReachable]);
     useEffect(() => {
         if (groupFilter) {
             const normalizedGroupFilter = groupFilter === "New Groups" ? "NewGroups" : (groupFilter === "Ongoing Groups" ? "OngoingGroups" : groupFilter);
-            if (normalizedGroupFilter !== selectedGroup) {
-                setSelectedGroup(normalizedGroupFilter);
-            }
+            if (normalizedGroupFilter !== selectedGroup) setSelectedGroup(normalizedGroupFilter);
         }
     }, [groupFilter]);
 
@@ -209,13 +240,9 @@ const Enrollment = ({ route, navigation }) => {
         const now = new Date();
         const startDate = new Date(card.start_date);
         const endDate = new Date(card.end_date);
-        if (startDate > now) {
-            return 'new';
-        } else if (startDate <= now && endDate > now) {
-            return 'ongoing';
-        } else if (endDate <= now) {
-            return 'ended';
-        }
+        if (startDate > now) return 'new';
+        else if (startDate <= now && endDate > now) return 'ongoing';
+        else if (endDate <= now) return 'ended';
         return 'default';
     };
 
@@ -256,287 +283,135 @@ const Enrollment = ({ route, navigation }) => {
             return startDate <= now && endDate > now;
         });
         const endedGroups = cardsData.filter(card => new Date(card.end_date) <= now);
-        
-        // Filter vacant groups using the helper function
         const vacantGroups = cardsData.filter(card => getVacantSeats(card) > 0);
         
-        if (selectedGroup === "AllGroups") {
-            return {
-                new: newGroups,
-                ongoing: ongoingGroups,
-                ended: endedGroups,
-                vacant: [] 
-            };
-        } else if (selectedGroup === "NewGroups") {
-            return { new: cardsData, ongoing: [], ended: [], vacant: [] };
-        } else if (selectedGroup === "OngoingGroups") {
-            return { new: [], ongoing: cardsData, ended: [], vacant: [] };
-        } else if (selectedGroup === "VacantGroups") {
-            // cardsData is already filtered in fetchGroups when selectedGroup is "VacantGroups"
-            return { new: [], ongoing: [], ended: [], vacant: cardsData }; 
-        }
+        if (selectedGroup === "AllGroups") return { new: newGroups, ongoing: ongoingGroups, ended: endedGroups, vacant: [] };
+        else if (selectedGroup === "NewGroups") return { new: cardsData, ongoing: [], ended: [], vacant: [] };
+        else if (selectedGroup === "OngoingGroups") return { new: [], ongoing: cardsData, ended: [], vacant: [] };
+        else if (selectedGroup === "VacantGroups") return { new: [], ongoing: [], ended: [], vacant: cardsData }; 
         return { new: [], ongoing: [], ended: [], vacant: [] };
     };
 
-    // REMOVED: handleEnrollmentConfirmation function as it is no longer used and its purpose is replaced by direct navigation to EnrollForm.
-
-
     const handleEnrollment = (card) => {
-        if (!isConnected || !isInternetReachable) {
-            setModalMessage("You are offline. Please connect to the internet to view details.");
-            setEnrollmentModalVisible(true);
-            return;
-        }
+        if (!isConnected || !isInternetReachable) { setModalMessage("You are offline. Please connect to the internet to view details."); setEnrollmentModalVisible(true); return; }
         const selectedGroupId = card._id;
-        if (selectedGroupId) {
-            navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId });
-        } else {
-            setModalMessage("Error: Could not retrieve group ID.");
-            setEnrollmentModalVisible(true);
-        }
+        if (selectedGroupId) { navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId }); }
+        else { setModalMessage("Error: Could not retrieve group ID."); setEnrollmentModalVisible(true); }
     };
     
-    // Function to handle direct enrollment (joining) - MODIFIED TO NAVIGATE DIRECTLY TO ENROLLFORM
     const handleJoinNow = async (card) => { 
-        if (!isConnected || !isInternetReachable) {
-            Toast.show({
-                type: "error",
-                text1: "No Internet Connection",
-                text2: "Please check your network and try again.",
-                position: "bottom",
-                visibilityTime: 3000,
-            });
-            return;
-        }
-
+        if (!isConnected || !isInternetReachable) { Toast.show({ type: "error", text1: "No Internet Connection", text2: "Please check your network and try again.", position: "bottom", visibilityTime: 3000 }); return; }
         const selectedGroupId = card._id;
-        
-        if (!selectedGroupId) {
-            Toast.show({
-                type: "error",
-                text1: "Error",
-                text2: "Could not retrieve group ID for enrollment.",
-                position: "bottom",
-                visibilityTime: 3000,
-            });
-            return;
-        }
-
-        // CRITICAL CHANGE: Use the new helper function for the check
+        if (!selectedGroupId) { Toast.show({ type: "error", text1: "Error", text2: "Could not retrieve group ID for enrollment.", position: "bottom", visibilityTime: 3000 }); return; }
         const vacantSeats = getVacantSeats(card); 
-        
-        if (vacantSeats === 0) {
-             Toast.show({
-                type: "info",
-                text1: "No Seats Available",
-                text2: "This group currently has no vacant seats.",
-                position: "bottom",
-                visibilityTime: 3000,
-            });
-            return;
-        }
-
-        // **CRITICAL MODIFICATION: Navigate directly to EnrollForm**
-        // Removed: setEnrollmentConfirmationData(card); setCustomEnrollModalVisible(true);
+        if (vacantSeats === 0) { Toast.show({ type: "info", text1: "No Seats Available", text2: "This group currently has no vacant seats.", position: "bottom", visibilityTime: 3000 }); return; }
         navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId });
     };
 
-
     const NoGroupsIllustration = require('../../assets/Nogroup.png');
     
-    // START: InstallmentRow Helper Function - Added 'colors' prop
     const InstallmentRow = ({ amount, label, timeUnit, colors }) => {
         if (amount === undefined || amount === null || amount === "") return null;
-        // Only render if the amount is a valid number > 0 for display purpose, or you want to show 0
         const formattedAmount = formatNumberIndianStyle(amount); 
         if (formattedAmount === "0") return null;
-
         return (
             <View style={[styles.installmentRowSmall, { backgroundColor: colors.primary, borderLeftColor: colors.secondary }]}>
-                <Text style={[styles.detailLabelSmall, { color: colors.darkText, fontWeight: 'bold', fontSize: 12 }]}>
-                    {label}:
-                </Text>
-                <Text style={[styles.detailValueSmall, styles.highlightedInstallment, { color: colors.secondary }]}>
-                    ₹ {formattedAmount} / {timeUnit}
-                </Text>
+                <Text style={[styles.detailLabelSmall, { color: colors.darkText, fontWeight: 'bold', fontSize: 12 }]}>{label}:</Text>
+                <Text style={[styles.detailValueSmall, styles.highlightedInstallment, { color: colors.secondary }]}>₹ {formattedAmount} / {timeUnit}</Text>
             </View>
         );
     };
-    // END: InstallmentRow Helper Function
 
-    // START: MODIFIED CardContent to show selected filter as badge and new installment rows
     const CardContent = ({ card, colors, isSelected, currentFilter }) => {
-        
-        // **MODIFICATION:** Removed state for toggling installment details
-        // const [showInstallmentDetails, setShowInstallmentDetails] = useState(false);
-        
         const getFilterDisplayName = (filterKey) => {
             switch (filterKey) {
-                case "NewGroups":
-                    return "New Group";
-                case "OngoingGroups":
-                    return "Ongoing";
-                case "VacantGroups":
-                    return "Vacant Group";
+                case "NewGroups": return "New Group";
+                case "OngoingGroups": return "Ongoing";
+                case "VacantGroups": return "Vacant Group";
                 case "AllGroups":
                     const type = getGroupType(card);
                     if (type === 'new') return 'New';
                     if (type === 'ongoing') return 'Ongoing';
                     return 'Group'; 
-                default:
-                    return "Group";
+                default: return "Group";
             }
         };
-
         const formatDate = (dateString) => {
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
             const date = new Date(dateString);
             if (isNaN(date)) return dateString; 
             return date.toLocaleDateString('en-GB', options);
         };
-        
-        // CRITICAL CHANGE: Use the new helper function for the display value
         const vacantSeats = getVacantSeats(card);
-        
         const isCurrentCardJoining = isJoining && joinGroupId === card._id; 
         const badgeText = getFilterDisplayName(currentFilter);
-        
         const shouldShowBadge = !(currentFilter === "AllGroups" && getGroupType(card) === 'ended');
-
-        // NEW: Fetch installment amounts
         const monthlyInstallment = card.monthly_installment;
-        // const weeklyInstallment = card.weekly_installment; // Not needed
-        // const dailyInstallment = card.daily_installment; // Not needed
         
-        // Determine the main installment to display on the headline (use monthly as priority)
-        // const mainInstallmentAmount = monthlyInstallment; // Not needed
-        // const formattedMainAmount = formatNumberIndianStyle(mainInstallmentAmount); // Not needed
-
         return (
             <>
                 <View style={styles.cardHeaderSmall}>
                     <View style={styles.groupMainInfoRow}>
-                        <TouchableOpacity
-                            onPress={() => setSelectedCardIndex(card._id)}
-                            style={styles.radioButtonContainer}
-                        >
-                            <Ionicons
-                                name={isSelected ? "radio-button-on" : "radio-button-off"}
-                                size={24}
-                                color={isSelected ? "#053B90" : "#ccc"}
-                            />
+                        <TouchableOpacity onPress={() => setSelectedCardIndex(card._id)} style={styles.radioButtonContainer}>
+                            <Ionicons name={isSelected ? "radio-button-on" : "radio-button-off"} size={24} color={isSelected ? "#053B90" : "#ccc"} />
                         </TouchableOpacity>
-
                         <View style={styles.groupNameAndValueBlock}>
                             <View style={styles.groupValueContainerSmall}>
-                                <Text style={[styles.groupValueSmall, { color: '#FF8C00' }]} numberOfLines={1}>
-                                    ₹ {formatNumberIndianStyle(card.group_value)}
-                                </Text>
+                                <Text style={[styles.groupValueSmall, { color: '#FF8C00' }]} numberOfLines={1}>₹ {formatNumberIndianStyle(card.group_value)}</Text>
                                 <Text style={[styles.chitValueTextSmall, { color: colors.darkText }]}>Chit Value</Text>
                             </View>
-                            
-                            <Text style={[styles.groupNameSmall, { color: isSelected ? colors.text : colors.darkText }]} numberOfLines={1} ellipsizeMode="tail">
-                                {card.group_name}
-                            </Text>
+                            <Text style={[styles.groupNameSmall, { color: isSelected ? colors.text : colors.darkText }]} numberOfLines={1} ellipsizeMode="tail">{card.group_name}</Text>
                         </View>
-                        
                         <View style={styles.statusBadgeContainer}>
                             {shouldShowBadge && (
                                 <View style={[styles.statusBadge, { backgroundColor: colors.secondary }]}>
-                                    <Text style={styles.statusBadgeText}>
-                                        {badgeText}
-                                    </Text>
+                                    <Text style={styles.statusBadgeText}>{badgeText}</Text>
                                 </View>
                             )}
                         </View>
                     </View>
                 </View>
-
                 <View style={styles.headerSeparatorSmall} />
-
                 <View style={styles.cardDetailsRowSmall}>
                     <View style={styles.detailItemSmall}>
                         <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Starts</Text>
-                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>
-                            {formatDate(card.start_date)}
-                        </Text>
+                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>{formatDate(card.start_date)}</Text>
                     </View>
                     <View style={styles.detailItemSmall}>
                         <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Ends</Text>
-                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>
-                            {formatDate(card.end_date)}
-                        </Text>
+                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>{formatDate(card.end_date)}</Text>
                     </View>
                     <View style={styles.detailItemSmall}>
                         <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Members</Text>
-                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>
-                            {card.group_members}
-                        </Text>
+                        <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>{card.group_members}</Text>
                     </View>
                     <View style={styles.detailItemSmall}>
                         <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Vacant</Text>
-                        <Text style={[styles.detailValueSmall, styles.highlightedVacantSeatsSmall]}>
-                            {vacantSeats}
-                        </Text>
+                        <Text style={[styles.detailValueSmall, styles.highlightedVacantSeatsSmall]}>{vacantSeats}</Text>
                     </View>
                 </View>
-                
-                {/* START: INSTALLMENT DETAILS - MODIFIED TO SHOW ONLY MONTHLY INSTALLMENT WITHOUT TOGGLE */}
                 <View style={[styles.installmentDetailsStandalone, {  backgroundColor: colors.primary }]}>
-                    {/* Passing 'colors' to InstallmentRow for consistent styling */}
                     <InstallmentRow amount={monthlyInstallment} label="Monthly Installment" timeUnit="month" colors={colors} />
                 </View>
-                
-
-
                 <View style={styles.viewMoreContainerSmall}>
-                    <TouchableOpacity
-                        style={[
-                            styles.viewMoreButtonSmall,
-                            { 
-                                borderColor: colors.secondary, 
-                            }, 
-                            (!isConnected || !isInternetReachable || isCurrentCardJoining) && { opacity: 0.5, borderColor: '#aaa' }
-                        ]}
-                        onPress={() => handleEnrollment(card)}
-                        activeOpacity={0.7}
-                        disabled={!isConnected || !isInternetReachable || isCurrentCardJoining}
-                    >
+                    <TouchableOpacity style={[styles.viewMoreButtonSmall, { borderColor: colors.secondary }, (!isConnected || !isInternetReachable || isCurrentCardJoining) && { opacity: 0.5, borderColor: '#aaa' }]} onPress={() => handleEnrollment(card)} activeOpacity={0.7} disabled={!isConnected || !isInternetReachable || isCurrentCardJoining}>
                         <Text style={[styles.viewMoreButtonTextSmall, { color: colors.secondary }]}>Details</Text>
                         <Ionicons name="information-circle-outline" size={16} color={colors.secondary} style={styles.viewMoreIconSmall} />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.joinNowButtonSmall, 
-                            { backgroundColor: colors.secondary }, 
-                            ((!isConnected || !isInternetReachable || isCurrentCardJoining) || vacantSeats === 0) && { opacity: 0.5 }
-                        ]}
-                        onPress={() => handleJoinNow(card)}
-                        activeOpacity={0.7}
-                        disabled={!isConnected || !isInternetReachable || isCurrentCardJoining || vacantSeats === 0} 
-                    >
-                        {isCurrentCardJoining ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                            <Text style={styles.joinNowButtonTextSmall}>
-                                {vacantSeats === 0 ? 'No Seats' : 'Join Now'} 
-                            </Text> 
-                        )}
+                    <TouchableOpacity style={[styles.joinNowButtonSmall, { backgroundColor: colors.secondary }, ((!isConnected || !isInternetReachable || isCurrentCardJoining) || vacantSeats === 0) && { opacity: 0.5 }]} onPress={() => handleJoinNow(card)} activeOpacity={0.7} disabled={!isConnected || !isInternetReachable || isCurrentCardJoining || vacantSeats === 0} >
+                        {isCurrentCardJoining ? (<ActivityIndicator size="small" color="#fff" />) : (<Text style={styles.joinNowButtonTextSmall}>{vacantSeats === 0 ? 'No Seats' : 'Join Now'} </Text>)}
                     </TouchableOpacity>
                 </View>
             </>
         );
     };
-    // END: MODIFIED CardContent
 
     if (isLoading) {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <StatusBar barStyle="light-content" backgroundColor="#053B90" />
                 <Header userId={userId} navigation={navigation} />
-                <View style={styles.loaderContainer}>
-                    <ActivityIndicator size="large" color="#053B90" />
-                </View>
+                <View style={styles.loaderContainer}><ActivityIndicator size="large" color="#053B90" /></View>
             </SafeAreaView>
         );
     }
@@ -549,9 +424,7 @@ const Enrollment = ({ route, navigation }) => {
                 <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle-outline" size={50} color="#DC143C" />
                     <Text style={styles.errorText}>{error}</Text>
-                    <TouchableOpacity style={styles.retryButton} onPress={fetchGroups}>
-                        <Text style={styles.retryButtonText}>Retry</Text>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.retryButton} onPress={fetchGroups}><Text style={styles.retryButtonText}>Retry</Text></TouchableOpacity>
                 </View>
             </SafeAreaView>
         );
@@ -566,50 +439,29 @@ const Enrollment = ({ route, navigation }) => {
                     <View style={styles.filterContainer}>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScrollContainer}>
                             <View style={styles.chipsContainer}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.chip,
-                                        selectedGroup === "NewGroups" && styles.selectedChip,
-                                    ]}
-                                    onPress={() => setSelectedGroup("NewGroups")}
-                                >
-                                    <Ionicons
-                                        name="sparkles"
-                                        size={16}
-                                        color={selectedGroup === "NewGroups" ? '#fff' : '#666'}
-                                        style={styles.chipIcon}
-                                    />
+                                <TouchableOpacity style={[styles.chip, selectedGroup === "NewGroups" && styles.selectedChip]} onPress={() => setSelectedGroup("NewGroups")}>
+                                    <Ionicons name="sparkles" size={16} color={selectedGroup === "NewGroups" ? '#fff' : '#666'} style={styles.chipIcon}/>
                                     <Text style={[styles.chipText, selectedGroup === "NewGroups" && styles.selectedChipText]}>New Groups</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.chip,
-                                        selectedGroup === "OngoingGroups" && styles.selectedChip,
-                                    ]}
-                                    onPress={() => setSelectedGroup("OngoingGroups")}
-                                >
-                                    <Ionicons
-                                        name="hourglass"
-                                        size={16}
-                                        color={selectedGroup === "OngoingGroups" ? '#fff' : '#666'}
-                                        style={styles.chipIcon}
-                                    />
+                                <TouchableOpacity style={[styles.chip, selectedGroup === "OngoingGroups" && styles.selectedChip]} onPress={() => setSelectedGroup("OngoingGroups")}>
+                                    <Ionicons name="hourglass" size={16} color={selectedGroup === "OngoingGroups" ? '#fff' : '#666'} style={styles.chipIcon}/>
                                     <Text style={[styles.chipText, selectedGroup === "OngoingGroups" && styles.selectedChipText]}>Ongoing Groups</Text>
                                 </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.moreOptionsButton}
-                                    onPress={() => setMoreFiltersModalVisible(true)}
-                                >
+                                <TouchableOpacity style={styles.moreOptionsButton} onPress={() => setMoreFiltersModalVisible(true)}>
                                     <Ionicons name="filter" size={20} color="#053B90" />
                                 </TouchableOpacity>
                             </View>
                         </ScrollView>
                     </View>
-                    <ScrollView
-                        contentContainerStyle={styles.scrollContentContainer}
-                        showsVerticalScrollIndicator={false}
-                    >
+
+                    {/* START: STYLISH POSTER SLIDER */}
+                    <StylishPosterSlider 
+                        data={cardsData} 
+                        onPress={handleEnrollment} 
+                    />
+                    {/* END: STYLISH POSTER SLIDER */}
+
+                    <ScrollView contentContainerStyle={styles.scrollContentContainer} showsVerticalScrollIndicator={false}>
                         {(() => {
                             const { new: newGroups, ongoing: ongoingGroups, ended: endedGroups, vacant: vacantGroups } = getDisplayCards();
                             const renderGroupSection = (data) => (
@@ -618,41 +470,16 @@ const Enrollment = ({ route, navigation }) => {
                                         {data.map((card) => {
                                             const primaryGroupType = getGroupType(card);
                                             const customColorKey = getCustomCardColorKey(card);
-                                            const colors = {
-                                                key: customColorKey,
-                                                ...(groupColors[customColorKey] || groupColors[primaryGroupType] || groupColors.default)
-                                            };
+                                            const colors = { key: customColorKey, ...(groupColors[customColorKey] || groupColors[primaryGroupType] || groupColors.default) };
                                             const isSelected = selectedCardIndex === card._id;
                                             const CardWrapper = ({ children }) => (
-                                                <View
-                                                    style={[
-                                                        styles.card,
-                                                        {
-                                                            backgroundColor: colors.primary,
-                                                            borderColor: isSelected ? colors.selectedBorder : '#E0E0E0', 
-                                                            borderWidth: isSelected ? 2 : 1,
-                                                        },
-                                                        (!isConnected || !isInternetReachable) && !isSelected && styles.offlineCardOverlay
-                                                    ]}
-                                                >
+                                                <View style={[styles.card, { backgroundColor: colors.primary, borderColor: isSelected ? colors.selectedBorder : '#E0E0E0', borderWidth: isSelected ? 2 : 1 }, (!isConnected || !isInternetReachable) && !isSelected && styles.offlineCardOverlay]}>
                                                     {children}
                                                 </View>
                                             );
                                             return (
-                                                <TouchableOpacity
-                                                    key={card._id}
-                                                    onPress={() => setSelectedCardIndex(card._id)}
-                                                    activeOpacity={0.8}
-                                                    disabled={!isConnected || !isInternetReachable}
-                                                >
-                                                    <CardWrapper>
-                                                        <CardContent
-                                                            card={card}
-                                                            colors={colors}
-                                                            isSelected={isSelected}
-                                                            currentFilter={selectedGroup} 
-                                                        />
-                                                    </CardWrapper>
+                                                <TouchableOpacity key={card._id} onPress={() => setSelectedCardIndex(card._id)} activeOpacity={0.8} disabled={!isConnected || !isInternetReachable}>
+                                                    <CardWrapper><CardContent card={card} colors={colors} isSelected={isSelected} currentFilter={selectedGroup} /></CardWrapper>
                                                 </TouchableOpacity>
                                             );
                                         })}
@@ -665,21 +492,13 @@ const Enrollment = ({ route, navigation }) => {
                             let noGroupsTitle = "";
 
                             if (selectedGroup === "NewGroups") {
-                                groupsToDisplay = newGroups;
-                                noGroupsTitle = "No New Groups";
-                                noGroupsMessage = "No new groups found. Check back later for exciting additions!";
+                                groupsToDisplay = newGroups; noGroupsTitle = "No New Groups"; noGroupsMessage = "No new groups found. Check back later for exciting additions!";
                             } else if (selectedGroup === "OngoingGroups") {
-                                groupsToDisplay = ongoingGroups;
-                                noGroupsTitle = "No Ongoing Groups";
-                                noGroupsMessage = "No ongoing groups found. Check back later!";
+                                groupsToDisplay = ongoingGroups; noGroupsTitle = "No Ongoing Groups"; noGroupsMessage = "No ongoing groups found. Check back later!";
                             } else if (selectedGroup === "VacantGroups") {
-                                groupsToDisplay = vacantGroups;
-                                noGroupsTitle = "No Vacant Groups";
-                                noGroupsMessage = "There are no groups with vacant seats at the moment. Please check back later.";
+                                groupsToDisplay = vacantGroups; noGroupsTitle = "No Vacant Groups"; noGroupsMessage = "There are no groups with vacant seats at the moment. Please check back later.";
                             } else if (selectedGroup === "AllGroups") {
-                                groupsToDisplay = [...newGroups, ...ongoingGroups, ...endedGroups];
-                                noGroupsTitle = "No Groups Available";
-                                noGroupsMessage = "It looks like there are no groups that match your current filter. Try changing the filter or check back later for new additions!";
+                                groupsToDisplay = [...newGroups, ...ongoingGroups, ...endedGroups]; noGroupsTitle = "No Groups Available"; noGroupsMessage = "It looks like there are no groups that match your current filter. Try changing the filter or check back later for new additions!";
                             }
                             
                             if (groupsToDisplay.length === 0) {
@@ -687,9 +506,7 @@ const Enrollment = ({ route, navigation }) => {
                                     <View style={styles.emptyStateContainer}>
                                         <Image source={NoGroupsIllustration} style={styles.noGroupsImage} resizeMode="contain" />
                                         <Text style={styles.noGroupsTitle}>{noGroupsTitle}</Text>
-                                        <Text style={styles.noGroupsText}>
-                                            {noGroupsMessage}
-                                        </Text>
+                                        <Text style={styles.noGroupsText}>{noGroupsMessage}</Text>
                                     </View>
                                 );
                             }
@@ -700,86 +517,27 @@ const Enrollment = ({ route, navigation }) => {
                 </View>
             </View>
 
-            {/* General Modal for offline or error messages */}
-            <Modal
-                visible={enrollmentModalVisible}
-                transparent={true}
-                onRequestClose={() => setEnrollmentModalVisible(false)}
-            >
+            {/* Modals remain same */}
+            <Modal visible={enrollmentModalVisible} transparent={true} onRequestClose={() => setEnrollmentModalVisible(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>
-                            {modalMessage || "Please select a group to continue!"}
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.modalCloseButton}
-                            onPress={() => setEnrollmentModalVisible(false)}
-                        >
-                            <Text style={styles.modalCloseButtonText}>
-                                Got It!
-                            </Text>
-                        </TouchableOpacity>
+                        <Text style={styles.modalTitle}>{modalMessage || "Please select a group to continue!"}</Text>
+                        <TouchableOpacity style={styles.modalCloseButton} onPress={() => setEnrollmentModalVisible(false)}><Text style={styles.modalCloseButtonText}>Got It!</Text></TouchableOpacity>
                     </View>
                 </View>
             </Modal>
-            
-            {/* REMOVED: Custom Styled Confirmation Modal (Enrollment/Alert) */}
-
-            {/* More Filters Modal */}
-            <Modal
-                visible={moreFiltersModalVisible}
-                transparent={true}
-                onRequestClose={() => setMoreFiltersModalVisible(false)}
-            >
+            <Modal visible={moreFiltersModalVisible} transparent={true} onRequestClose={() => setMoreFiltersModalVisible(false)}>
                 <View style={styles.moreFiltersModalOverlay}>
                     <View style={styles.moreFiltersModalContent}>
                         <Text style={styles.moreFiltersTitle}>Select a Filter</Text>
-                        <TouchableOpacity
-                            style={styles.moreFiltersOption}
-                            onPress={() => {
-                                setSelectedGroup("AllGroups");
-                                setMoreFiltersModalVisible(false);
-                            }}
-                        >
-                            <Text style={styles.moreFiltersOptionText}>All Groups</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.moreFiltersOption}
-                            onPress={() => {
-                                setSelectedGroup("NewGroups");
-                                setMoreFiltersModalVisible(false);
-                            }}
-                        >
-                            <Text style={styles.moreFiltersOptionText}>New Groups</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.moreFiltersOption}
-                            onPress={() => {
-                                setSelectedGroup("OngoingGroups");
-                                setMoreFiltersModalVisible(false);
-                            }}
-                        >
-                            <Text style={styles.moreFiltersOptionText}>Ongoing Groups</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.moreFiltersOption}
-                            onPress={() => {
-                                setSelectedGroup("VacantGroups");
-                            setMoreFiltersModalVisible(false);
-                            }}
-                        >
-                            <Text style={styles.moreFiltersOptionText}>Vacant Groups</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.closeMoreFiltersButton}
-                            onPress={() => setMoreFiltersModalVisible(false)}
-                        >
-                            <Text style={styles.closeMoreFiltersButtonText}>Cancel</Text>
-                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("AllGroups"); setMoreFiltersModalVisible(false); }}><Text style={styles.moreFiltersOptionText}>All Groups</Text></TouchableOpacity>
+                        <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("NewGroups"); setMoreFiltersModalVisible(false); }}><Text style={styles.moreFiltersOptionText}>New Groups</Text></TouchableOpacity>
+                        <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("OngoingGroups"); setMoreFiltersModalVisible(false); }}><Text style={styles.moreFiltersOptionText}>Ongoing Groups</Text></TouchableOpacity>
+                        <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("VacantGroups"); setMoreFiltersModalVisible(false); }}><Text style={styles.moreFiltersOptionText}>Vacant Groups</Text></TouchableOpacity>
+                        <TouchableOpacity style={styles.closeMoreFiltersButton} onPress={() => setMoreFiltersModalVisible(false)}><Text style={styles.closeMoreFiltersButtonText}>Cancel</Text></TouchableOpacity>
                     </View>
                 </View>
             </Modal>
-
             <Toast />
         </SafeAreaView>
     );
@@ -787,321 +545,234 @@ const Enrollment = ({ route, navigation }) => {
 
 
 const styles = StyleSheet.create({
-    // Standard Layout Styles
-    safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, },
-    loaderContainer: { 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        backgroundColor: '#F5F5F5' 
-    },
+    // ... (Standard Layout Styles) ...
+    safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+    loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
     errorText: { fontSize: 15, color: '#DC143C', textAlign: 'center', marginTop: 10, fontWeight: 'bold' },
     retryButton: { marginTop: 20, backgroundColor: '#053B90', paddingVertical: 12, paddingHorizontal: 25, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 6 },
     retryButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     mainContentWrapper: { flex: 1, alignItems: 'center', paddingVertical: 1, backgroundColor: '#053B90', paddingHorizontal: 15 },
     innerContentArea: { flex: 1, backgroundColor: '#F5F5F5', marginHorizontal: 0, borderRadius: 15, paddingVertical: 15, paddingBottom: 25, width: '104%' },
-    filterContainer: { paddingHorizontal: 15, paddingBottom: 10, },
+    filterContainer: { paddingHorizontal: 15, paddingBottom: 10 },
     chipsScrollContainer: { paddingRight: 30, paddingLeft: 5 }, 
     chipsContainer: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-    
-    // Chip/Filter Styles
-    chip: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        paddingVertical: 8, 
-        paddingHorizontal: 15, 
-        borderRadius: 5, 
-        backgroundColor: '#E0EFFF', 
-        shadowColor: '#000', 
-        shadowOffset: { width: 0, height: 1 }, 
-        shadowOpacity: 0.15, 
-        shadowRadius: 2, 
-        elevation: 1, 
-        justifyContent: 'center' 
-    },
+    chip: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 5, backgroundColor: '#E0EFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center' },
     selectedChip: { backgroundColor: '#053B90', borderColor: '#053B90', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 },
     chipIcon: { marginRight: 2 },
     chipText: { fontSize: 12, fontWeight: '600', color: '#4A4A4A' },
     selectedChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
-    moreOptionsButton: {
-        paddingHorizontal: 10,
-        paddingVertical: 10,
-        backgroundColor: '#E0EFFF',
-        borderRadius: 5,
+    moreOptionsButton: { paddingHorizontal: 10, paddingVertical: 10, backgroundColor: '#E0EFFF', borderRadius: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center', alignItems: 'center' },
+    
+    // START: STYLISH POSTER STYLES (UNIQUE COLOR SLANT LINES) - UPDATED HEIGHTS
+    posterContainer: {
+        height: 150, // Decreased from 190
+        marginBottom: 20,
+        marginTop: 10,
+        alignItems: 'center',
+    },
+    posterCard: {
+        height: 150, // Decreased from 190 (Must match posterContainer)
+        overflow: 'hidden', 
+        borderRadius: 20, 
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.15,
-        shadowRadius: 2,
-        elevation: 1,
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    posterBackground: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#053B90', 
+    },
+    
+    // 1. Vibrant Pink Slant (Top Left)
+    slantLinePink: {
+        position: 'absolute',
+        width: '200%',
+        height: 300,
+        backgroundColor: 'rgba(255, 46, 99, 0.20)', // Vibrant Pink
+        top: -100,
+        left: -80,
+        transform: [{ rotate: '25deg' }],
+        zIndex: 1,
+    },
+    // 2. Soft Gold Slant (Middle Accent)
+    slantLineGold: {
+        position: 'absolute',
+        width: '120%',
+        height: 150,
+        backgroundColor: 'rgba(255, 201, 60, 0.12)', // Gold
+        top: 20,
+        right: -50,
+        transform: [{ rotate: '-35deg' }],
+        zIndex: 1,
+    },
+    // 3. Electric Cyan Slant (Bottom Right)
+    slantLineCyan: {
+        position: 'absolute',
+        width: '200%',
+        height: 250,
+        backgroundColor: 'rgba(0, 210, 252, 0.15)', // Electric Cyan
+        bottom: -80,
+        right: -50,
+        transform: [{ rotate: '-15deg' }],
+        zIndex: 1,
+    },
+
+    posterContentLayout: {
+        flex: 1,
+        flexDirection: 'row',
+        zIndex: 2, 
+        paddingHorizontal: 20, 
+        paddingTop: 8,
+    },
+    posterTextSection: {
+        flex: 1.4,
         justifyContent: 'center',
-        alignItems: 'center',
     },
-    
-    // Card Styles
-    scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
-    groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
-    card: {
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: 10, 
-        marginVertical: 6, 
-        borderRadius: 12, 
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 }, 
-        shadowOpacity: 0.15,
-        shadowRadius: 3,
-        elevation: 4,
-        width: '105%',
-        alignSelf: 'center'
-    },
-    offlineCardOverlay: { opacity: 0.6 },
-    
-    // Card Header/Content Styles (Small)
-    cardHeaderSmall: {
-        flexDirection: 'column',
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        marginBottom: 5,
-        position: 'relative',
-    },
-    groupMainInfoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    radioButtonContainer: {
-        paddingRight: 10, 
-        marginRight: 5, 
-    },
-    groupNameAndValueBlock: {
-        flex: 1, 
-        marginLeft: 0,
-        overflow: 'hidden',
-    },
-    groupValueContainerSmall: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        marginBottom: 0,
-    },
-    groupValueSmall: {
-        fontSize: 25, 
-        fontWeight: 'bold',
-        marginRight: 6,
-    },
-    chitValueTextSmall: {
-        fontSize: 14, 
-        fontWeight: '600',
-    },
-    groupNameSmall: {
-        fontSize: 15, 
-        fontWeight: 'bold',
-        marginTop: 2,
-    },
-    statusBadgeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginLeft: 10,
-    },
-    statusBadge: {
+    badgeContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.25)', 
+        alignSelf: 'flex-start',
         paddingHorizontal: 6,
         paddingVertical: 3,
         borderRadius: 4,
+        marginBottom: 8, 
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.4)'
     },
-    statusBadgeText: {
-        color: 'white',
-        fontSize: 8,
+    badgeText: {
+        color: '#fff', 
+        fontSize: 9,
+        fontWeight: '800',
+        letterSpacing: 1,
+    },
+    offerTextLine1: {
+        fontSize: 25, 
+        color: '#FFFFFF', 
+        fontWeight: '900',
+        lineHeight: 32,
+    },
+    offerTextLine2Container: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        marginTop: 2,
+    },
+    offerTextLine2Prefix: {
+        fontSize: 12,
+        color: '#E0E0E0',
+        marginBottom: 2, 
+    },
+    offerTextLine2Amount: {
+        fontSize: 18,
+        color: '#FFC93C', // Changed to Gold to match lines
         fontWeight: 'bold',
+        marginLeft: 4,
     },
-    headerSeparatorSmall: {
-        height: 1,
-        width: '100%',
-        backgroundColor: '#E0E0E0',
-        marginVertical: 8, 
+    offerTextLine2Suffix: {
+        fontSize: 11,
+        color: '#E0E0E0',
+        marginBottom: 2,
+        marginLeft: 2,
     },
     
-    // Card Details Row Styles (Small)
-    cardDetailsRowSmall: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 10,
+    posterImageSection: {
+        flex: 1.6,
+        justifyContent: 'flex-end',
+        alignItems: 'flex-end',
+        marginBottom: -5,
     },
-    detailItemSmall: {
-        flex: 1,
-        alignItems: 'center', 
-        paddingHorizontal: 2,
+    imageShadowBg: {
+        position: 'absolute',
+        width: 75,   // Decreased from 90
+        height: 100, // Decreased from 120
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        borderRadius: 10,
+        bottom: 0,
+        right: 10,
+        transform: [{ rotate: '-10deg' }],
+        zIndex: -1,
     },
-    detailLabelSmall: {
-        fontSize: 9, 
-        fontWeight: '500',
-        color: '#777',
-        marginBottom: 1,
-    },
-    detailValueSmall: {
-        fontSize: 12, 
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-    highlightedVacantSeatsSmall: {
-      backgroundColor: '#1de94cff',
-        color: '#060806ff',
-        paddingHorizontal: 6, 
-        paddingVertical: 2, 
-        borderRadius: 10, 
-        fontWeight: 'bold',
-        overflow: 'hidden',
-    },
-
-    // Installment Toggle Styles (MODIFIED/Simplified)
-    // Removed installmentToggleContainer, installmentHeadline, headlineValueContainer styles
-    installmentDetailsStandalone: {
-        marginTop: 5,
-        marginBottom: 10,
-        borderRadius: 8,
-        borderWidth: 1, 
-        borderColor: '#E0E0E0', 
-        overflow: 'hidden',
-        // The background and border color are set dynamically via the 'colors' prop now
-        paddingHorizontal: 5, 
-        paddingVertical: 5,
-    },
-    installmentRowSmall: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 10, // Adjusted padding for inner view
-        paddingVertical: 8, 
-        borderRadius: 6, // Slightly rounded corners for inner rows
-        borderLeftWidth: 4,
-        // The background and border color are set dynamically via the 'colors' prop now
-    },
-    highlightedInstallment: {
-        fontSize: 14, 
-        fontWeight: 'bold',
-        // Color is set dynamically via the 'colors' prop now
-    },
-
-    // Card Action Button Styles (Small)
-    viewMoreContainerSmall: {
-        width: '100%',
-        alignItems: 'center',
-        marginTop: 5, 
-        flexDirection: 'row', 
-        justifyContent: 'flex-end', 
-        paddingHorizontal: 0,
-        gap: 8, 
-        borderTopWidth: 1, 
-        borderTopColor: '#E0E0E0',
-        paddingTop: 8, 
-    },
-    viewMoreButtonSmall: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8, 
-        paddingHorizontal: 10, 
-        borderRadius: 6, 
-        borderWidth: 1.5, 
-        backgroundColor: 'transparent',
-        minWidth: 100, 
-        justifyContent: 'center',
-        flex: 1,
-    },
-    viewMoreButtonTextSmall: {
-        fontSize: 12, 
-        fontWeight: '700',
-        marginRight: 3, 
-    },
-    viewMoreIconSmall: {
-        marginLeft: 1
-    },
-    joinNowButtonSmall: {
-        paddingVertical: 8, 
-        paddingHorizontal: 15, 
-        borderRadius: 6, 
+    posterImage: {
+        width: 110,   // Decreased from 130
+        height: 140,  // Decreased from 175
+        transform: [{ rotate: '-5deg' }],
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.15,
-        shadowRadius: 2,
-        elevation: 2,
-        minWidth: 100, 
-        justifyContent: 'center',
-        alignItems: 'center',
-        flex: 1,
+        shadowOffset: { width: -2, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
     },
-    joinNowButtonTextSmall: {
-        color: '#fff',
-        fontSize: 14, 
-        fontWeight: '700',
+    floatingPriceTag: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 15,
+        borderWidth: 1,
+        borderColor: '#FF2E63', // Pink border to match line
+        transform: [{ rotate: '5deg' }], 
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        zIndex: 5,
     },
-    
-    // Empty State Styles
-    emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
-    noGroupsImage: {
-        width: 250,
-        height: 250,
-        marginBottom: 20,
-    },
-    noGroupsTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
+    floatingPriceText: {
         color: '#053B90',
-        marginBottom: 10,
-        textAlign: 'center',
+        fontSize: 10,
+        fontWeight: 'bold',
     },
+    // END: STYLISH POSTER STYLES
+
+    // ... (List Styles Unchanged) ...
+    scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
+    groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
+    card: { flexDirection: 'column', justifyContent: 'space-between', padding: 10, marginVertical: 6, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3, elevation: 4, width: '105%', alignSelf: 'center' },
+    offlineCardOverlay: { opacity: 0.6 },
+    cardHeaderSmall: { flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 5, position: 'relative' },
+    groupMainInfoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
+    radioButtonContainer: { paddingRight: 10, marginRight: 5, },
+    groupNameAndValueBlock: { flex: 1, marginLeft: 0, overflow: 'hidden', },
+    groupValueContainerSmall: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 0, },
+    groupValueSmall: { fontSize: 25, fontWeight: 'bold', marginRight: 6, },
+    chitValueTextSmall: { fontSize: 14, fontWeight: '600', },
+    groupNameSmall: { fontSize: 15, fontWeight: 'bold', marginTop: 2, },
+    statusBadgeContainer: { flexDirection: 'row', alignItems: 'center', marginLeft: 10, },
+    statusBadge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 4, },
+    statusBadgeText: { color: 'white', fontSize: 8, fontWeight: 'bold', },
+    headerSeparatorSmall: { height: 1, width: '100%', backgroundColor: '#E0E0E0', marginVertical: 8, },
+    cardDetailsRowSmall: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, },
+    detailItemSmall: { flex: 1, alignItems: 'center', paddingHorizontal: 2, },
+    detailLabelSmall: { fontSize: 9, fontWeight: '500', color: '#777', marginBottom: 1, },
+    detailValueSmall: { fontSize: 12, fontWeight: '700', textAlign: 'center', },
+    highlightedVacantSeatsSmall: { backgroundColor: '#1de94cff', color: '#060806ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, fontWeight: 'bold', overflow: 'hidden', },
+    installmentDetailsStandalone: { marginTop: 5, marginBottom: 10, borderRadius: 8, borderWidth: 1, borderColor: '#E0E0E0', overflow: 'hidden', paddingHorizontal: 5, paddingVertical: 5, },
+    installmentRowSmall: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, borderLeftWidth: 4, },
+    highlightedInstallment: { fontSize: 14, fontWeight: 'bold', },
+    viewMoreContainerSmall: { width: '100%', alignItems: 'center', marginTop: 5, flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 0, gap: 8, borderTopWidth: 1, borderTopColor: '#E0E0E0', paddingTop: 8, },
+    viewMoreButtonSmall: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1.5, backgroundColor: 'transparent', minWidth: 100, justifyContent: 'center', flex: 1, },
+    viewMoreButtonTextSmall: { fontSize: 12, fontWeight: '700', marginRight: 3, },
+    viewMoreIconSmall: { marginLeft: 1 },
+    joinNowButtonSmall: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2, minWidth: 100, justifyContent: 'center', alignItems: 'center', flex: 1, },
+    joinNowButtonTextSmall: { color: '#fff', fontSize: 14, fontWeight: '700', },
+    emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
+    noGroupsImage: { width: 250, height: 250, marginBottom: 20, },
+    noGroupsTitle: { fontSize: 22, fontWeight: 'bold', color: '#053B90', marginBottom: 10, textAlign: 'center', },
     noGroupsText: { fontSize: 16, color: '#777', textAlign: 'center', marginTop: 15, lineHeight: 22 },
-    
-    // General Modal Styles
     modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
     modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 25, alignItems: 'center', marginHorizontal: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 5, elevation: 7 },
     modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#333' },
     modalCloseButton: { backgroundColor: '#053B90', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginTop: 10 },
     modalCloseButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-
-    // REMOVED: Custom Styled Confirmation Modal Styles
-
-    // More Filters Modal Styles
-    moreFiltersModalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-    },
-    moreFiltersModalContent: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        padding: 20,
-        paddingBottom: 40,
-    },
-    moreFiltersTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        textAlign: 'center',
-        color: '#333',
-    },
-    moreFiltersOption: {
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    moreFiltersOptionText: {
-        fontSize: 16,
-        color: '#053B90',
-        textAlign: 'center',
-    },
-    closeMoreFiltersButton: {
-        marginTop: 20,
-        padding: 15,
-        backgroundColor: '#eee',
-        borderRadius: 10,
-    },
-    closeMoreFiltersButtonText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#666',
-        textAlign: 'center',
-    },
+    moreFiltersModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)', },
+    moreFiltersModalContent: { backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40, },
+    moreFiltersTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, textAlign: 'center', color: '#333', },
+    moreFiltersOption: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#eee', },
+    moreFiltersOptionText: { fontSize: 16, color: '#053B90', textAlign: 'center', },
+    closeMoreFiltersButton: { marginTop: 20, padding: 15, backgroundColor: '#eee', borderRadius: 10, },
+    closeMoreFiltersButtonText: { fontSize: 16, fontWeight: 'bold', color: '#666', textAlign: 'center', },
 });
 
 export default Enrollment;

@@ -9,6 +9,7 @@ import Register from "../screens/Register";
 import ForgotPassword from "../screens/ForgotPassword";
 import Otp from "../screens/Otp";
 import ConformNewPassword from "../screens/ConformNewPassword";
+import ReportList from "../screens/ReportList";
 import PasswordChanged from "../screens/PasswordChanged";
 import ReportScreen from "./Screens/ReportScreen";
 import IntroduceNewCustomers from "../screens/IntroduceNewCustomers";
@@ -18,7 +19,7 @@ import RegisterOtpVerify from "../screens/RegisterOtpVerify.jsx";
 import HomeScreen from "./Screens/HomeScreen";
 import EnrollScreen from "./Screens/EnrollScreen";
 import PaymentScreen from "./Screens/PaymentScreen";
-
+import EMICalculator from "../screens/EMICalculator";
 import QrCodePage from "../screens/QrCodePage";
 import ProfileScreen from "./Screens/ProfileScreen";
 import EnrollGroup from "../screens/EnrollGroup";
@@ -275,6 +276,11 @@ export default function ScreenNavigate() {
             component={Fq}
             options={{ headerShown: false }}
           />
+             <Stack.Screen
+            name="EMICalculator"
+            component={EMICalculator}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen
             name="FeatureComingSoon"
             component={FeatureComingSoon}
@@ -287,7 +293,7 @@ export default function ScreenNavigate() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
-            name="LicenseAndCertificate"
+            name="LicenseAndCertificateScreen"
             component={LicenseAndCertificateScreen}
             options={{ headerShown: false }}
           />
@@ -300,6 +306,11 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="Enrollment"
             component={Enrollment}
+            options={{ headerShown: false }}
+          />
+           <Stack.Screen
+            name="ReportList"
+            component={ReportList}
             options={{ headerShown: false }}
           />
           <Stack.Screen
