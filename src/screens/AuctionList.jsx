@@ -273,6 +273,12 @@ const AuctionRecordsView = ({
   const hasCommencementData = !!(commencementData && (commencementData.group_name || commencementData.commencement_date));
   const showNoRecordsMessage = records.length === 0 || error;
   
+  // --- CALCULATE STATS ---
+  const totalRecords = records.length + (hasCommencementData ? 1 : 0);
+  const normalCount = records.filter(r => (r.auction_type || "").toLowerCase() === "normal").length;
+  const freeCount = records.filter(r => (r.auction_type || "").toLowerCase() === "free").length;
+  // ---------------------
+
   if (showNoRecordsMessage && !hasCommencementData) {
     return (
       <View style={styles.auctionRecordsContainer}>
@@ -288,32 +294,73 @@ const AuctionRecordsView = ({
     );
   }
   
-  const totalActualRecords = records.length;
-
   return (
     <View style={styles.auctionRecordsContainer}>
+      {/* Back Button stays fixed at top outside scroll */}
       <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
         <MaterialIcons name="arrow-back" size={24} color={Colors.primary} />
         <Text style={styles.backButtonText}>Back to Groups</Text>
       </TouchableOpacity>
 
-      {/* --- ADDED BEAUTIFUL BOX AROUND GROUP NAME AND VALUE --- */}
-      <View style={styles.groupHeaderBox}>
-        <Text style={styles.headerGroupName}> {selectedGroupName}</Text>
-        {selectedGroupValue && (
-          <Text style={styles.headerGroupValue}>
-            ₹ {formatNumberIndianStyle(selectedGroupValue)}
-          </Text>
-        )}
-      </View>
+      {/* --- MAIN SCROLL VIEW (Contains Summary + Title + List) --- */}
+      <ScrollView 
+        contentContainerStyle={styles.auctionRecordsScrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
+        
+        {/* --- MASTER SUMMARY BOX --- */}
+        <View style={styles.masterSummaryCard}>
+          {/* Top Section: Name & Value */}
+          <View style={styles.masterCardTop}>
+            <View style={styles.masterNameRow}>
+               <MaterialCommunityIcons name="trophy-outline" size={28} color={Colors.primary} style={{marginRight: 10}} />
+               <Text style={styles.masterGroupName} numberOfLines={1}>{selectedGroupName}</Text>
+            </View>
+            <Text style={styles.masterGroupValue}>
+              {selectedGroupValue ? `₹ ${formatNumberIndianStyle(selectedGroupValue)}` : ""}
+            </Text>
+          </View>
 
-      <Text style={styles.recordsListTitle}>Auction Records</Text>
-      
-      <ScrollView contentContainerStyle={styles.auctionRecordsScrollContent} showsVerticalScrollIndicator={false}>
+          {/* Divider */}
+          <View style={styles.masterCardDivider} />
+
+          {/* Bottom Section: Stats Column (Stacked Rows) */}
+          <View style={styles.masterCardStatsColumn}>
+            
+            {/* Total Records Row */}
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Total Records</Text>
+              <Text style={styles.statValue}>{totalRecords}</Text>
+            </View>
+
+            <View style={styles.statHorizontalDivider} />
+
+            {/* Auction Normal Row */}
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Auction Normal</Text>
+              <Text style={[styles.statValue, {color: Colors.primary}]}>{normalCount}</Text>
+            </View>
+
+            <View style={styles.statHorizontalDivider} />
+
+            {/* Auction Free Row */}
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Auction Free</Text>
+              <Text style={[styles.statValue, {color: Colors.accentOrange}]}>{freeCount}</Text>
+            </View>
+
+          </View>
+        </View>
+
+        {/* --- SECTION TITLE --- */}
+        <Text style={styles.recordsListTitle}>Auction Records</Text>
+
+        {/* --- RECORDS LIST --- */}
         {records.map((record, index) => {
           const isFreeAuctionRecord = record.auction_type?.toLowerCase() === "free";
           const formattedAuctionType = record.auction_type ? record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1) : "Normal"; 
-          const recordNumber = totalActualRecords - index + 1;
+          
+          const recordNumber = totalRecords - index;
             
           return (
             <View key={record._id || `auction-${index}`} style={styles.auctionRecordCard}>
@@ -357,15 +404,19 @@ const AuctionRecordsView = ({
             </View>
           );
         })}
+
+        {/* --- COMMENCEMENT CARD (Rendered last visually) --- */}
         {hasCommencementData && (
           <CommencementRecordCard groupName={commencementData.group_name} firstAuctionDate={commencementData.commencement_date} onPress={onCommencementPress} />
         )}
+
         {records.length === 0 && hasCommencementData && (
             <View style={styles.noDataPlaceholder}>
                 <MaterialCommunityIcons name="information" size={30} color={Colors.primaryLight} />
-                <Text style={styles.noDataPlaceholderText}>This group's auctions have not started yet. The card below provides details about the commencement date.</Text>
+                <Text style={styles.noDataPlaceholderText}>This group's auctions have not started yet. The card above provides details about the commencement date.</Text>
             </View>
         )}
+        
       </ScrollView>
     </View>
   );
@@ -552,7 +603,7 @@ const styles = StyleSheet.create({
   auctionTypeOrangeText: { color: Colors.accentOrange },
   cardBody: { flexDirection: 'row', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 15 },
   infoColumn: { alignItems: 'center' },
-  infoTitle: { fontSize: 16, color: Colors.textMedium, fontWeight: '300', marginBottom: 5 },
+  infoTitle: { fontSize: 16, color: Colors.textMedium, fontWeight: "300", marginBottom: 5 },
   infoValue: { fontSize: 42, fontWeight: '900', color: Colors.primary },
   actionButtonsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 15, backgroundColor: Colors.dataPanelBg },
   actionButton: { alignItems: 'center', flex: 1 },
@@ -566,24 +617,75 @@ const styles = StyleSheet.create({
   backButton: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", paddingVertical: 12, paddingHorizontal: 18, marginBottom: 25, borderRadius: 12, backgroundColor: Colors.backgroundLight, borderWidth: 1, borderColor: Colors.border },
   backButtonText: { marginLeft: 10, fontSize: 16, fontWeight: "bold", color: Colors.primary },
   
-  // --- STYLES FOR THE BEAUTIFUL GROUP BOX ---
-  groupHeaderBox: {
+  masterSummaryCard: {
     backgroundColor: Colors.card,
     borderRadius: 20,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
     marginBottom: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.border,
     ...Platform.select({
-      ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-      android: { elevation: 6 },
+      ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12 },
+      android: { elevation: 8 },
     }),
   },
-  headerGroupName: { fontSize: 20, fontWeight: '800', color: Colors.textDark, textAlign: 'center' },
-  headerGroupValue: { fontSize: 28, fontWeight: '900', color: Colors.primary, marginTop: 4, textAlign: 'center' },
+  masterCardTop: {
+    backgroundColor: Colors.card,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  masterNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  masterGroupName: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.textDark,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  masterGroupValue: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: Colors.primary,
+    textAlign: 'center',
+  },
+  masterCardDivider: {
+    height: 1,
+    backgroundColor: Colors.lightDivider,
+    marginHorizontal: 20,
+  },
+  masterCardStatsColumn: {
+    flexDirection: 'column',
+    backgroundColor: Colors.backgroundLight,
+    paddingVertical: 5,
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 25,
+    paddingVertical: 14,
+  },
+  statLabel: {
+    fontSize: 16,
+    color: Colors.textDark,
+    fontWeight: '600',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  statHorizontalDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    width: '90%',
+    alignSelf: 'center',
+  },
   
   recordsListTitle: { fontSize: 26, fontWeight: "bold", color: Colors.primary, marginBottom: 20, textAlign: "center" },
   auctionRecordsScrollContent: { paddingBottom: 40, paddingHorizontal: 15 },
