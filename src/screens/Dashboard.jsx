@@ -641,20 +641,15 @@ const styles = StyleSheet.create({
   
   // --- STATS (Styled Dynamically in JSX) ---
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 2 },
-  statBoxClean: { 
-    width: '31%', 
-    backgroundColor: '#FFF', 
-    borderRadius: 16, 
-    paddingVertical: 18, 
-    paddingHorizontal: 5, 
-    marginBottom: 12, 
-    alignItems: 'center', 
-    // Note: Colors are applied dynamically in JSX
-    shadowColor: '#000', 
-    shadowOpacity: 0.06, 
-    shadowRadius: 8, 
-    elevation: 4 
-  },
+statBoxClean: { 
+  width: '31%', 
+  borderRadius: 16, 
+  paddingVertical: 18, 
+  paddingHorizontal: 5, 
+  marginBottom: 12, 
+  alignItems: 'center',
+}
+,
   statIconClean: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   statValueClean: { fontSize: 15, fontWeight: '900', marginBottom: 4, textAlign: 'center' },
   statLabelClean: { fontSize: 10, fontWeight: '600', textAlign: 'center' },
