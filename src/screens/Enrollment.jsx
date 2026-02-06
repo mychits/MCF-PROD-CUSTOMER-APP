@@ -1,4 +1,4 @@
-// Enrollment.jsx
+
 
 import React, { useState, useEffect, useContext, useRef } from "react";
 import {
@@ -111,9 +111,7 @@ const StylishPosterSlider = ({ data, onPress }) => {
                             
                             {/* Left: Text Area */}
                             <View style={styles.posterTextSection}>
-                                <View style={styles.badgeContainer}>
-                                    <Text style={styles.badgeText}>BEST OFFER</Text>
-                                </View>
+                             
                                 
                                 <Text style={styles.offerTextLine1}>
                                     Get ₹ {formatNumberIndianStyle(item.group_value)}
@@ -566,15 +564,15 @@ const styles = StyleSheet.create({
     selectedChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
     moreOptionsButton: { paddingHorizontal: 10, paddingVertical: 10, backgroundColor: '#E0EFFF', borderRadius: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center', alignItems: 'center' },
     
-    // START: STYLISH POSTER STYLES (UNIQUE COLOR SLANT LINES)
+    // START: STYLISH POSTER STYLES (UNIQUE COLOR SLANT LINES) - UPDATED HEIGHTS
     posterContainer: {
-        height: 190, 
+        height: 150, // Decreased from 190
         marginBottom: 20,
         marginTop: 10,
         alignItems: 'center',
     },
     posterCard: {
-        height: 190,
+        height: 150, // Decreased from 190 (Must match posterContainer)
         overflow: 'hidden', 
         borderRadius: 20, 
         shadowColor: '#000',
@@ -650,7 +648,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     offerTextLine1: {
-        fontSize: 30, 
+        fontSize: 25, 
         color: '#FFFFFF', 
         fontWeight: '900',
         lineHeight: 32,
@@ -686,8 +684,8 @@ const styles = StyleSheet.create({
     },
     imageShadowBg: {
         position: 'absolute',
-        width: 90, 
-        height: 120, 
+        width: 75,   // Decreased from 90
+        height: 100, // Decreased from 120
         backgroundColor: 'rgba(0,0,0,0.2)',
         borderRadius: 10,
         bottom: 0,
@@ -696,8 +694,8 @@ const styles = StyleSheet.create({
         zIndex: -1,
     },
     posterImage: {
-        width: 130, 
-        height: 175, 
+        width: 110,   // Decreased from 130
+        height: 140,  // Decreased from 175
         transform: [{ rotate: '-5deg' }],
         shadowColor: '#000',
         shadowOffset: { width: -2, height: 2 },

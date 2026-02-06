@@ -342,11 +342,14 @@ const MyPassbookScreen = ({ navigation, route }) => {
           />
         }
       >
-        <View style={styles.contentArea}>
-          {isLoadingData ? (
-            renderSkeleton()
-          ) : (
-            <>
+        {isLoadingData ? (
+          <View style={styles.contentArea}>
+             {renderSkeleton()}
+          </View>
+        ) : (
+          <>
+            {/* SECTION 1: WHITE CONTAINER (CARDS) */}
+            <View style={styles.contentArea}>
               <FadeInUp delay={0}>
                 <Text style={styles.mainTitle}>Your Financial Snapshot</Text>
                 <Text style={styles.subtitle}>Track your investments, savings, and loans.</Text>
@@ -493,42 +496,44 @@ const MyPassbookScreen = ({ navigation, route }) => {
                   </ScalePress>
                 )}
               </FadeInUp>
+            </View>
 
-              {/* UPDATED SECTION: Bottom Summary with Sentence */}
-              <FadeInUp delay={400}>
-                <Text style={styles.summarySentence}>Your Active Services</Text>
-                <View style={styles.statsContainer}>
-                  <View style={styles.statItem}>
-                    <MaterialIcons name="group" size={28} color="#053B90" />
-                    <Text style={styles.statValue}>{enrolledGroupsCount}</Text>
-                    <Text style={styles.statLabel}>Chit Groups</Text>
+            {/* SECTION 2: BOTTOM BLUE AREA (STATS) */}
+            <View style={styles.bottomBlueArea}>
+               <FadeInUp delay={400}>
+                  <Text style={styles.summarySentenceBlue}>Your Active Services</Text>
+                  <View style={styles.statsContainerBlue}>
+                    <View style={styles.statItem}>
+                      <MaterialIcons name="group" size={28} color="#053B90" />
+                      <Text style={styles.statValue}>{enrolledGroupsCount}</Text>
+                      <Text style={styles.statLabel}>Chit Groups</Text>
+                    </View>
+                    {pigmeAccounts.length > 0 && (
+                      <View style={styles.statDivider} />
+                    )}
+                    {pigmeAccounts.length > 0 && (
+                      <View style={styles.statItem}>
+                        <FontAwesome5 name="piggy-bank" size={24} color="#0c7596ff" />
+                        <Text style={styles.statValue}>{activePigmeCount}</Text>
+                        <Text style={styles.statLabel}>Pigmy </Text>
+                      </View>
+                    )}
+                    {pigmeAccounts.length > 0 && loans.length > 0 && (
+                      <View style={styles.statDivider} />
+                    )}
+                    {loans.length > 0 && (
+                      <View style={styles.statItem}>
+                        <MaterialIcons name="account-balance" size={28} color="#E67E22" />
+                        <Text style={styles.statValue}>{activeLoanCount}</Text>
+                        <Text style={styles.statLabel}>Loans</Text>
+                      </View>
+                    )}
                   </View>
-                  {pigmeAccounts.length > 0 && (
-                    <View style={styles.statDivider} />
-                  )}
-                  {pigmeAccounts.length > 0 && (
-                    <View style={styles.statItem}>
-                      <FontAwesome5 name="piggy-bank" size={24} color="#0c7596ff" />
-                      <Text style={styles.statValue}>{activePigmeCount}</Text>
-                      <Text style={styles.statLabel}>Pigmy </Text>
-                    </View>
-                  )}
-                  {pigmeAccounts.length > 0 && loans.length > 0 && (
-                    <View style={styles.statDivider} />
-                  )}
-                  {loans.length > 0 && (
-                    <View style={styles.statItem}>
-                      <MaterialIcons name="account-balance" size={28} color="#E67E22" />
-                      <Text style={styles.statValue}>{activeLoanCount}</Text>
-                      <Text style={styles.statLabel}>Loans</Text>
-                    </View>
-                  )}
-                </View>
-              </FadeInUp>
+               </FadeInUp>
+            </View>
 
-            </>
-          )}
-        </View>
+          </>
+        )}
       </ScrollView>
       <Toast />
     </SafeAreaView>
@@ -538,10 +543,31 @@ const MyPassbookScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safeArea: { flex:1, backgroundColor: "#053B90" },
   mainScrollView: { flex: 1 },
-  mainScrollViewContent: { flexGrow: 1, paddingBottom: 65 },
+  mainScrollViewContent: { flexGrow: 1, paddingBottom: 20 },
   
   // --- Layout & Typography ---
-  contentArea: { flex: 1, backgroundColor: "#F8FAFC", marginHorizontal: 15, marginTop: 15, borderRadius: 30, padding: 25, minHeight: "100%" },
+  contentArea: { 
+    backgroundColor: "#F8FAFC", 
+    marginHorizontal: 15, 
+    marginTop: 15, 
+    borderRadius: 30, 
+    padding: 25, 
+    minHeight: 200, // Minimum height even if empty
+    marginBottom: 20,
+  },
+  
+  // --- NEW: Bottom Blue Area Styles ---
+  bottomBlueArea: {
+    backgroundColor: "#053B90", // Matches header background
+    paddingTop: 30,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -10, // Slight overlap or pull up
+    marginHorizontal: 0,
+  },
+
   mainTitle: { fontSize: 26, fontWeight: "800", color: "#1e293b", marginBottom: 5, textAlign: "center", letterSpacing: 0.5 },
   subtitle: { fontSize: 14, color: "#64748b", marginBottom: 30, textAlign: "center" },
 
@@ -622,17 +648,20 @@ const styles = StyleSheet.create({
   contactLabel: { fontSize: 11, fontWeight: '700', color: '#475569', marginBottom: 3, textTransform: 'uppercase' },
   contactDetails: { fontSize: 12, color: '#334155', fontWeight: '600', marginBottom: 1 },
 
-  // --- Bottom Summary Section ---
-  summarySentence: { fontSize: 16, fontWeight: "700", color: "#334155", textAlign: "center", marginBottom: 15, marginTop: 10 },
-  statsContainer: { 
+  // --- Bottom Summary Section (Updated for Blue Background) ---
+  summarySentenceBlue: { fontSize: 16, fontWeight: "700", color: "#FFFFFF", textAlign: "center", marginBottom: 15, marginTop: 0 }, // Changed color to White
+  statsContainerBlue: { 
     flexDirection: "row", 
     justifyContent: "space-around", 
-    backgroundColor: "rgba(255, 255, 255, 0.8)", 
+    backgroundColor: "#FFFFFF", // Solid white for contrast
     borderRadius: 25, 
     padding: 20, 
     marginBottom: 10,
-    
-
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   statItem: { alignItems: "center", flex: 1 },
   statValue: { fontSize: 24, fontWeight: "800", marginTop: 8, marginBottom: 2, color: "#0f172a" },

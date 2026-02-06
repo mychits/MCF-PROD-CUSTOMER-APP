@@ -51,7 +51,7 @@ const joinSteps = [
   {
     id: 4,
     title: 'E-Sign Agreement',
-    desc: 'Securely register with OTP and digital signatures.',
+    desc: 'Securely Enroll the Group.',
     icon: 'document-text'
   }
 ];
@@ -95,19 +95,19 @@ const customerReviews = [
 
 const mychitsAdvantages = [
   {
-    icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00', action: 'navigate', targetScreen: 'Enrollment' // Navigates to Enrollment
+    icon: 'lock-clock', text1: 'Join a Chit ', text2: 'in Minutes', iconColor: '#EF6C00', action: 'navigate', targetScreen: 'Enrollment'
   },
   {
-    icon: 'gavel', text1: 'In app ', text2: 'Auctions', iconColor: '#795548', action: 'navigate', targetScreen: 'AuctionList' // Navigates to AuctionList
+    icon: 'gavel', text1: 'In app ', text2: 'Auctions', iconColor: '#795548', action: 'navigate', targetScreen: 'AuctionList'
   },
   {
     icon: 'verified-user', text1: '100% ', text2: 'Secure Data', iconColor: '#2E7D32' }, 
   {
-    icon: 'support-agent', text1: '24/7 Customer', text2: 'support', iconColor: '#607D8B', action: 'call', phoneNumber: '+919483900777' // Calls Number
+    icon: 'support-agent', text1: '24/7 Customer', text2: 'support', iconColor: '#607D8B', action: 'call', phoneNumber: '+919483900777'
   },
   { icon: 'gavel', text1: 'Compliant as', text2: 'per Chit Act', iconColor: '#3F51B5' },
   {
-    icon: 'groups', text1: 'Chit Plans for', text2: 'everyone', iconColor: '#4CAF50', action: 'navigate', targetScreen: 'Enrollment' // Navigates to Enrollment
+    icon: 'groups', text1: 'Chit Plans for', text2: 'everyone', iconColor: '#4CAF50', action: 'navigate', targetScreen: 'Enrollment'
   },
 ];
 
@@ -155,6 +155,9 @@ const ReviewsSection = () => {
 
   const renderReviewCard = ({ item }) => (
     <View style={styles.reviewCard}>
+      {/* Decorative Quote Background */}
+      <FontAwesome name="quote-left" size={100} color="#E3F2FD" style={styles.reviewQuoteBg} />
+      
       <View style={styles.reviewerInfo}>
         <View style={[styles.reviewAvatar, { backgroundColor: '#E3F2FD' }]}>
           <Text style={[styles.reviewAvatarText, { color: '#1565C0' }]}>{item.name.charAt(0)}</Text>
@@ -206,13 +209,10 @@ const DashboardScreen = ({ navigation }) => {
   const [zoomImage, setZoomImage] = useState(null);
   const slideAnim = useRef(new Animated.Value(height)).current;
 
-  // Header Animations
   const headerAnim = useRef(new Animated.Value(0)).current;
   const cardAnimations = useRef([...Array(8)].map(() => new Animated.Value(0))).current;
   const floatingAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
-
-  // Professional Animations
   const pulseAnim = useRef(new Animated.Value(1)).current; 
   const progressAnim = useRef(new Animated.Value(0)).current; 
   const statsAnims = useRef([...Array(6)].map(() => new Animated.Value(0))).current; 
@@ -229,7 +229,6 @@ const DashboardScreen = ({ navigation }) => {
   const scrollRef = useRef(null);
   const CARD_WIDTH = 340 + 18;
 
-  // Helper handlers for the new footer
   const openLink = (url) => Linking.openURL(url);
   const handleWebsiteLink = () => openLink('https://mychits.co.in');
   const handleWhatsAppPress = () => openLink('https://wa.me/919483900777');
@@ -241,39 +240,27 @@ const DashboardScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchUserData();
-    
-    // 1. Header & Card Entrance
     Animated.spring(headerAnim, { toValue: 1, useNativeDriver: true }).start();
     const cardAnims = cardAnimations.map((anim, index) => 
       Animated.spring(anim, { toValue: 1, delay: index * 100, useNativeDriver: true })
     );
     Animated.stagger(100, cardAnims).start();
-
-    // 2. Continuous Loops
     Animated.loop(Animated.sequence([
       Animated.timing(floatingAnim, { toValue: 1, duration: 3000, useNativeDriver: true }), 
       Animated.timing(floatingAnim, { toValue: 0, duration: 3000, useNativeDriver: true })
     ])).start();
     Animated.loop(Animated.timing(rotateAnim, { toValue: 1, duration: 20000, useNativeDriver: true })).start();
-
-    // 3. Stats Stagger Animation
     const statsSequence = statsAnims.map((anim, i) => 
       Animated.timing(anim, { toValue: 1, duration: 400, delay: i * 100, useNativeDriver: true })
     );
     Animated.stagger(100, statsSequence).start();
-
-    // 4. Status Card Pulse
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1.02, duration: 1500, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true })
       ])
     ).start();
-
-    // 5. Progress Bar Fill
     Animated.timing(progressAnim, { toValue: 25, duration: 1500, delay: 500, useNativeDriver: false }).start();
-
-    // Auto Scroll
     let currentIndex = 0;
     const interval = setInterval(() => { currentIndex = (currentIndex + 1) % cardData.length; scrollRef.current?.scrollTo({ x: currentIndex * CARD_WIDTH, animated: true }); }, 4000);
     return () => clearInterval(interval);
@@ -300,11 +287,9 @@ const DashboardScreen = ({ navigation }) => {
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
           
-          {/* STYLED HEADER: Corporate Blue Gradient */}
           <LinearGradient colors={["#0A2463", "#053B90", "#3E64FF"]} style={styles.headerCurve}>
             <SlantLine delay={0} opacity={0.1} color="#FFFFFF" />
             <SlantLine delay={2000} opacity={0.08} />
-            
             <Animated.View style={[styles.bgCircle1, { transform: [{ rotate }] }]} />
             <Animated.View style={[styles.headerRow, { opacity: headerAnim }]}>
               <View style={styles.logoContainer}>
@@ -329,6 +314,7 @@ const DashboardScreen = ({ navigation }) => {
             </View>
           </LinearGradient>
 
+          <View style={styles.bgBlendOverlay} />
           <Animated.View style={[styles.floatingWrapper, { transform: [{ translateY }] }]}>
             <ScrollView ref={scrollRef} horizontal showsVerticalScrollIndicator={false} snapToInterval={CARD_WIDTH} decelerationRate="fast" contentContainerStyle={{ paddingHorizontal: 20 }}>
               {cardData.map((card, index) => (
@@ -341,7 +327,6 @@ const DashboardScreen = ({ navigation }) => {
 
           <View style={styles.contentPadding}>
             
-            {/* --- TRUST BAR --- */}
             <View style={styles.trustBarContainer}>
               <View style={styles.trustItem}>
                 <Ionicons name="shield-checkmark" size={22} color="#2E7D32" />
@@ -359,14 +344,12 @@ const DashboardScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* --- COMPLIANCE SECTION --- */}
             <View style={styles.complianceCard}>
               <View style={styles.complianceHeaderRow}>
                 <Ionicons name="shield-checkmark" size={24} color="#053B90" />
                 <Text style={styles.complianceTitle}>Fully Compliant & Registered</Text>
               </View>
               <Text style={styles.complianceSubtitle}>Registered under The Chit Funds Act, 1982. Your investments are legally protected.</Text>
-              
               <View style={styles.complianceRow}>
                 <View style={styles.complianceColumn}>
                   <View style={styles.complianceIconBox}>
@@ -388,27 +371,21 @@ const DashboardScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* --- CORRECTED LINK BUTTON --- */}
-            <TouchableOpacity
-              style={styles.viewLicenseBtnExternal}
-              onPress={() => navigation.navigate('LicenseAndCertificateScreen')}
-            >
+            <TouchableOpacity style={styles.viewLicenseBtnExternal} onPress={() => navigation.navigate('LicenseAndCertificateScreen')}>
               <View style={styles.viewLicenseContentRow}>
                 <MaterialIcons name="open-in-new" size={20} color="#053B90" />
                 <Text style={styles.viewLicenseText}>View Government Licenses & Certificates</Text>
               </View>
             </TouchableOpacity>
 
-            {/* --- PARTNERS --- */}
             <View style={styles.partnersCard}>
                <Text style={styles.partnersTitle}>Our Banking & Payment Partners</Text>
                <View style={styles.partnerLogoBox}><Image source={require("../../assets/b.png")} style={styles.partnerLogoImage} resizeMode="contain" /></View>
             </View>
 
-            {/* --- JOIN STEPS --- */}
-            <View style={styles.sectionBlock}>
+            {/* --- SECTION WITH BACKGROUND WASH --- */}
+            <View style={[styles.sectionBlock, styles.sectionWithWash]}>
               <View style={styles.headerBlock}><Text style={styles.headerBlockText}>How It Works</Text><View style={styles.blockUnderline} /></View>
-              
               <View style={styles.timelineContainer}>
                 <View style={styles.timelineLine} />
                 {joinSteps.map((step, index) => (
@@ -431,7 +408,6 @@ const DashboardScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* --- GROW WITH US --- */}
             <View style={styles.sectionBlock}>
               <View style={styles.headerBlock}><Text style={styles.headerBlockText}>Our Track Record</Text><View style={styles.blockUnderline} /></View>
               <View style={styles.statsGrid}>
@@ -443,37 +419,42 @@ const DashboardScreen = ({ navigation }) => {
                       {
                         opacity: statsAnims[index],
                         transform: [{ scale: statsAnims[index] }],
-                        borderTopColor: item.color,
-                        borderTopWidth: 3 
+                        // DYNAMIC STYLING: Colored Backgrounds
+                        backgroundColor: item.color + '15', // Adds color to the box
+                        borderColor: item.color + '30',    // Adds colored border
+                        borderWidth: 1
                       }
                     ]}
                   >
-                    <View style={[styles.statIconClean, { backgroundColor: item.color + '15' }]}>
+                    <View style={[styles.statIconClean, { backgroundColor: item.color + '25' }]}>
                       <FontAwesome5 name={item.icon} size={14} color={item.color} />
                     </View>
-                    <Text style={styles.statValueClean}>{item.value}</Text>
+                    <Text style={[styles.statValueClean, { color: item.color }]}>{item.value}</Text>
                     <Text style={styles.statLabelClean}>{item.label}</Text>
                   </Animated.View>
                 ))}
               </View>
             </View>
 
-            {/* --- ADVANTAGES --- */}
             <View style={styles.sectionBlock}>
               <Text style={styles.sectionTitleText}>Why Choose MyChits?</Text>
               <View style={styles.advantagesCleanGrid}>
                 {mychitsAdvantages.map((item, index) => (
                   <TouchableOpacity key={index} style={styles.advantageCleanBox} onPress={() => handleAdvantagePress(item)} activeOpacity={0.8}>
-                    <View style={[styles.advantageIconBox, { backgroundColor: item.iconColor + '20' }]}>
-                       <MaterialIcons name={item.icon} size={22} color={item.iconColor} />
-                    </View>
+                    {/* GRADIENT ICON BACKGROUND */}
+                    <LinearGradient 
+                        colors={[item.iconColor, item.iconColor + '99']} 
+                        start={{x:0, y:0}} end={{x:1, y:1}}
+                        style={styles.advantageIconBox}
+                    >
+                       <MaterialIcons name={item.icon} size={22} color="#FFF" />
+                    </LinearGradient>
                     <Text style={styles.advantageText}>{item.text1} <Text style={{fontWeight:'400'}}>{item.text2}</Text></Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
-            {/* Status Card */}
             <Animated.View style={[styles.statusCleanCard, { transform: [{ scale: pulseAnim }] }]}>
               <View style={styles.statusRow}>
                 <View style={[styles.statusIcon, { backgroundColor: '#FF6F00' }]}><Ionicons name="hourglass-outline" size={24} color="#FFF" /></View>
@@ -489,11 +470,9 @@ const DashboardScreen = ({ navigation }) => {
 
             <ReviewsSection />
 
-            {/* Address Section */}
             <LinearGradient colors={["#053B90", "#6200EA"]} style={styles.addressCard}>
               <View style={styles.addressHeader}><Ionicons name="location" size={28} color="#FFD700" /><Text style={styles.addressTitle}>Head Office</Text></View>
               <Text style={styles.addressText}>11/36-25, Third Floor, Kathriguppe Main Road, Banashankari Stage 3, Bengaluru - 560085</Text>
-              
               <View style={styles.contactRow}>
                  <TouchableOpacity style={styles.contactBtn} onPress={() => Linking.openURL(`tel:+919483900777`)}>
                     <Ionicons name="call" size={16} color="#FFF" />
@@ -506,62 +485,31 @@ const DashboardScreen = ({ navigation }) => {
               </View>
             </LinearGradient>
 
-            {/* --- NEW BEAUTIFUL APP INFO FOOTER --- */}
-            <LinearGradient
-                colors={['#F0F8FF', '#F8F8F8']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={styles.appInfoFooter}
-            >
-                <TouchableOpacity
-                    onPress={handleWebsiteLink}
-                    activeOpacity={0.7}
-                >
+            <LinearGradient colors={['#F0F8FF', '#F8F8F8']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.appInfoFooter}>
+                <TouchableOpacity onPress={handleWebsiteLink} activeOpacity={0.7}>
                     <Text style={styles.appInfoWebsiteLink}>
                         Visit our Website: <Text style={{ fontWeight: 'bold', color: '#053B90' }}>mychits.co.in</Text>
                     </Text>
                 </TouchableOpacity>
-
-                {/* Social Media Section */}
                 <View style={styles.socialMediaContainer}>
                     <TouchableOpacity onPress={() => openLink('https://www.facebook.com/MyChits')} style={styles.socialIcon} activeOpacity={0.7}>
-                        <LinearGradient
-                            colors={['#3b5998', '#4267B2']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.gradientIcon}
-                        >
+                        <LinearGradient colors={['#3b5998', '#4267B2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gradientIcon}>
                             <FontAwesome name="facebook" size={20} color="#fff" />
                         </LinearGradient>
                     </TouchableOpacity>
-
                     <TouchableOpacity onPress={() => openLink('https://www.instagram.com/my_chits/')} style={styles.socialIcon} activeOpacity={0.7}>
-                        <LinearGradient
-                            colors={['#833AB4', '#C13584', '#FD1D1D', '#F56040', '#FFDC80']}
-                            start={{ x: 0.0, y: 1.0 }}
-                            end={{ x: 1.0, y: 0.0 }}
-                            style={styles.gradientIcon}
-                        >
+                        <LinearGradient colors={['#833AB4', '#C13584', '#FD1D1D', '#F56040', '#FFDC80']} start={{ x: 0.0, y: 1.0 }} end={{ x: 1.0, y: 0.0 }} style={styles.gradientIcon}>
                             <FontAwesome name="instagram" size={20} color="#fff" />
                         </LinearGradient>
                     </TouchableOpacity>
-
                     <TouchableOpacity onPress={handleWhatsAppPress} style={styles.socialIcon} activeOpacity={0.7}>
-                        <LinearGradient
-                            colors={['#25D366', '#128C7E']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.gradientIcon}
-                        >
+                        <LinearGradient colors={['#25D366', '#128C7E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gradientIcon}>
                             <FontAwesome name="whatsapp" size={20} color="#fff" />
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
-
                 <View style={styles.madeWithLoveContainer}>
-                    <Text style={styles.appInfoMadeWithLove}>
-                        Made with <Text style={{ color: '#E53935' }}>❤️</Text> in India
-                    </Text>
+                    <Text style={styles.appInfoMadeWithLove}>Made with <Text style={{ color: '#E53935' }}>❤️</Text> in India</Text>
                     <MaterialIcons name="public" size={16} color="#4CAF50" style={styles.madeInIndiaIcon} />
                 </View>
             </LinearGradient>
@@ -569,7 +517,6 @@ const DashboardScreen = ({ navigation }) => {
           </View>
         </ScrollView>
 
-        {/* FIXED BOTTOM BUTTON */}
         <View style={styles.fixedButtonContainer}>
           <TouchableOpacity activeOpacity={0.9}>
             <LinearGradient colors={["#053B90", "#FF6F00"]} start={[0, 0]} end={[1, 0]} style={styles.fixedButton}>
@@ -579,7 +526,6 @@ const DashboardScreen = ({ navigation }) => {
         </View>
       </SafeAreaView>
 
-      {/* Profile Modal */}
       <Modal visible={isProfileVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={{ flex: 1 }} onPress={toggleProfileModal} />
@@ -593,8 +539,6 @@ const DashboardScreen = ({ navigation }) => {
                 <Ionicons name="close" size={28} color="#333" />
               </TouchableOpacity>
             </View>
-            
-             {/* Modal Status Card */}
              <Animated.View style={[styles.statusCleanCard, { transform: [{ scale: pulseAnim }] }]}>
               <View style={styles.statusRow}>
                 <View style={[styles.statusIcon, { backgroundColor: '#FF6F00' }]}><Ionicons name="hourglass-outline" size={24} color="#FFF" /></View>
@@ -607,7 +551,6 @@ const DashboardScreen = ({ navigation }) => {
                  <Animated.View style={[styles.progressBarFill, { width: progressWidth, backgroundColor: '#FF6F00' }]} />
               </View>
             </Animated.View>
-
             <TouchableOpacity style={styles.menuItem} onPress={() => { toggleProfileModal(); setAppUser(null); navigation.replace('Login'); }}><MaterialIcons name="logout" size={24} color="#FF416C" /><Text style={[styles.menuText, { color: '#FF416C' }]}>Logout</Text></TouchableOpacity>
           </Animated.View>
         </View>
@@ -621,8 +564,8 @@ const DashboardScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F6F9' },
-  headerCurve: { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 80, borderBottomLeftRadius: 45, borderBottomRightRadius: 45, overflow: 'hidden' },
+  container: { flex: 1, backgroundColor: '#F0F4F8' },
+  headerCurve: { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 80, borderBottomLeftRadius: 45, borderBottomRightRadius: 45, overflow: 'hidden', shadowColor: "#053B90", shadowOpacity: 0.3, shadowRadius: 10, elevation: 10 },
   bgCircle1: { position: 'absolute', top: -120, right: -60, width: 280, height: 280, borderRadius: 140, backgroundColor: 'rgba(255, 255, 255, 0.05)' },
   slantLineStyle: { position: 'absolute', top: 0, bottom: 0, width: 40, zIndex: 0 },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", zIndex: 2 },
@@ -637,94 +580,147 @@ const styles = StyleSheet.create({
   welcome: { fontSize: 22, fontWeight: "700", color: "#FFF" },
   userName: { fontSize: 24, color: "#FFF", fontWeight: "800" },
   subWelcome: { fontSize: 14, color: "#E3F2FD", marginTop: 5 },
-  floatingWrapper: { marginTop: -60 },
-  floatingCard: { width: 340, height: 190, marginRight: 18, borderRadius: 20, backgroundColor: '#FFF', elevation: 12, shadowColor: "#053B90", shadowOpacity: 0.25, shadowRadius: 15, shadowOffset: { width: 0, height: 10 }, overflow: 'hidden', borderWidth: 1, borderColor: '#E0E0E0' },
+  bgBlendOverlay: { position: 'absolute', top: 220, left: 0, right: 0, height: 300, backgroundColor: '#E3F2FD', opacity: 0.4, zIndex: -1, borderBottomLeftRadius: 100, borderBottomRightRadius: 100, transform: [{scaleY: 0.8}] },
+  floatingWrapper: { marginTop: -60, zIndex: 10 },
+  floatingCard: { width: 340, height: 190, marginRight: 18, borderRadius: 20, backgroundColor: '#FFF', elevation: 15, shadowColor: "#053B90", shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, overflow: 'hidden', borderWidth: 1, borderColor: '#E0E0E0' },
   bgImage: { width: '100%', height: '100%' },
-  contentPadding: { paddingHorizontal: 20, marginTop: 30, paddingBottom: 40 },
-  trustBarContainer: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 12, paddingVertical: 15, marginBottom: 20, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, borderWidth: 1, borderColor: '#EEE' },
+  contentPadding: { paddingHorizontal: 20, marginTop: 30, paddingBottom: 40, zIndex: 1 },
+  
+  // --- TRUST BAR (Glassmorphism) ---
+  trustBarContainer: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 16, paddingVertical: 18, marginBottom: 25, elevation: 6, shadowColor: '#053B90', shadowOpacity: 0.1, shadowRadius: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)' },
   trustItem: { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
-  trustText: { fontSize: 11, fontWeight: '700', color: '#333', marginTop: 5, textAlign: 'center' },
-  trustDivider: { width: 1, height: '70%', backgroundColor: '#EEE' },
-  complianceCard: { backgroundColor: "#FFF", borderRadius: 20, padding: 20, marginBottom: 15, borderWidth: 1, borderColor: '#E0E0E0', elevation: 4, shadowColor: "#053B90", shadowOpacity: 0.08, shadowRadius: 10 },
-  complianceHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  complianceTitle: { fontSize: 16, fontWeight: "800", color: "#053B90", marginLeft: 10, flex: 1 },
-  complianceSubtitle: { fontSize: 13, color: '#555', marginLeft: 34, marginBottom: 20, lineHeight: 18 },
+  trustText: { fontSize: 12, fontWeight: '800', color: '#333', marginTop: 6, textAlign: 'center' },
+  trustDivider: { width: 1, height: '60%', backgroundColor: 'rgba(0,0,0,0.05)' },
+  
+  // --- COMPLIANCE ---
+  complianceCard: { backgroundColor: "#FFF", borderRadius: 20, padding: 25, marginBottom: 25, elevation: 8, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 15, shadowOffset: { width: 0, height: 5 }, borderTopWidth: 6, borderTopColor: '#053B90' },
+  complianceHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  complianceTitle: { fontSize: 18, fontWeight: "800", color: "#053B90", marginLeft: 12, flex: 1 },
+  complianceSubtitle: { fontSize: 13, color: '#666', marginLeft: 36, marginBottom: 25, lineHeight: 20 },
   complianceRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginTop: 10 },
   complianceColumn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   complianceDivider: { width: 1, height: '80%', backgroundColor: '#F0F0F0' },
-  complianceIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E8EAF6', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  complianceLabel: { fontSize: 10, color: '#888', fontWeight: '600', marginTop: 5 },
-  complianceValue: { fontSize: 11, color: '#333', fontWeight: '800', textAlign: 'center' },
-  
-  // STYLES FOR LINK BUTTON
-  viewLicenseBtnExternal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 0, marginBottom: 25, paddingVertical: 14, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1.5, borderColor: '#053B90', elevation: 2 },
+  complianceIconBox: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#F5F7FA', justifyContent: 'center', alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#EEE' },
+  complianceLabel: { fontSize: 11, color: '#888', fontWeight: '600', marginTop: 5 },
+  complianceValue: { fontSize: 12, color: '#333', fontWeight: '800', textAlign: 'center' },
+  viewLicenseBtnExternal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 0, marginBottom: 30, paddingVertical: 16, backgroundColor: '#FFF', borderRadius: 14, borderWidth: 2, borderColor: '#053B90', elevation: 4, shadowColor: '#053B90', shadowOpacity: 0.15 },
   viewLicenseContentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  viewLicenseText: { color: '#053B90', fontWeight: '800', fontSize: 13.5, marginLeft: 8 },
-
-  partnersCard: { backgroundColor: '#FFF', alignItems: 'center', padding: 20, marginBottom: 30, borderRadius: 20, borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5 },
-  partnersTitle: { fontSize: 12, fontWeight: '700', color: '#555555', marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1.5 },
-  partnerLogoBox: { width: '100%', alignItems: 'center', justifyContent: 'center' },
+  viewLicenseText: { color: '#053B90', fontWeight: '800', fontSize: 13, marginLeft: 8 },
+  
+  // --- PARTNERS ---
+  partnersCard: { backgroundColor: '#FFF', alignItems: 'center', padding: 25, marginBottom: 35, borderRadius: 20, borderTopWidth: 6, borderTopColor: '#FF6F00', elevation: 5, shadowColor: '#FF6F00', shadowOpacity: 0.1, shadowRadius: 10 },
+  partnersTitle: { fontSize: 12, fontWeight: '700', color: '#555555', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1.5 },
+  partnerLogoBox: { width: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FAFAFA', paddingVertical: 15, borderRadius: 12, borderWidth: 1, borderColor: '#EEE' },
   partnerLogoImage: { width: 280, height: 50 },
-  sectionBlock: { marginBottom: 30 },
-  headerBlock: { alignItems: 'center', marginBottom: 20 },
-  headerBlockText: { fontSize: 20, fontWeight: "900", color: '#1A237E', textTransform: 'uppercase' },
-  blockUnderline: { width: 60, height: 4, backgroundColor: '#053B90', marginTop: 8, borderRadius: 2 },
+  
+  // --- SECTION BLOCKS (WASH) ---
+  sectionBlock: { marginBottom: 35 },
+  sectionWithWash: {
+    backgroundColor: 'rgba(5, 59, 144, 0.03)', // Very faint blue wash
+    paddingTop: 20,
+    paddingBottom: 10,
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(5, 59, 144, 0.05)'
+  },
+  headerBlock: { alignItems: 'center', marginBottom: 25 },
+  headerBlockText: { fontSize: 22, fontWeight: "900", color: '#1A237E', textTransform: 'uppercase' },
+  blockUnderline: { width: 50, height: 5, backgroundColor: '#6200EA', marginTop: 8, borderRadius: 3 },
   timelineContainer: { paddingHorizontal: 10 },
   timelineLine: { position: 'absolute', left: 24, top: 20, bottom: 20, width: 2, backgroundColor: '#E0E0E0', zIndex: 0 },
   timelineItem: { flexDirection: 'row', marginBottom: 25, zIndex: 1 },
   timelineCircleWrapper: { alignItems: 'center', width: 48 },
-  timelineCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#053B90', justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#F4F6F8', zIndex: 2, elevation: 2 },
-  timelineNumber: { color: '#FFF', fontWeight: '800', fontSize: 14 },
-  timelineConnector: { position: 'absolute', top: 32, bottom: -25, width: 2, backgroundColor: '#053B90' },
-  timelineContentCard: { flex: 1, backgroundColor: '#FFF', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#EEE', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 5, elevation: 2 },
-  timelineIconRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  timelineTitle: { fontSize: 15, fontWeight: '800', color: '#333' },
-  timelineDesc: { fontSize: 12, color: '#666', lineHeight: 18, textAlign: 'justify' },
+  timelineCircle: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#6200EA', justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#F0F4F8', zIndex: 2, elevation: 3 },
+  timelineNumber: { color: '#FFF', fontWeight: '800', fontSize: 15 },
+  timelineConnector: { position: 'absolute', top: 34, bottom: -25, width: 2, backgroundColor: '#6200EA' },
+  timelineContentCard: { flex: 1, backgroundColor: '#FFF', padding: 18, borderRadius: 16, borderWidth: 1, borderColor: '#EEE', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 3 },
+  timelineIconRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  timelineTitle: { fontSize: 16, fontWeight: '800', color: '#333' },
+  timelineDesc: { fontSize: 13, color: '#666', lineHeight: 20, textAlign: 'justify' },
+  
+  // --- STATS (Styled Dynamically in JSX) ---
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 2 },
-  statBoxClean: { width: '31%', backgroundColor: '#FFF', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 5, marginBottom: 8, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 2, borderWidth: 1, borderColor: '#F5F5F5' },
-  statIconClean: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  statValueClean: { fontSize: 14, fontWeight: '800', color: '#333', marginBottom: 2, textAlign: 'center' },
-  statLabelClean: { fontSize: 9, fontWeight: '600', color: '#777', textAlign: 'center' },
-  sectionTitleText: { fontSize: 18, fontWeight: "900", color: "#333", marginBottom: 15, textAlign: 'center' },
+  statBoxClean: { 
+    width: '31%', 
+    backgroundColor: '#FFF', 
+    borderRadius: 16, 
+    paddingVertical: 18, 
+    paddingHorizontal: 5, 
+    marginBottom: 12, 
+    alignItems: 'center', 
+    // Note: Colors are applied dynamically in JSX
+    shadowColor: '#000', 
+    shadowOpacity: 0.06, 
+    shadowRadius: 8, 
+    elevation: 4 
+  },
+  statIconClean: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  statValueClean: { fontSize: 15, fontWeight: '900', marginBottom: 4, textAlign: 'center' },
+  statLabelClean: { fontSize: 10, fontWeight: '600', textAlign: 'center' },
+  
+  // --- ADVANTAGES ---
+  sectionTitleText: { fontSize: 20, fontWeight: "900", color: "#333", marginBottom: 20, textAlign: 'center' },
   advantagesCleanGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  advantageCleanBox: { width: '31%', backgroundColor: '#FFF', borderRadius: 12, padding: 10, alignItems: 'center', marginBottom: 10, elevation: 1, borderWidth: 1, borderColor: '#F5F5F5' },
-  advantageIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-  advantageText: { fontSize: 10, fontWeight: '700', color: '#444', textAlign: 'center', marginTop: 4, lineHeight: 13 },
-  statusCleanCard: { backgroundColor: '#FFF8E1', borderRadius: 15, padding: 20, marginBottom: 25, elevation: 3, shadowColor: '#FF6F00', shadowOpacity: 0.15, shadowRadius: 8, borderWidth: 1, borderColor: '#FFECB3' },
+  advantageCleanBox: { width: '31%', backgroundColor: '#FFF', borderRadius: 16, padding: 15, alignItems: 'center', marginBottom: 12, elevation: 4, borderWidth: 1, borderColor: '#F0F0F0', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6 },
+  advantageIconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  advantageText: { fontSize: 11, fontWeight: '700', color: '#444', textAlign: 'center', marginTop: 4, lineHeight: 15 },
+  
+  // --- STATUS ---
+  statusCleanCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 30, elevation: 5, shadowColor: '#FF6F00', shadowOpacity: 0.15, shadowRadius: 10, borderWidth: 1, borderColor: '#FFE0B2', borderLeftWidth: 6, borderLeftColor: '#FF6F00' },
   statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  statusIcon: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  statusIcon: { width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   statusTitle: { fontSize: 16, fontWeight: '800', color: '#333' },
   statusSub: { fontSize: 13, color: '#666', marginTop: 2 },
-  progressBarTrack: { height: 6, backgroundColor: '#FFE0B2', borderRadius: 3, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 3 },
-  reviewsContainer: { marginBottom: 25 },
+  progressBarTrack: { height: 8, backgroundColor: '#FFF3E0', borderRadius: 4, overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: 4 },
+  
+  // --- REVIEWS ---
+  reviewsContainer: { marginBottom: 30 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
-  sectionTitle: { fontSize: 20, fontWeight: "900", color: "#333" },
-  reviewCard: { width: 260, backgroundColor: "#FFF", borderRadius: 20, padding: 15, marginRight: 15, elevation: 3, borderWidth: 1, borderColor: '#F0F0F0' },
-  reviewerInfo: { flexDirection: 'row', marginBottom: 10 },
-  reviewAvatar: { width: 35, height: 35, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  sectionTitle: { fontSize: 12, fontWeight: "900", color: "#333" },
+  reviewCard: { 
+    width: 270, 
+    backgroundColor: "#FFF", 
+    borderRadius: 20, 
+    padding: 20, 
+    marginRight: 15, 
+    elevation: 6, 
+    borderWidth: 1, 
+    borderColor: '#F0F0F0', 
+    shadowColor: '#000', 
+    shadowOpacity: 0.08, 
+    shadowRadius: 10,
+    borderTopWidth: 5,
+    borderTopColor: '#2E7D32'
+  },
+  reviewQuoteBg: { position: 'absolute', top: 10, right: 15, zIndex: 0 },
+  reviewerInfo: { flexDirection: 'row', marginBottom: 12, zIndex: 1 },
+  reviewAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12, zIndex: 1 },
   reviewAvatarText: { fontWeight: '800' },
-  reviewName: { fontWeight: '800', color: '#333', fontSize: 14 },
+  reviewName: { fontWeight: '800', color: '#333', fontSize: 15 },
   reviewLocation: { fontSize: 11, color: '#888' },
-  reviewText: { fontSize: 12, color: '#555', lineHeight: 18 },
+  reviewText: { fontSize: 13, color: '#555', lineHeight: 20, zIndex: 1 },
   seeAllBtn: { flexDirection: 'row', alignItems: 'center' },
   seeAllText: { color: '#053B90', fontWeight: '700', marginRight: 2 },
-  addressCard: { borderRadius: 25, padding: 25, marginBottom: 20 },
-  addressHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  addressTitle: { fontSize: 18, color: '#FFF', fontWeight: '900', marginLeft: 10 },
-  addressText: { color: '#E8E8E8', lineHeight: 22, marginBottom: 20 },
-  contactRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  contactBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
-  contactBtnText: { color: '#FFF', fontWeight: '700', marginLeft: 5 },
   
-  // --- NEW FOOTER STYLES ---
-  appInfoFooter: { marginTop: 10, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 30, paddingBottom: 30, paddingHorizontal: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.05, shadowRadius: 10 },
-  appInfoWebsiteLink: { fontSize: 14, color: '#555', marginBottom: 20, textDecorationLine: 'underline' },
-  socialMediaContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
+  // --- ADDRESS ---
+  addressCard: { borderRadius: 25, padding: 30, marginBottom: 25, elevation: 8, shadowColor: '#6200EA', shadowOpacity: 0.3, shadowRadius: 15 },
+  addressHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  addressTitle: { fontSize: 20, color: '#FFF', fontWeight: '900', marginLeft: 12 },
+  addressText: { color: '#E8E8E8', lineHeight: 24, marginBottom: 25, fontSize: 14 },
+  contactRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  contactBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 25 },
+  contactBtnText: { color: '#FFF', fontWeight: '700', marginLeft: 8 },
+  
+  // --- FOOTER ---
+  appInfoFooter: { marginTop: 10, borderTopLeftRadius: 35, borderTopRightRadius: 35, paddingTop: 35, paddingBottom: 35, paddingHorizontal: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.05, shadowRadius: 10, borderWidth: 1, borderColor: '#EEE', backgroundColor: '#FAFAFA' },
+  appInfoWebsiteLink: { fontSize: 15, color: '#555', marginBottom: 25, textDecorationLine: 'underline' },
+  socialMediaContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 25 },
   socialIcon: { marginHorizontal: 10 },
-  gradientIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4 },
+  gradientIcon: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', elevation: 6, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6 },
   madeWithLoveContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  appInfoMadeWithLove: { fontSize: 12, color: '#777', marginRight: 5 },
+  appInfoMadeWithLove: { fontSize: 13, color: '#777', marginRight: 6 },
   madeInIndiaIcon: { marginBottom: 2 },
 
   socialRow: { flexDirection: 'row', marginTop: 20 },
@@ -744,9 +740,9 @@ const styles = StyleSheet.create({
   zoomContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
   zoomedImage: { width: width, height: height * 0.7 },
   closeZoomBtn: { position: 'absolute', top: 40, right: 20, zIndex: 1 },
-  fixedButtonContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#F4F6F9', paddingHorizontal: 20, paddingVertical: 20, borderTopLeftRadius: 25, borderTopRightRadius: 25, shadowColor: '#053B90', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 20, zIndex: 1000 },
-  fixedButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', elevation: 5 },
-  fixedButtonText: { color: "#FFFFFF", fontSize: 18, fontWeight: "800", letterSpacing: 0.5 },
+  fixedButtonContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 20, paddingVertical: 20, borderTopLeftRadius: 30, borderTopRightRadius: 30, shadowColor: '#053B90', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 20, zIndex: 1000, borderTopWidth: 1, borderTopColor: '#EEE' },
+  fixedButton: { paddingVertical: 18, borderRadius: 14, alignItems: 'center', justifyContent: 'center', elevation: 6, shadowColor: '#FF6F00', shadowOpacity: 0.3, shadowRadius: 10 },
+  fixedButtonText: { color: "#FFFFFF", fontSize: 19, fontWeight: "800", letterSpacing: 0.5 },
 });
 
 export default DashboardScreen;
