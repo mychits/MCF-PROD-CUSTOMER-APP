@@ -36,6 +36,7 @@ import RewardsScreen from "../screens/RewardsScreen.jsx";
 import Dashboard from "../screens/Dashboard.jsx";
 import PayOnline from "../screens/PayOnline.jsx";
 import OnlineAuction from "../screens/OnlineAuction.jsx";
+// import Holdedgroups from "../screens/Holdedgroups.jsx";
 
 
 import About from "../screens/About";
@@ -276,7 +277,7 @@ export default function ScreenNavigate() {
             component={Fq}
             options={{ headerShown: false }}
           />
-             <Stack.Screen
+          <Stack.Screen
             name="EMICalculator"
             component={EMICalculator}
             options={{ headerShown: false }}
@@ -308,7 +309,7 @@ export default function ScreenNavigate() {
             component={Enrollment}
             options={{ headerShown: false }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="ReportList"
             component={ReportList}
             options={{ headerShown: false }}
@@ -350,6 +351,11 @@ export default function ScreenNavigate() {
             component={TermsConditions}
             options={{ headerShown: false }}
           />
+          {/* <Stack.Screen
+            name="Holdedgroups"
+            component={Holdedgroups}
+            options={{ headerShown: false }}
+          /> */}
           <Stack.Screen
             name="Dashboard"
             component={Dashboard}

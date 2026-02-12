@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   masterGroupName: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     color: Colors.textDark,
     textAlign: 'center',
