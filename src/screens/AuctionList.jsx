@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  masterGroupValue: {
+  masterGroupValue: { 
     fontSize: 32,
     fontWeight: '900',
     color: Colors.primary,

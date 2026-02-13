@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useContext, useRef } from "react";
 import {
   View,
@@ -12,6 +13,7 @@ import {
   Platform,
   UIManager,
   Animated,
+  Linking,
 } from "react-native";
 import url from "../data/url";
 import axios from "axios";
@@ -21,6 +23,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import NoGroupImage from "../../assets/Nogroup.png";
+// --- IMPORTED THE NEW IMAGE ---
+import GirlImage from "../../assets/girlimage.png"; 
 import { ContextProvider } from "../context/UserProvider";
 
 // Enable LayoutAnimation on Android
@@ -164,6 +168,15 @@ const Mygroups = ({ navigation }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
+  // --- NEW ANIMATION REFS FOR THE GIRL ---
+  const girlWalkX = useRef(new Animated.Value(-50)).current;
+  const girlWalkY = useRef(new Animated.Value(50)).current;
+  const girlWalkRotation = useRef(new Animated.Value(-10)).current;
+
+  // Contact details
+  const recipientEmail = 'info.mychits@gmail.com';
+  const phoneNumber = '+919483900777';
+
   useEffect(() => {
     const animation = Animated.loop(
         Animated.parallel([
@@ -180,6 +193,59 @@ const Mygroups = ({ navigation }) => {
     animation.start();
     return () => animation.stop();
   }, [scaleAnim, slideAnim]);
+
+  // --- ANIMATION EFFECT FOR WALKING GIRL ---
+  useEffect(() => {
+    if (viewMode === 'held') {
+      triggerWalkAnimation();
+    }
+  }, [viewMode]);
+
+  const triggerWalkAnimation = () => {
+    // Reset positions
+    girlWalkX.setValue(-50);
+    girlWalkY.setValue(50);
+    girlWalkRotation.setValue(-10);
+
+    // Define the walk steps
+    // Step 1: Move Right and Rotate Right
+    const step1 = Animated.parallel([
+        Animated.timing(girlWalkX, { toValue: -15, duration: 300, useNativeDriver: true }),
+        Animated.timing(girlWalkRotation, { toValue: 5, duration: 300, useNativeDriver: true }),
+    ]);
+
+    // Step 2: Move Left (settle) and Rotate Left
+    const step2 = Animated.parallel([
+        Animated.timing(girlWalkX, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.timing(girlWalkRotation, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]);
+
+    // Move Up (Y axis) while walking
+    const moveUp = Animated.timing(girlWalkY, { toValue: 0, duration: 600, useNativeDriver: true });
+
+    // Run sequence: Step 1 -> Step 2, parallel with moving Up
+    Animated.sequence([step1, step2]).start();
+    moveUp.start();
+  };
+
+  const handleContactPress = (type, value) => {
+    let urlLink = '';
+    if (type === 'email') {
+      urlLink = `mailto:${value}`;
+    } else if (type === 'phone') {
+      urlLink = `tel:${value}`;
+    }
+    
+    Linking.canOpenURL(urlLink)
+      .then((supported) => {
+        if (!supported) {
+          console.log("Can't handle url: " + urlLink);
+        } else {
+          return Linking.openURL(urlLink);
+        }
+      })
+      .catch((err) => console.error("An error occurred", err));
+  };
 
   const fetchHeldGroups = useCallback(async () => {
     if (!userId) {
@@ -381,6 +447,67 @@ const Mygroups = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
 
+              {/* --- STYLISH CONVERT BOX WITH ANIMATED GIRL --- */}
+              {viewMode === 'held' && (
+                <View style={styles.convertBoxContainer}>
+                    <LinearGradient 
+                        colors={['#FFFFFF', '#F0F8FF']} 
+                        start={{x: 0, y: 0}} 
+                        end={{x: 1, y: 1}}
+                        style={styles.convertBoxInner}
+                    >
+                        {/* ANIMATED GIRL IMAGE */}
+                        <Animated.Image 
+                            source={GirlImage} 
+                            style={[
+                                styles.girlImage, 
+                                {
+                                    transform: [
+                                        { translateX: girlWalkX },
+                                        { translateY: girlWalkY },
+                                        { rotate: girlWalkRotation.interpolate({
+                                            inputRange: [-10, 0, 5],
+                                            outputRange: ['-10deg', '0deg', '5deg']
+                                        })}
+                                    ]
+                                }
+                            ]} 
+                            resizeMode="contain" 
+                        />
+                        
+                        <View style={styles.convertContent}>
+                            <View style={styles.convertBadge}>
+                                <Ionicons name="sparkles" size={16} color="#D35400" />
+                                <Text style={styles.convertBadgeText}>Reactivate Now</Text>
+                            </View>
+                            
+                            <Text style={styles.convertTitle}>Convert Hold to Active</Text>
+                            <Text style={styles.convertSubtitle}>
+                                Your groups are on hold. Contact our support team to convert them back to active status instantly!
+                            </Text>
+
+                            <View style={styles.convertButtonsRow}>
+                                <TouchableOpacity 
+                                    style={styles.convertButtonEmail} 
+                                    onPress={() => handleContactPress('email', recipientEmail)}
+                                >
+                                    <MaterialCommunityIcons name="email-outline" size={22} color="#fff" />
+                              
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={styles.convertButtonCall} 
+                                    onPress={() => handleContactPress('phone', phoneNumber)}
+                                >
+                                    <MaterialCommunityIcons name="phone-outline" size={22} color="#fff" />
+                                 
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </LinearGradient>
+                </View>
+              )}
+
               {viewMode === 'active' && cardsToRender.length > 0 && (
                 <View style={accordionStyles.listContainer}>
                     <Text style={accordionStyles.listTitle}>Active Enrollments Index</Text>
@@ -524,9 +651,111 @@ const styles = StyleSheet.create({
   enrolledGroupsCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderRadius: 20 },
   enrolledGroupsCount: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
   enrolledGroupsLabel: { fontSize: 16, color: 'rgba(255,255,255,0.9)' },
+  enrolledGroupsIcon: { opacity: 0.8 },
   heldGroupsButton: { flexDirection: 'row', backgroundColor: Colors.secondaryBlue, padding: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   heldGroupsButtonActive: { backgroundColor: "#D35400" },
   heldGroupsButtonText: { color: '#fff', fontWeight: 'bold' },
+  
+  // --- STYLISH CONVERT BOX STYLES ---
+  convertBoxContainer: {
+    marginBottom: 25,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(5, 59, 144, 0.1)',
+  },
+  convertBoxInner: {
+    padding: 20,
+    position: 'relative',
+    minHeight: 180, // Ensure space for the image
+  },
+  girlImage: {
+    position: 'absolute',
+    bottom: -10,
+    left: -10,
+    width: 140,
+    height: 180,
+    zIndex: 1,
+  },
+  convertContent: {
+    marginLeft: 100, // Push content to the right to make room for the girl
+    zIndex: 2,
+    flex: 1,
+  },
+  convertBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(211, 84, 0, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  convertBadgeText: {
+    color: '#D35400',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 5,
+  },
+  convertTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.primaryBlue,
+    marginBottom: 5,
+  },
+  convertSubtitle: {
+    fontSize: 13,
+    color: Colors.mediumText,
+    lineHeight: 18,
+    marginBottom: 15,
+  },
+  convertButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  convertButtonEmail: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primaryBlue,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginRight: 10,
+    shadowColor: Colors.primaryBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  convertButtonCall: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#27AE60',
+    paddingVertical: 10,
+    borderRadius: 12,
+    shadowColor: '#27AE60',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  convertButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 10,
+    marginLeft: 6,
+  },
+  // -------------------------------
+
   cardTouchable: { marginBottom: 20, borderRadius: 20, elevation: 4, backgroundColor: "#fff" },
   highlightedCard: { borderWidth: 2, borderColor: Colors.accentColor, transform: [{ scale: 1.02 }] },
   cardGradient: { borderRadius: 20, padding: 2 },
