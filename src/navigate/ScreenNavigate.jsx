@@ -37,6 +37,7 @@ import Dashboard from "../screens/Dashboard.jsx";
 import PayOnline from "../screens/PayOnline.jsx";
 import OnlineAuction from "../screens/OnlineAuction.jsx";
 // import Holdedgroups from "../screens/Holdedgroups.jsx";
+import BidRequest from "../screens/BidRequest.jsx";
 
 
 import About from "../screens/About";
@@ -55,6 +56,7 @@ import MoreInformation from "../screens/MoreInformation";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import UserProvider, { ContextProvider } from "../context/UserProvider";
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -375,6 +377,12 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="OnlineAuction"
             component={OnlineAuction}
+            options={{ headerShown: false }}
+          />  
+
+          <Stack.Screen
+            name="BidRequest"
+            component={BidRequest}
             options={{ headerShown: false }}
           />
           <Stack.Screen
