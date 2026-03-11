@@ -16,6 +16,7 @@ import IntroduceNewCustomers from "../screens/IntroduceNewCustomers";
 import Insurance from "../screens/Insurance";
 import EligibilityScreen from "../screens/EligibilityScreen";
 import RegisterOtpVerify from "../screens/RegisterOtpVerify.jsx";
+import PrizedScreen from "../screens/PrizedScreen.jsx"
 import HomeScreen from "./Screens/HomeScreen";
 import EnrollScreen from "./Screens/EnrollScreen";
 import PaymentScreen from "./Screens/PaymentScreen";
@@ -36,6 +37,8 @@ import RewardsScreen from "../screens/RewardsScreen.jsx";
 import Dashboard from "../screens/Dashboard.jsx";
 import PayOnline from "../screens/PayOnline.jsx";
 import OnlineAuction from "../screens/OnlineAuction.jsx";
+// import Holdedgroups from "../screens/Holdedgroups.jsx";
+import BidRequest from "../screens/BidRequest.jsx";
 
 
 import About from "../screens/About";
@@ -54,6 +57,7 @@ import MoreInformation from "../screens/MoreInformation";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import UserProvider, { ContextProvider } from "../context/UserProvider";
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -233,6 +237,11 @@ export default function ScreenNavigate() {
             component={ReportScreen}
             options={{ headerShown: false }}
           />
+             <Stack.Screen
+            name="PrizedScreen"
+            component={PrizedScreen}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen
             name="IntroduceNewCustomers"
             component={IntroduceNewCustomers}
@@ -276,7 +285,7 @@ export default function ScreenNavigate() {
             component={Fq}
             options={{ headerShown: false }}
           />
-             <Stack.Screen
+          <Stack.Screen
             name="EMICalculator"
             component={EMICalculator}
             options={{ headerShown: false }}
@@ -308,7 +317,7 @@ export default function ScreenNavigate() {
             component={Enrollment}
             options={{ headerShown: false }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="ReportList"
             component={ReportList}
             options={{ headerShown: false }}
@@ -350,6 +359,11 @@ export default function ScreenNavigate() {
             component={TermsConditions}
             options={{ headerShown: false }}
           />
+          {/* <Stack.Screen
+            name="Holdedgroups"
+            component={Holdedgroups}
+            options={{ headerShown: false }}
+          /> */}
           <Stack.Screen
             name="Dashboard"
             component={Dashboard}
@@ -369,6 +383,12 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="OnlineAuction"
             component={OnlineAuction}
+            options={{ headerShown: false }}
+          />  
+
+          <Stack.Screen
+            name="BidRequest"
+            component={BidRequest}
             options={{ headerShown: false }}
           />
           <Stack.Screen
