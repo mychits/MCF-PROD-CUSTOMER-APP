@@ -23,13 +23,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import NoGroupImage from "../../assets/Nogroup.png";
 import { ContextProvider } from "../context/UserProvider";
 
-// REMOVED WARNING BLOCK: setLayoutAnimationEnabledExperimental is a no-op in New Architecture.
-// if (Platform.OS === 'android') {
-//   if (UIManager.setLayoutAnimationEnabledExperimental) {
-//     UIManager.setLayoutAnimationEnabledExperimental(true);
-//   }
-// }
-
 
 const Colors = {
   primaryBlue: "#053B90",
@@ -42,15 +35,12 @@ const Colors = {
   completedText: "#27AE60",
   tableHeaderBlue: "#042D75",
   tableBorderColor: "#E0E0E0", 
-  // ADDED: Warning color for pending status (Matching Mygroups.jsx)
   warningText: "#F39C12", 
 };
 
-// --- MODIFIED FUNCTION: formatNumberIndianStyle ---
 const formatNumberIndianStyle = (num) => {
   if (num === null || num === undefined) return "0";
   
-  // Modification: Convert to number, fix to 2 decimal places, and get as a string
   const formattedNum = parseFloat(num).toFixed(2);
 
   const parts = formattedNum.toString().split(".");
@@ -68,10 +58,6 @@ const formatNumberIndianStyle = (num) => {
     : "";
   return (isNegative ? "-" : "") + formattedOther + lastThree + decimalPart;
 };
-// --------------------------------------------------
-
-// --- AccordionListItem Component REMOVED ---
-// ---------------------------------------------------------------------
 
 const Payments = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -80,85 +66,71 @@ const Payments = ({ navigation }) => {
   const [cardsData, setCardsData] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Initialize to null to hide values until loaded
   const [Totalpaid, setTotalPaid] = useState(null); 
   const [Totalprofit, setTotalProfit] = useState(null); 
   
   const [individualGroupReports, setIndividualGroupReports] = useState({});
-  // const [enrolledGroupsCount, setEnrolledGroupsCount] = useState(0); // REMOVED
-  // const [expandedIndex, setExpandedIndex] = useState(null); // REMOVED
   const [highlightedCardIndex, setHighlightedCardIndex] = useState(null);
   
-    const scrollViewRef = useRef(null); 
-    const cardLayouts = useRef({});
+  const scrollViewRef = useRef(null); 
+  const cardLayouts = useRef({});
   
-    // --- Animation Refs and Logic (Intensified) for Payments Button ---
-    const scaleAnim = useRef(new Animated.Value(1)).current;
-    const slideAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
-    // --- NEW: Animation Refs for Auction/Insurance Buttons (Scale down on press) ---
-    const auctionScaleAnim = useRef(new Animated.Value(1)).current;
-    // const insuranceScaleAnim = useRef(new Animated.Value(1)).current; // REMOVED: insuranceScaleAnim
+  const auctionScaleAnim = useRef(new Animated.Value(1)).current;
 
-    const handleAuctionPressIn = () => {
-      Animated.timing(auctionScaleAnim, {
-        toValue: 0.95, // Scale down slightly on press in
-        duration: 100,
-        useNativeDriver: true,
-      }).start();
+  const handleAuctionPressIn = () => {
+    Animated.timing(auctionScaleAnim, {
+      toValue: 0.95,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleAuctionPressOut = () => {
+    Animated.timing(auctionScaleAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  useEffect(() => {
+    const pulseAndSlide = () => {
+      Animated.loop(
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(scaleAnim, {
+              toValue: 1.3, 
+              duration: 400, 
+              useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+              toValue: 1, 
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.sequence([
+            Animated.timing(slideAnim, {
+              toValue: 5, 
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+              toValue: 0, 
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      ).start();
     };
-
-    const handleAuctionPressOut = () => {
-      Animated.timing(auctionScaleAnim, {
-        toValue: 1, // Scale back up on press out
-        duration: 150,
-        useNativeDriver: true,
-      }).start(() => {
-        // Add navigation logic here if you want to navigate on press out
-        // navigation.navigate("AuctionScreen"); // Example
-      });
-    };
-
-    // REMOVED: handleInsurancePressIn and handleInsurancePressOut
   
-    useEffect(() => {
-      const pulseAndSlide = () => {
-        Animated.loop(
-          Animated.parallel([
-            // Scale animation: Pulses from 1 to 1.3
-            Animated.sequence([
-              Animated.timing(scaleAnim, {
-                toValue: 1.3, 
-                duration: 400, 
-                useNativeDriver: true,
-              }),
-              Animated.timing(scaleAnim, {
-                toValue: 1, 
-                duration: 400,
-                useNativeDriver: true,
-              }),
-            ]),
-            // Slide animation: Slides 5 units to the right
-            Animated.sequence([
-              Animated.timing(slideAnim, {
-                toValue: 5, 
-                duration: 400,
-                useNativeDriver: true,
-              }),
-              Animated.timing(slideAnim, {
-                toValue: 0, 
-                duration: 400,
-                useNativeDriver: true,
-              }),
-            ]),
-          ])
-        ).start();
-      };
-  
-      pulseAndSlide();
-    }, [scaleAnim, slideAnim]);
+    pulseAndSlide();
+  }, [scaleAnim, slideAnim]);
 
-  // MODIFIED: Function to fetch and process both enrollment types (same route as Mygroups.jsx)
   const fetchTickets = useCallback(async () => {
     if (!userId) {
       setLoading(false);
@@ -166,35 +138,29 @@ const Payments = ({ navigation }) => {
       return;
     }
     try {
-      // Use the mobile endpoint which returns both pending and approved groups
       const response = await axios.get(`${url}/enroll/mobile-enrolls/users/${userId}`);
       
       const responseData = response.data.data || [];
       let allCards = [];
 
       responseData.forEach(groupBlock => {
-        // Collect mobileAppEnrolls (Pending Approval)
         if (groupBlock.mobileAppEnrolls && groupBlock.mobileAppEnrolls.length > 0) {
-            const mobileCards = groupBlock.mobileAppEnrolls.map(card => ({
-                ...card,
-                // Harmonize ticket key for consistency (enrollments uses 'tickets', mobile uses 'no_of_tickets')
-                tickets: card.no_of_tickets, 
-                isPendingApproval: true, 
-            }));
-            allCards.push(...mobileCards);
+          const mobileCards = groupBlock.mobileAppEnrolls.map(card => ({
+            ...card,
+            tickets: card.no_of_tickets, 
+            isPendingApproval: true, 
+          }));
+          allCards.push(...mobileCards);
         }
-        // Collect regular enrollments (Approved/Active)
         if (groupBlock.enrollments && groupBlock.enrollments.length > 0) {
-            const approvedCards = groupBlock.enrollments.map(card => ({
-                ...card,
-                // Ensure approved cards have isPendingApproval: false
-                isPendingApproval: false,
-            }));
-            allCards.push(...approvedCards);
+          const approvedCards = groupBlock.enrollments.map(card => ({
+            ...card,
+            isPendingApproval: false,
+          }));
+          allCards.push(...approvedCards);
         }
       });
 
-      // setCardsData now includes both pending and approved enrollments
       setCardsData(allCards);
 
     } catch (error) {
@@ -209,9 +175,7 @@ const Payments = ({ navigation }) => {
     try {
       const response = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`);
       const data = response.data;
-      // setEnrolledGroupsCount(data.length); // REMOVED
       
-      // Set values after successful fetch
       setTotalPaid(data.reduce((sum, g) => sum + (g?.payments?.totalPaidAmount || 0), 0));
       setTotalProfit(data.reduce((sum, g) => sum + (g?.profit?.totalProfit || 0), 0));
 
@@ -231,7 +195,6 @@ const Payments = ({ navigation }) => {
         setTotalPaid(0);
         setTotalProfit(0);
         setIndividualGroupReports({});
-        // setEnrolledGroupsCount(0); // REMOVED
       } else {
         console.error(error);
       }
@@ -240,16 +203,15 @@ const Payments = ({ navigation }) => {
 
   useEffect(() => {
     const loadData = async () => {
-        setLoading(true);
-        if (userId) {
-            await Promise.all([fetchTickets(), fetchAllOverview()]);
-        } else {
-            setCardsData([]);
-            // setEnrolledGroupsCount(0); // REMOVED
-            setTotalPaid(null);
-            setTotalProfit(null);
-        }
-        setLoading(false);
+      setLoading(true);
+      if (userId) {
+        await Promise.all([fetchTickets(), fetchAllOverview()]);
+      } else {
+        setCardsData([]);
+        setTotalPaid(null);
+        setTotalProfit(null);
+      }
+      setLoading(false);
     };
 
     loadData();
@@ -260,22 +222,20 @@ const Payments = ({ navigation }) => {
       const loadData = async () => {
         setLoading(true);
         if (userId) {
-            await Promise.all([fetchTickets(), fetchAllOverview()]);
+          await Promise.all([fetchTickets(), fetchAllOverview()]);
         } else {
-            setCardsData([]);
-            // setEnrolledGroupsCount(0); // REMOVED
-            setTotalPaid(null);
-            setTotalProfit(null);
+          setCardsData([]);
+          setTotalPaid(null);
+          setTotalProfit(null);
         }
         setLoading(false);
-    };
+      };
 
-    loadData();
+      loadData();
     }, [userId, fetchTickets, fetchAllOverview])
   );
 
   const filteredCards = cardsData.filter((card) => card.group_id !== null);
-  // Show all non-deleted enrollments (including pending approval)
   const activeCards = filteredCards.filter(c => !c.deleted); 
 
   const handleScrollToCard = (index) => {
@@ -283,52 +243,44 @@ const Payments = ({ navigation }) => {
     const offset = cardLayouts.current[cardId];
 
     if (offset && scrollViewRef.current) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        
-        setHighlightedCardIndex(index); 
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      
+      setHighlightedCardIndex(index); 
 
-        scrollViewRef.current.scrollTo({ 
-            y: offset - 100, 
-            animated: true 
-        });
-        // setExpandedIndex(null); // REMOVED
+      scrollViewRef.current.scrollTo({ 
+        y: offset - 100, 
+        animated: true 
+      });
 
-        setTimeout(() => {
-            setHighlightedCardIndex(null);
-        }, 3000); 
+      setTimeout(() => {
+        setHighlightedCardIndex(null);
+      }, 3000); 
 
     } else {
-        if (activeCards[index]?.group_id?._id) {
-            handleCardPress(activeCards[index].group_id._id, activeCards[index].tickets);
-        }
+      if (activeCards[index]?.group_id?._id) {
+        handleCardPress(activeCards[index].group_id._id, activeCards[index].tickets);
+      }
     }
   };
 
   const handleCardPress = (groupId, ticket) => {
-    // New Tap Animation Logic: Scale up and slide right, then quickly return to normal.
     Animated.sequence([
-        Animated.parallel([
-            Animated.timing(scaleAnim, { toValue: 1.2, duration: 100, useNativeDriver: true }),
-            Animated.timing(slideAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-            Animated.timing(scaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
-            Animated.timing(slideAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
-        ]),
+      Animated.parallel([
+        Animated.timing(scaleAnim, { toValue: 1.2, duration: 100, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(scaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+      ]),
     ]).start(() => {
-        // Navigation runs only after the animation completes
-        navigation.navigate("BottomTab", {
-            screen: "EnrollTab",
-            params: { screen: "EnrollGroup", params: { userId, groupId, ticket } },
-        });
+      navigation.navigate("BottomTab", {
+        screen: "EnrollTab",
+        params: { screen: "EnrollGroup", params: { userId, groupId, ticket } },
+      });
     });
   };
-  
-  // const toggleAccordion = (index) => { // REMOVED
-  //   setExpandedIndex(expandedIndex === index ? null : index);
-  // };
 
-  // Check against 0 when calculating display profit to avoid showing '0' if total paid is null/loading
   const displayTotalProfit = Totalpaid === 0 ? 0 : Totalprofit; 
 
   const calculatePaidPercentage = (group_value, paid_amount) => {
@@ -336,26 +288,19 @@ const Payments = ({ navigation }) => {
     return Math.min(100, Math.round((paid_amount / group_value) * 100));
   };
   
-  // Only display the currency prefix/number if the value is not null (i.e., loaded)
   const paidDisplay = Totalpaid !== null ? `₹ ${formatNumberIndianStyle(Totalpaid)}` : '';
   const profitDisplay = Totalprofit !== null ? `₹ ${formatNumberIndianStyle(displayTotalProfit)}` : '';
   
-  // Animation styles for the new buttons
   const auctionAnimatedStyle = {
     transform: [{ scale: auctionScaleAnim }],
   };
 
-  // REMOVED: insuranceAnimatedStyle
-  
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.primaryBlue} />
-      {/* Header is always shown */}
       <Header userId={userId} navigation={navigation} />
 
       <View style={styles.mainWrapper}>
-        {/* Conditional rendering for loading state */}
         {loading ? (
           <View style={styles.fullScreenLoader}>
             <ActivityIndicator size="large" color={Colors.primaryBlue} />
@@ -378,16 +323,14 @@ const Payments = ({ navigation }) => {
               </LinearGradient>
             </View>
 
-            {/* New Buttons for Navigation (now placed after summary cards) */}
-            {/* UPDATED STYLE: justifyContent: 'center' to center the single button */}
+            {/* Navigation Buttons */}
             <View style={[styles.navigationButtonsContainer, { paddingHorizontal: 20, justifyContent: 'center' }]}>
               <TouchableOpacity
-                style={[styles.navButton, { maxWidth: 200 }]} // FIX: Removed comment from this line
+                style={[styles.navButton, { maxWidth: 200 }]}
                 onPressIn={handleAuctionPressIn}
                 onPressOut={handleAuctionPressOut}
                 onPress={() => {
-                  // Actual navigation for Auction goes here
-                  // navigation.navigate("AuctionScreen"); 
+                  navigation.navigate("AuctionList"); // ✅ NAVIGATES TO AuctionList.jsx
                 }}
               >
                 <Animated.View style={[styles.navButtonGradient, auctionAnimatedStyle]}>
@@ -399,38 +342,32 @@ const Payments = ({ navigation }) => {
                   <Text style={styles.navButtonText}>Auction</Text>
                 </Animated.View>
               </TouchableOpacity>
-              {/* REMOVED: View Insurance Button */}
             </View>
 
             <ScrollView
               ref={scrollViewRef} 
               style={styles.scrollWrapper}
-              contentContainerStyle={{ padding: 20, paddingBottom: 100 }} // Increased paddingBottom
+              contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
               showsVerticalScrollIndicator={false}
             >
-              
-              {/* REMOVED: Enrolled Groups Card */}
-              {/* REMOVED: Accordion List Component (Active Enrollments Index) */}
-
               {filteredCards.length === 0 ? (
                 <View style={styles.noGroupWrapper}>
                   <Image source={NoGroupImage} style={styles.noGroupImage} resizeMode="contain" />
                   <Text style={styles.noGroupText}>No groups found for this user.</Text>
                 </View>
               ) : (activeCards.length === 0 ? (
-                <View style={styles.noGroupWrapper}><Text style={styles.noGroupText}>No active groups found for this user.</Text></View>
+                <View style={styles.noGroupWrapper}>
+                  <Text style={styles.noGroupText}>No active groups found for this user.</Text>
+                </View>
               ) : activeCards.map((card, index) => { 
                   const groupIdFromCard = card.group_id?._id || card.group_id;
                   const groupReportKey = `${groupIdFromCard}-${card.tickets}`;
-                  // Only calculate payment details for non-pending cards
                   const individualPaidAmount = card.isPendingApproval ? 0 : individualGroupReports[groupReportKey]?.totalPaid || 0;
                   const paidPercentage = calculatePaidPercentage(card.group_id.group_value, individualPaidAmount);
                   const isDeleted = card.deleted; 
                   const isCompleted = card.completed;
-                  // NEW: Pending check
                   const isPending = card.isPendingApproval; 
                   
-                  // --- Date Formatting for Main Card ---
                   const startDate = card.group_id?.start_date
                     ? new Date(card.group_id?.start_date).toLocaleDateString('en-IN', {
                         year: 'numeric',
@@ -445,13 +382,11 @@ const Payments = ({ navigation }) => {
                         day: 'numeric',
                       })
                     : 'N/A';
-                  // ------------------------------------------
 
                   let gradientColors;
                   if (isDeleted) {
                     gradientColors = ["#F5F5F5", "#E0E0E0"];
                   } else if (isPending) {
-                    // MATCHING Mygroups.jsx pending color
                     gradientColors = ["#FEF9E7", Colors.warningText]; 
                   } else if (isCompleted) {
                     gradientColors = ["#E8F6F3", "#27AE60"];
@@ -463,14 +398,13 @@ const Payments = ({ navigation }) => {
                     <TouchableOpacity
                       key={index}
                       onPress={() => handleCardPress(card.group_id._id, card.tickets)}
-                      disabled={isDeleted || card.isPendingApproval} // Disable navigation for deleted or pending cards
+                      disabled={isDeleted || card.isPendingApproval}
                       style={[
                         styles.cardTouchable,
                         index === highlightedCardIndex && styles.highlightedCard
                       ]}
                       onLayout={event => {
                         const { y } = event.nativeEvent.layout;
-                        // Store the y position of the card relative to the ScrollView content
                         cardLayouts.current[`card-${index}`] = y;
                       }}
                     >
@@ -487,25 +421,21 @@ const Payments = ({ navigation }) => {
                               <Text style={styles.ticketText}>Ticket: {card.tickets}</Text>
                               {isDeleted && <Text style={styles.removalReason}>Reason: {card.removal_reason?.toUpperCase() !== "OTHERS" ? card.removal_reason : "Unknown"}</Text>}
                               {isCompleted && <Text style={styles.completedText}>Completed</Text>}
-                              {/* UPDATED: Uses pendingApprovalText style for consistency */}
                               {card.isPendingApproval && <Text style={styles.pendingApprovalText}>Approval Pending</Text>}
                             </View>
                           </View>
                           
-                          {/* --- Start and End Dates Block (ADDED) --- */}
                           <View style={styles.dateRow}>
-                              <View style={styles.dateColumn}>
-                                  <Text style={styles.dateLabel}>Start Date</Text>
-                                  <Text style={styles.dateValue}>{startDate}</Text>
-                              </View>
-                              <View style={styles.dateColumn}>
-                                  <Text style={styles.dateLabel}>End Date</Text>
-                                  <Text style={styles.dateValue}>{endDate}</Text>
-                              </View>
+                            <View style={styles.dateColumn}>
+                              <Text style={styles.dateLabel}>Start Date</Text>
+                              <Text style={styles.dateValue}>{startDate}</Text>
+                            </View>
+                            <View style={styles.dateColumn}>
+                              <Text style={styles.dateLabel}>End Date</Text>
+                              <Text style={styles.dateValue}>{endDate}</Text>
+                            </View>
                           </View>
-                          {/* -------------------------------------- */}
 
-                          {/* PAYMENT DETAILS: Now always visible */}
                           <View style={styles.progressHeader}>
                             <Text style={styles.progressText}>Paid</Text>
                             <Text style={styles.progressTextBold}>{paidPercentage}%</Text>
@@ -524,16 +454,14 @@ const Payments = ({ navigation }) => {
                             </View>
                           </View>
                           
-                          {/* --- Animated Payments Button (Conditional: Hidden for Pending) --- */}
                           {!card.isPendingApproval && (
                             <View style={styles.paymentsButton}>
-                                <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
-                                <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}>
-                                  <Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" />
-                                </Animated.View>
+                              <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
+                              <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}>
+                                <Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" />
+                              </Animated.View>
                             </View>
                           )}
-                          {/* ----------------------------------------- */}
 
                         </View>
                       </LinearGradient>
@@ -549,10 +477,6 @@ const Payments = ({ navigation }) => {
   );
 };
 
-// --- Styles for the Accordion List (REMOVED) ---
-// ------------------------------------
-
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.primaryBlue },
   mainWrapper: {
@@ -562,15 +486,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
   },
-  
-  // --- NEW: Style for full screen loader ---
   fullScreenLoader: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // ------------------------------------------
-
   title: {
     fontSize: 26,
     fontWeight: "bold",
@@ -579,7 +499,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: Colors.darkText,
   },
-  
   fixedSummaryWrapper: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -589,7 +508,6 @@ const styles = StyleSheet.create({
     zIndex: 1,
     alignItems: 'stretch',
   },
-  
   summaryCardLeft: {
     flex: 1,
     marginRight: 5,
@@ -616,17 +534,11 @@ const styles = StyleSheet.create({
   },
   summaryAmount: { color: "#fff", fontSize: 18, fontWeight: "bold", marginTop: 5 },
   summaryText: { color: "#fff", fontSize: 11, textAlign: "center", marginTop: 3 },
-  
-  // --- NEW NAVIGATION BUTTON STYLES ---
   navigationButtonsContainer: {
     flexDirection: "row",
-    // NOTE: justifyContent is now set to 'center' directly in the JSX
-    // justifyContent: "space-between", 
     marginBottom: 25,
   },
   navButton: {
-    // REMOVED: flex: 1 as there is only one button and it should not stretch full width
-    // flex: 1, 
     marginHorizontal: 5,
     borderRadius: 15,
     overflow: 'hidden',
@@ -650,20 +562,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
   },
-  // -----------------------------------
-  
   scrollWrapper: { flex: 1, backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  
   highlightedCard: {
     borderWidth: 3,
-    borderColor: Colors.accentColor, // Bold border to highlight
+    borderColor: Colors.accentColor,
     borderRadius: 22,
-    shadowColor: Colors.accentColor, // Add shadow for extra pop
+    shadowColor: Colors.accentColor,
     shadowOpacity: 0.5,
     shadowRadius: 10,
     elevation: 15, 
   },
-  
   paymentsButton: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -674,12 +582,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryBlue, 
   },
   paymentsButtonText: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: '#fff', 
-      marginRight: 8,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff', 
+    marginRight: 8,
   },
-
   noGroupWrapper: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30 },
   noGroupImage: { width: 180, height: 180, marginBottom: 20 },
   noGroupText: { fontSize: 20, fontWeight: "bold", color: Colors.darkText, textAlign: "center" },
@@ -700,7 +607,6 @@ const styles = StyleSheet.create({
   ticketText: { fontSize: 14, color: Colors.mediumText },
   removalReason: { fontSize: 12, color: Colors.removedText, marginTop: 2 },
   completedText: { fontSize: 12, color: Colors.completedText, fontWeight: "bold", marginTop: 2 },
-  // UPDATED PENDING TEXT STYLE (from Mygroups.jsx's pendingApprovalText)
   pendingApprovalText: {
     fontSize: 12,
     color: Colors.warningText,
@@ -716,8 +622,6 @@ const styles = StyleSheet.create({
   amountColumn: { alignItems: "center" },
   amountLabel: { fontSize: 12, color: Colors.mediumText },
   amountValue: { fontSize: 16, fontWeight: "bold" },
-  
-  // --- Styles for Date Display (ADDED from Mygroups.jsx) ---
   dateRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -745,7 +649,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.darkText,
   },
-  // --------------------------------------
 });
 
 export default Payments;

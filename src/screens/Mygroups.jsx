@@ -526,10 +526,7 @@ const Mygroups = ({ navigation }) => {
 
               {cardsToRender.length === 0 ? (
                 <View style={styles.noGroupWrapper}>
-                  <Image source={NoGroupImage} style={styles.noGroupImage} resizeMode="contain" />
-                  <Text style={styles.noGroupText}>
-                    {viewMode === 'held' ? "No holded groups found." : "No active groups found."}
-                  </Text>
+               
                 </View>
               ) : (cardsToRender.map((card, index) => {
                   const ticketKey = card.tickets; 

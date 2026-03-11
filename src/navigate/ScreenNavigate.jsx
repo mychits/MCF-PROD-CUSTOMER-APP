@@ -16,6 +16,7 @@ import IntroduceNewCustomers from "../screens/IntroduceNewCustomers";
 import Insurance from "../screens/Insurance";
 import EligibilityScreen from "../screens/EligibilityScreen";
 import RegisterOtpVerify from "../screens/RegisterOtpVerify.jsx";
+import PrizedScreen from "../screens/PrizedScreen.jsx"
 import HomeScreen from "./Screens/HomeScreen";
 import EnrollScreen from "./Screens/EnrollScreen";
 import PaymentScreen from "./Screens/PaymentScreen";
@@ -234,6 +235,11 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="ReportScreen"
             component={ReportScreen}
+            options={{ headerShown: false }}
+          />
+             <Stack.Screen
+            name="PrizedScreen"
+            component={PrizedScreen}
             options={{ headerShown: false }}
           />
           <Stack.Screen
