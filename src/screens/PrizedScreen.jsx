@@ -117,13 +117,10 @@ const SummaryBanner = ({ count, totalAmount }) => {
         </View>
 
         <View style={styles.bannerStatRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{count}</Text>
-            <Text style={styles.statLabel}>groups won</Text>
-          </View>
+        
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
-            <Text style={[styles.statValue, { color: Colors.gold, fontSize: 14 }]}>
+            <Text style={[styles.statValue, { color: Colors.gold, fontSize: 24 }]}>
               ₹{formatNumberIndianStyle(totalAmount)}
             </Text>
             <Text style={styles.statLabel}>total earned</Text>
@@ -134,29 +131,18 @@ const SummaryBanner = ({ count, totalAmount }) => {
   );
 };
 
-// Rank Badge
-const RankBadge = ({ rank }) => {
-  const gradMap = {
-    1: [Colors.gold, Colors.goldDark],
-    2: ["#D0D0D0", "#A0A0A0"],
-    3: ["#D4895A", "#A05020"],
-  };
-  const gradColors = gradMap[rank] || [Colors.primaryLight, Colors.primary];
-  return (
-    <LinearGradient colors={gradColors} start={[0, 0]} end={[1, 1]} style={styles.rankBadge}>
-      <Text style={styles.rankText}>#{rank}</Text>
-    </LinearGradient>
-  );
-};
+// RankBadge removed — replaced by inline rankCircle in PrizeCard
 
-// Prize Card — compact
+// Prize Card — bold crimson/rose redesign
 const PrizeCard = ({ item, index }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const scaleAnim = useRef(new Animated.Value(0.96)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 380, delay: index * 80, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 380, delay: index * 80, easing: Easing.out(Easing.exp), useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 420, delay: index * 90, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 420, delay: index * 90, easing: Easing.out(Easing.exp), useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 420, delay: index * 90, easing: Easing.out(Easing.exp), useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -169,83 +155,71 @@ const PrizeCard = ({ item, index }) => {
   const rank = index + 1;
 
   return (
-    <Animated.View style={[styles.cardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View style={[styles.cardWrapper, { opacity: fadeAnim, transform: [{ translateY: slideAnim }, { scale: scaleAnim }] }]}>
       <View style={styles.prizeCard}>
 
-        {/* Gold accent bar */}
-        <View style={styles.goldAccentBar} />
 
-        {/* Header */}
-        <LinearGradient
-          colors={[Colors.deepBlue, "#0A2255"]}
-          start={[0, 0]} end={[1, 1]}
-          style={styles.cardHeaderBlock}
-        >
-          <View style={styles.headerDecorDot1} />
+        <LinearGradient colors={["#7B0D1E", "#C0392B", "#E74C3C"]} start={[0, 0]} end={[1, 1]} style={styles.cardTop}>
+       
+          <View style={styles.diagSlice1} />
+          <View style={styles.diagSlice2} />
 
-          <View style={styles.headerTopRow}>
-            <RankBadge rank={rank} />
-            <View style={styles.headerTitleBlock}>
-              <Text style={styles.groupName} numberOfLines={1}>{groupName}</Text>
-              <View style={styles.headerChip}>
-                <MaterialCommunityIcons name="medal" size={9} color={Colors.gold} />
-                <Text style={styles.headerChipText}>PRIZED GROUP</Text>
+          <View style={styles.cardTopContent}>
+          
+            <View style={styles.rankCircle}>
+              <Text style={styles.rankCircleText}>{rank}</Text>
+            </View>
+
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              
+              <Text style={styles.prizeGroupName} numberOfLines={1}>{groupName}</Text>
+             
+              <View style={styles.ticketPill}>
+                <MaterialCommunityIcons name="ticket-outline" size={11} color="#FFD6D6" />
+                <Text style={styles.ticketPillText}>Ticket <Text style={styles.ticketPillNum}>{ticket}</Text></Text>
               </View>
             </View>
-            <View style={styles.headerValueBlock}>
-              <Text style={styles.chitValueLabel}>chit value</Text>
-              <Text style={styles.chitValueAmount}>₹ {formatNumberIndianStyle(groupValue)}</Text>
+
+          
+            <View style={styles.prizedSlantTag}>
+              <MaterialCommunityIcons name="trophy" size={9} color="#7B0D1E" style={{ marginRight: 3 }} />
+              <Text style={styles.prizedSlantTagText}>PRIZED</Text>
             </View>
+          </View>
+
+         
+          <View style={styles.groupValueStrip}>
+            <Text style={styles.groupValueStripLabel}>CHIT VALUE</Text>
+            <Text style={styles.groupValueStripAmount}>₹ {formatNumberIndianStyle(groupValue)}</Text>
           </View>
         </LinearGradient>
 
-        {/* Ticket row */}
-        <LinearGradient
-          colors={["#FFFBEA", "#FFF3C0"]}
-          start={[0, 0]} end={[1, 0]}
-          style={styles.ticketBlock}
-        >
-          <LinearGradient colors={[Colors.gold, Colors.goldDark]} style={styles.ticketCircle}>
-            <FontAwesome5 name="ticket-alt" size={10} color={Colors.deepBlue} />
-            <Text style={styles.ticketNum}>{ticket}</Text>
-          </LinearGradient>
-
-          <View style={styles.ticketMidBlock}>
-            <Text style={styles.winningTicketLabel}>🏆 Winning Ticket</Text>
-            <Text style={styles.receiptSmall}>receipt · {receiptNo}</Text>
+       
+        <View style={styles.prizeHeroBlock}>
+          <View style={styles.prizeHeroLeft}>
+            <Text style={styles.prizeHeroLabel}>PRIZE WON</Text>
+            <Text style={styles.prizeHeroAmount}>₹ {formatNumberIndianStyle(amount)}</Text>
           </View>
-
-          <View style={styles.prizeAmountBlock}>
-            <Text style={styles.prizeAmountLabel}>prize won</Text>
-            <Text style={styles.prizeAmountValue}>₹ {formatNumberIndianStyle(amount)}</Text>
-          </View>
-        </LinearGradient>
-
-        {/* Footer */}
-        <View style={styles.footerRow}>
-          <View style={styles.footerInfoBox}>
-            <View style={styles.footerIconCircle}>
-              <MaterialCommunityIcons name="calendar-check" size={12} color={Colors.primary} />
+          <View style={styles.prizeHeroDivider} />
+          <View style={styles.prizeHeroRight}>
+            <View style={styles.prizeHeroStatRow}>
+              <MaterialCommunityIcons name="file-document-outline" size={13} color={Colors.textMedium} />
+              <Text style={styles.prizeHeroStatLabel}>Receipt</Text>
+              <Text style={styles.prizeHeroStatValue}>{receiptNo}</Text>
             </View>
-            <Text style={styles.footerInfoLabel}>payment date</Text>
-            <Text style={styles.footerInfoValue}>{formatDate(payDate)}</Text>
-          </View>
-          <View style={styles.footerBoxDivider} />
-          <View style={styles.footerInfoBox}>
-            <View style={styles.footerIconCircle}>
-              <MaterialCommunityIcons name="file-document-outline" size={12} color={Colors.primary} />
+            <View style={[styles.prizeHeroStatRow, { marginTop: 6 }]}>
+              <MaterialCommunityIcons name="calendar-check" size={13} color={Colors.textMedium} />
+              <Text style={styles.prizeHeroStatLabel}>Date</Text>
+              <Text style={styles.prizeHeroStatValue}>{formatDate(payDate)}</Text>
             </View>
-            <Text style={styles.footerInfoLabel}>receipt no</Text>
-            <Text style={[styles.footerInfoValue, { color: Colors.primary }]}>{receiptNo}</Text>
           </View>
-          <View style={styles.footerBoxDivider} />
-          <View style={styles.footerInfoBox}>
-            <View style={[styles.footerIconCircle, { backgroundColor: "#ECFDF5" }]}>
-              <MaterialCommunityIcons name="check-circle-outline" size={12} color={Colors.successGreen} />
-            </View>
-            <Text style={styles.footerInfoLabel}>status</Text>
-            <Text style={[styles.footerInfoValue, { color: Colors.successGreen }]}>Paid</Text>
-          </View>
+        </View>
+
+        {/* Footer: paid status bar */}
+        <View style={styles.paidBar}>
+          <View style={styles.paidDot} />
+          <Text style={styles.paidText}>PAYMENT COMPLETED</Text>
+          <MaterialCommunityIcons name="check-circle" size={14} color={Colors.successGreen} />
         </View>
 
       </View>
@@ -288,36 +262,83 @@ const DotIndicator = ({ count, activeIndex }) => (
 );
 
 // Main Screen
-const PrizedScreen = ({ navigation }) => {
+const PrizedScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const [appUser] = useContext(ContextProvider);
-  const userId = appUser?.userId;
+
+  // Support both context userId and param userId (from AuctionList navigation)
+  const userId = route?.params?.userId || appUser?.userId;
+  // groupId and ticket are passed when navigating from a specific group's "Prized Info" button
+  const groupId = route?.params?.groupId || null;
+  const ticket = route?.params?.ticket || null;
+
   const [prizedData, setPrizedData] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const normalizeToArray = (data) => {
+    if (!data) return [];
+    // Shape: { success, data: { payouts: [...], summary: {} } }
+    if (data?.data?.payouts && Array.isArray(data.data.payouts)) return data.data.payouts;
+    // Shape: { data: [...] }
+    if (Array.isArray(data?.data)) return data.data;
+    // Already an array
+    if (Array.isArray(data)) return data;
+    return [];
+  };
+
+  const extractSummary = (data) => {
+    if (data?.data?.summary) return data.data.summary;
+    return null;
+  };
 
   const fetchPrizedDetails = useCallback(async () => {
     if (!userId) { setIsLoading(false); setError("User session expired."); return; }
     setIsLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${url}/payment-out/prized-group/${userId}`);
-      if (response.data) {
-        const data = Array.isArray(response.data) ? response.data : (response.data.data || []);
-        setPrizedData(data);
-      }
+      const params = { userId };
+      if (groupId) params.groupId = groupId;
+      if (ticket) params.ticket = ticket;
+
+      console.log("=== PrizedScreen ===");
+      console.log("route.params:", JSON.stringify(route?.params, null, 2));
+      console.log("userId:", userId);
+      console.log("groupId:", groupId);
+      console.log("Request params:", JSON.stringify(params, null, 2));
+
+      const response = await axios.get(`${url}/payment-out/prized-group`, { params });
+
+      console.log("Response status:", response.status);
+      console.log("Response data type:", typeof response.data);
+      console.log("Is array:", Array.isArray(response.data));
+      console.log("Response data:", JSON.stringify(response.data, null, 2));
+
+      const normalized = normalizeToArray(response.data);
+      console.log("Normalized length:", normalized.length);
+      console.log("Normalized data:", JSON.stringify(normalized, null, 2));
+
+      setSummary(extractSummary(response.data));
+      setPrizedData(normalized);
     } catch (err) {
+      console.log("=== PrizedScreen ERROR ===");
+      console.log("Error message:", err.message);
+      console.log("Error status:", err.response?.status);
+      console.log("Error response data:", JSON.stringify(err.response?.data, null, 2));
       setError("No prized group records found.");
       setPrizedData([]);
+      setSummary(null);
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, groupId]);
 
   useFocusEffect(useCallback(() => { fetchPrizedDetails(); }, [fetchPrizedDetails]));
 
-  const totalAmount = prizedData.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+  const totalAmount = summary?.payout_amount ?? prizedData.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+  const totalCount = summary?.count ?? prizedData.length;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -328,6 +349,11 @@ const PrizedScreen = ({ navigation }) => {
 
         {/* Top Bar */}
         <View style={styles.topBar}>
+          {groupId && (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
+           
+            </TouchableOpacity>
+          )}
           <View style={styles.topBarTitleBlock}>
             <Text style={styles.topBarEyebrow}>auction victories</Text>
             <Text style={styles.topBarTitle}>My Prizes</Text>
@@ -361,9 +387,9 @@ const PrizedScreen = ({ navigation }) => {
                 }}
                 ListHeaderComponent={
                   <>
-                    <SummaryBanner count={prizedData.length} totalAmount={totalAmount} />
+                    <SummaryBanner count={totalCount} totalAmount={totalAmount} />
                     <Text style={styles.listHeader}>
-                      {prizedData.length} prize{prizedData.length !== 1 ? "s" : ""} found
+                      {totalCount} prize{totalCount !== 1 ? "s" : ""} found
                     </Text>
                   </>
                 }
@@ -396,6 +422,7 @@ const styles = StyleSheet.create({
 
   // Top Bar
   topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingTop: 16, paddingBottom: 10 },
+  backBtn: { marginRight: 10, padding: 4 },
   topBarTitleBlock: { flex: 1 },
   topBarEyebrow: { fontSize: 9, fontWeight: "700", color: Colors.textLight, letterSpacing: 1.6, textTransform: "uppercase", marginBottom: 1 },
   topBarTitle: { fontSize: 22, fontWeight: "900", color: Colors.primary, letterSpacing: -0.4 },
@@ -443,69 +470,93 @@ const styles = StyleSheet.create({
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: Colors.border },
   dotActive: { width: 16, height: 5, borderRadius: 3, backgroundColor: Colors.primary },
 
-  // Prize Card — compact
-  cardWrapper: { marginBottom: 14 },
+  // Prize Card — crimson redesign
+  cardWrapper: { marginBottom: 16 },
   prizeCard: {
     backgroundColor: Colors.card,
-    borderRadius: 18,
+    borderRadius: 20,
     overflow: "hidden",
     ...Platform.select({
-      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.14, shadowRadius: 14 },
-      android: { elevation: 10 },
+      ios: { shadowColor: "#C0392B", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16 },
+      android: { elevation: 12 },
     }),
   },
-  goldAccentBar: { height: 3, backgroundColor: Colors.gold },
 
-  // Card header
-  cardHeaderBlock: { paddingVertical: 12, paddingHorizontal: 14, overflow: "hidden" },
-  headerDecorDot1: { position: "absolute", width: 90, height: 90, borderRadius: 45, backgroundColor: "rgba(255,255,255,0.03)", top: -30, right: 0 },
-  headerTopRow: { flexDirection: "row", alignItems: "center" },
-  rankBadge: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center", marginRight: 10 },
-  rankText: { fontSize: 12, fontWeight: "900", color: Colors.deepBlue },
-  headerTitleBlock: { flex: 1 },
-  groupName: { fontSize: 14, fontWeight: "800", color: Colors.card, letterSpacing: 0.1, marginBottom: 4 },
-  headerChip: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: "rgba(245,197,24,0.12)",
-    paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
-    borderWidth: 1, borderColor: "rgba(245,197,24,0.25)",
-    alignSelf: "flex-start",
+  // Top crimson header
+  cardTop: { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 0, overflow: "hidden" },
+  diagSlice1: {
+    position: "absolute", width: 160, height: 160,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    transform: [{ rotate: "40deg" }],
+    top: -70, right: -30,
   },
-  headerChipText: { fontSize: 7, fontWeight: "800", color: Colors.gold, marginLeft: 3, letterSpacing: 0.8 },
-  headerValueBlock: { alignItems: "flex-end" },
-  chitValueLabel: { fontSize: 8, fontWeight: "600", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 },
-  chitValueAmount: { fontSize: 13, fontWeight: "800", color: Colors.gold },
-
-  // Ticket row — compact
-  ticketBlock: {
-    flexDirection: "row", alignItems: "center",
-    paddingVertical: 12, paddingHorizontal: 14,
-    borderBottomWidth: 1, borderColor: Colors.lightDivider,
+  diagSlice2: {
+    position: "absolute", width: 90, height: 90,
+    backgroundColor: "rgba(0,0,0,0.08)",
+    transform: [{ rotate: "40deg" }],
+    bottom: 10, left: 50,
   },
-  ticketCircle: {
-    width: 50, height: 50, borderRadius: 13,
+  cardTopContent: { flexDirection: "row", alignItems: "flex-start", marginBottom: 12 },
+  rankCircle: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.3)",
     alignItems: "center", justifyContent: "center",
-    marginRight: 12,
-    ...Platform.select({
-      ios: { shadowColor: Colors.goldDark, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.35, shadowRadius: 5 },
-      android: { elevation: 5 },
-    }),
   },
-  ticketNum: { fontSize: 16, fontWeight: "900", color: Colors.deepBlue, marginTop: 1 },
-  ticketMidBlock: { flex: 1 },
-  winningTicketLabel: { fontSize: 13, fontWeight: "800", color: Colors.textDark, marginBottom: 3 },
-  receiptSmall: { fontSize: 10, color: Colors.textMedium, fontWeight: "500", letterSpacing: 0.2 },
-  prizeAmountBlock: { alignItems: "flex-end" },
-  prizeAmountLabel: { fontSize: 8, fontWeight: "600", color: Colors.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 },
-  prizeAmountValue: { fontSize: 16, fontWeight: "900", color: Colors.successGreen, letterSpacing: -0.3 },
+  rankCircleText: { fontSize: 14, fontWeight: "900", color: Colors.card },
+  prizeGroupName: { fontSize: 16, fontWeight: "900", color: Colors.card, letterSpacing: 0.1, marginBottom: 5 },
+  ticketPill: { flexDirection: "row", alignItems: "center", gap: 4 },
+  ticketPillText: { fontSize: 12, fontWeight: "500", color: "rgba(255,255,255,0.7)" },
+  ticketPillNum: { fontWeight: "900", color: Colors.card, fontSize: 13 },
 
-  // Footer — compact
-  footerRow: { flexDirection: "row", backgroundColor: "#F8FAFC" },
-  footerInfoBox: { flex: 1, alignItems: "center", paddingVertical: 11, paddingHorizontal: 4 },
-  footerIconCircle: { width: 26, height: 26, borderRadius: 8, backgroundColor: "#EEF3FF", alignItems: "center", justifyContent: "center", marginBottom: 5 },
-  footerInfoLabel: { fontSize: 7, fontWeight: "600", color: Colors.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3, textAlign: "center" },
-  footerInfoValue: { fontSize: 11, fontWeight: "800", color: Colors.textDark, textAlign: "center" },
-  footerBoxDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 10 },
+  // Slant PRIZED tag
+  prizedSlantTag: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: Colors.gold,
+    paddingHorizontal: 9, paddingVertical: 5,
+    borderRadius: 4,
+    transform: [{ skewX: "-10deg" }],
+    alignSelf: "flex-start",
+    marginTop: 2,
+  },
+  prizedSlantTagText: {
+    fontSize: 9, fontWeight: "900", color: "#7B0D1E",
+    letterSpacing: 0.8, transform: [{ skewX: "10deg" }],
+  },
+
+  groupValueStrip: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: "rgba(0,0,0,0.15)",
+    marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 9,
+    marginTop: 4,
+  },
+  groupValueStripLabel: { fontSize: 9, fontWeight: "700", color: "rgba(255,255,255,0.5)", letterSpacing: 1.4, textTransform: "uppercase" },
+  groupValueStripAmount: { fontSize: 15, fontWeight: "900", color: Colors.gold },
+
+  // Prize hero middle
+  prizeHeroBlock: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: Colors.card,
+  },
+  prizeHeroLeft: { flex: 1 },
+  prizeHeroLabel: { fontSize: 9, fontWeight: "700", color: Colors.textLight, letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 3 },
+  prizeHeroAmount: { fontSize: 19, fontWeight: "900", color: Colors.successGreen, letterSpacing: -0.5 },
+  prizeHeroDivider: { width: 1, height: 50, backgroundColor: Colors.border, marginHorizontal: 14 },
+  prizeHeroRight: { flex: 1 },
+  prizeHeroStatRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  prizeHeroStatLabel: { fontSize: 10, fontWeight: "500", color: Colors.textMedium, flex: 1 },
+  prizeHeroStatValue: { fontSize: 11, fontWeight: "800", color: Colors.textDark },
+
+  // Paid bar
+  paidBar: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, paddingVertical: 8,
+    backgroundColor: "#F0FDF4",
+    borderTopWidth: 1, borderColor: "#D1FAE5",
+  },
+  paidDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.successGreen },
+  paidText: { fontSize: 9, fontWeight: "800", color: Colors.successGreen, letterSpacing: 1.2, textTransform: "uppercase" },
 
   // Empty State
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 30, paddingVertical: 40 },

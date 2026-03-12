@@ -30,6 +30,7 @@ const Colors = {
   accentOrange: "#F48024",
   accentBlue: "#3F51B5",
   successGreen: "#10B981",
+  Green: "#05553a",
   gold: "#F5C518",
   goldDark: "#D4A017",
   error: "#EF4444",
@@ -132,7 +133,7 @@ const CommencementRecordCard = ({ groupName, firstAuctionDate, onPress }) => {
 };
 
 // ─── GroupCard ────────────────────────────────────────────────────────────────
-const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, index }) => {
+const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, index, isPrized }) => {
   const { group_id, tickets, _id } = card;
   const { group_name, group_value, auction_type } = group_id || {};
   const safeType = auction_type || "";
@@ -141,43 +142,77 @@ const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, index }) => {
 
   return (
     <FadeSlide delay={index * 80}>
-      <View style={[styles.groupCard, isHighlighted && styles.groupCardHighlighted]}>
-        {/* Header */}
-        <LinearGradient colors={[Colors.deepBlue, Colors.primary]} start={[0, 0]} end={[1, 1]} style={styles.groupCardHeader}>
-          <View style={styles.groupCardHeaderRow}>
-            <Text style={styles.groupCardName} numberOfLines={1}>{group_name || "—"}</Text>
-            {formattedType ? (
-              <View style={[styles.typeTag, isFree && styles.typeTagFree]}>
-                <Text style={[styles.typeTagText, isFree && { color: Colors.accentOrange }]}>{formattedType}</Text>
+      <View style={[styles.groupCard, isPrized && styles.groupCardPrized]}>
+
+        {/* Slant ribbon for type */}
+        <View style={styles.cardCanvas}>
+          {/* Left accent bar */}
+          <View style={[styles.leftAccentBar, isFree && { backgroundColor: Colors.accentOrange }, isPrized && { backgroundColor: Colors.gold }]} />
+
+          <View style={styles.cardInner}>
+            {/* Top: group name + slant tag */}
+            <View style={styles.cardTopRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.groupCardName} numberOfLines={1}>{group_name || "—"}</Text>
+                {/* Ticket number right below group name */}
+                {tickets ? (
+                  <View style={styles.ticketRow}>
+                    <MaterialCommunityIcons name="ticket-outline" size={13} color={Colors.accentBlue} />
+                    <Text style={styles.ticketText}>Ticket <Text style={styles.ticketNum}>{tickets}</Text></Text>
+                  </View>
+                ) : null}
               </View>
-            ) : null}
+              {/* Slant box tag */}
+              {formattedType ? (
+                <View style={[styles.slantTag, isFree && styles.slantTagFree, isPrized && styles.slantTagPrized]}>
+                  {isPrized
+                    ? <MaterialCommunityIcons name="trophy" size={10} color={Colors.deepBlue} style={{ marginRight: 3 }} />
+                    : isFree
+                    ? <MaterialCommunityIcons name="tag" size={10} color={Colors.card} style={{ marginRight: 3 }} />
+                    : <MaterialCommunityIcons name="gavel" size={10} color={Colors.card} style={{ marginRight: 3 }} />
+                  }
+                  <Text style={[styles.slantTagText, (isFree || !isPrized) && { color: Colors.card }, isPrized && { color: Colors.deepBlue }]}>
+                    {isPrized ? "PRIZED" : formattedType.toUpperCase()}
+                  </Text>
+                </View>
+              ) : isPrized ? (
+                <View style={[styles.slantTag, styles.slantTagPrized]}>
+                  <MaterialCommunityIcons name="trophy" size={10} color={Colors.deepBlue} style={{ marginRight: 3 }} />
+                  <Text style={[styles.slantTagText, { color: Colors.deepBlue }]}>PRIZED</Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* Divider */}
+            <View style={styles.cardMidDivider} />
+
+            {/* Group value row */}
+            <View style={styles.valueRow}>
+              <Text style={styles.valueLabel}>GROUP VALUE</Text>
+              <Text style={[styles.valueAmount, isPrized && { color: Colors.gold }]}>
+                ₹ {formatNumberIndianStyle(group_value)}
+              </Text>
+            </View>
+
+            {/* Action buttons */}
+            <View style={styles.actionRow}>
+              {isPrized ? (
+                <TouchableOpacity style={[styles.actionChip, styles.actionChipPrized]} onPress={onPrizedInfo} activeOpacity={0.8}>
+                  <MaterialCommunityIcons name="trophy" size={15} color={Colors.deepBlue} />
+                  <Text style={[styles.actionChipText, { color: Colors.deepBlue }]}>Prized Info</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={[styles.actionChip, styles.actionChipBid]} onPress={onBidRequest} activeOpacity={0.8}>
+                  <MaterialCommunityIcons name="handshake" size={15} color={Colors.card} />
+                  <Text style={[styles.actionChipText, { color: Colors.card }]}>Bid Request</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={[styles.actionChip, styles.actionChipDetails]} onPress={() => onSelect(_id, group_id?._id, tickets, group_name, group_value)} activeOpacity={0.8}>
+                <MaterialIcons name="timeline" size={15} color={Colors.primary} />
+                <Text style={[styles.actionChipText, { color: Colors.primary }]}>Auction Details</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </LinearGradient>
-
-        {/* Value row */}
-        <View style={styles.groupCardValueRow}>
-          <Text style={styles.groupCardValueLabel}>group value</Text>
-          <Text style={styles.groupCardValue}>₹ {formatNumberIndianStyle(group_value)}</Text>
-        </View>
-
-        <View style={styles.cardDivider} />
-
-        {/* Actions */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => onSelect(_id, group_id?._id, tickets, group_name, group_value)} activeOpacity={0.8}>
-            <View style={styles.actionIconWrap}><MaterialIcons name="list-alt" size={24} color={Colors.primary} /></View>
-            <Text style={styles.actionBtnLabel}>View Auctions</Text>
-          </TouchableOpacity>
-          <View style={styles.actionSep} />
-          <TouchableOpacity style={styles.actionBtn} onPress={onBidRequest} activeOpacity={0.8}>
-            <View style={styles.actionIconWrap}><MaterialCommunityIcons name="handshake" size={24} color={Colors.primary} /></View>
-            <Text style={styles.actionBtnLabel}>Bid Request</Text>
-          </TouchableOpacity>
-          <View style={styles.actionSep} />
-          <TouchableOpacity style={styles.actionBtn} onPress={() => onSelect(_id, group_id?._id, tickets, group_name, group_value)} activeOpacity={0.8}>
-            <View style={styles.actionIconWrap}><MaterialIcons name="timeline" size={24} color={Colors.primary} /></View>
-            <Text style={styles.actionBtnLabel}>Auction Details</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </FadeSlide>
@@ -195,29 +230,75 @@ const StatRow = ({ label, value, valueColor, isFirst }) => (
   </>
 );
 
-const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCount, commencementCount }) => (
+const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCount, commencementCount, selectedTicket, isPrized }) => (
   <FadeSlide delay={0}>
     <View style={styles.summaryCard}>
-      <LinearGradient colors={[Colors.deepBlue, Colors.primary]} start={[0, 0]} end={[1, 1]} style={styles.summaryCardHeader}>
-        <View style={styles.summaryHeaderDecor1} />
-        <View style={styles.summaryHeaderDecor2} />
-        <View style={styles.summaryHeaderInner}>
-          <MaterialCommunityIcons name="trophy-outline" size={20} color={Colors.gold} style={{ marginRight: 8 }} />
-          <Text style={styles.summaryGroupName} numberOfLines={1}>{groupName}</Text>
+      {/* Teal-to-emerald header */}
+      <LinearGradient colors={["#0F4C3A", "#0E7C5B", "#14A87A"]} start={[0, 0]} end={[1, 1]} style={styles.summaryCardHeader}>
+        <View style={styles.summaryDiagStripe1} />
+        <View style={styles.summaryDiagStripe2} />
+
+        {/* Eyebrow + Prized slant tag row */}
+        <View style={styles.summaryHeaderTopRow}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <MaterialCommunityIcons name="chart-timeline-variant" size={14} color="rgba(255,255,255,0.6)" style={{ marginRight: 5 }} />
+            <Text style={styles.summaryEyebrow}>AUCTION OVERVIEW</Text>
+          </View>
+          {isPrized && (
+            <View style={styles.summaryPrizedSlantTag}>
+              <MaterialCommunityIcons name="trophy" size={9} color="#7B0D1E" style={{ marginRight: 3, transform: [{ skewX: "10deg" }] }} />
+              <Text style={styles.summaryPrizedSlantText}>PRIZED</Text>
+            </View>
+          )}
         </View>
+
+        <Text style={styles.summaryGroupName} numberOfLines={1}>{groupName}</Text>
+        {/* Ticket number right below group name in header */}
+        {selectedTicket ? (
+          <View style={styles.summaryTicketRow}>
+            <MaterialCommunityIcons name="ticket-outline" size={13} color="rgba(255,255,255,0.7)" />
+            <Text style={styles.summaryTicketText}>Ticket <Text style={styles.summaryTicketNum}>{selectedTicket}</Text></Text>
+          </View>
+        ) : null}
         <Text style={styles.summaryGroupValue}>{groupValue ? `₹ ${formatNumberIndianStyle(groupValue)}` : ""}</Text>
       </LinearGradient>
-      <View style={styles.summaryStatsBlock}>
-        <StatRow label="Total Records"   value={totalRecords}      valueColor={Colors.textDark}    isFirst />
-        <StatRow label="Auction Normal"  value={normalCount}       valueColor={Colors.primary} />
-        <StatRow label="Auction Free"    value={freeCount}         valueColor={Colors.accentOrange} />
-        <StatRow label="Commencement"    value={commencementCount} valueColor={Colors.accentBlue} />
+
+      {/* 5 stat rows — full width each */}
+      <View style={styles.summaryStatsList}>
+
+        <View style={styles.summaryStatRow}>
+          <View style={[styles.summaryStatDot, { backgroundColor: Colors.textDark }]} />
+          <Text style={styles.summaryStatRowLabel}>Auction Records</Text>
+          <Text style={[styles.summaryStatRowValue, { color: Colors.textDark }]}>{totalRecords}</Text>
+        </View>
+        <View style={styles.summaryStatSep} />
+
+        <View style={styles.summaryStatRow}>
+          <View style={[styles.summaryStatDot, { backgroundColor: Colors.primary }]} />
+          <Text style={styles.summaryStatRowLabel}>Normal Auction</Text>
+          <Text style={[styles.summaryStatRowValue, { color: Colors.primary }]}>{normalCount}</Text>
+        </View>
+        <View style={styles.summaryStatSep} />
+
+        <View style={styles.summaryStatRow}>
+          <View style={[styles.summaryStatDot, { backgroundColor: Colors.accentOrange }]} />
+          <Text style={styles.summaryStatRowLabel}>Free Auction</Text>
+          <Text style={[styles.summaryStatRowValue, { color: Colors.accentOrange }]}>{freeCount}</Text>
+        </View>
+        <View style={styles.summaryStatSep} />
+
+        <View style={styles.summaryStatRow}>
+          <View style={[styles.summaryStatDot, { backgroundColor: Colors.accentBlue }]} />
+          <Text style={styles.summaryStatRowLabel}>First Payment</Text>
+          <Text style={[styles.summaryStatRowValue, { color: Colors.accentBlue }]}>{commencementCount}</Text>
+        </View>
+
       </View>
     </View>
   </FadeSlide>
 );
 
-// ─── Auction Record Card ───────────────────────────────────────────────────────
+
 const AuctionRecordCard = ({ record, recordNumber, index }) => {
   const isFree = record.auction_type?.toLowerCase() === "free";
   const typeLabel = record.auction_type ? record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1) : "Normal";
@@ -268,7 +349,7 @@ const AuctionRecordCard = ({ record, recordNumber, index }) => {
 };
 
 // ─── AuctionRecordsView ────────────────────────────────────────────────────────
-const AuctionRecordsView = ({ records, onBack, isLoading, error, commencementData, onCommencementPress, selectedGroupName, selectedGroupValue }) => {
+const AuctionRecordsView = ({ records, onBack, isLoading, error, commencementData, onCommencementPress, selectedGroupName, selectedGroupValue, selectedTicket, isPrized }) => {
   if (isLoading) return <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />;
 
   const hasCommencement = !!(commencementData && (commencementData.group_name || commencementData.commencement_date));
@@ -298,6 +379,8 @@ const AuctionRecordsView = ({ records, onBack, isLoading, error, commencementDat
             normalCount={normalCount}
             freeCount={freeCount}
             commencementCount={commencementCount}
+            selectedTicket={selectedTicket}
+            isPrized={isPrized}
           />
 
           <Text style={styles.sectionDividerLabel}>Auction Records</Text>
@@ -330,11 +413,13 @@ const AuctionList = ({ navigation }) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [userTickets, setUserTickets] = useState([]);
+  // Map of groupId -> boolean (prized status)
+  const [prizedMap, setPrizedMap] = useState({});
   const [isShowingRecords, setIsShowingRecords] = useState(false);
   const [auctionData, setAuctionData] = useState({
     records: [], loading: false, error: null,
     selectedGroupId: null, highlightedCardId: null,
-    selectedGroupName: "", selectedGroupValue: null,
+    selectedGroupName: "", selectedGroupValue: null, selectedTicket: null,
   });
   const [commencementAuctionData, setCommencementAuctionData] = useState(null);
 
@@ -343,9 +428,50 @@ const AuctionList = ({ navigation }) => {
     setIsLoading(true);
     try {
       const res = await axios.post(`${url}/enroll/get-user-tickets/${userId}`);
-      if (res.status === 200) setUserTickets(res.data || []);
-    } catch (e) { console.error(e); }
-    finally { setIsLoading(false); }
+      if (res.status === 200) {
+        const tickets = res.data || [];
+        setUserTickets(tickets);
+        // After fetching tickets, check prized status for each group
+        fetchPrizedStatuses(tickets);
+      }
+    } catch (e) { console.error(e); setIsLoading(false); }
+  }, [userId]);
+
+  const fetchPrizedStatuses = useCallback(async (tickets) => {
+    if (!userId || !tickets || tickets.length === 0) {
+      setIsLoading(false);
+      return;
+    }
+    const filtered = tickets.filter(c => c.group_id !== null);
+    try {
+      const results = await Promise.allSettled(
+        filtered.map((card) =>
+          axios.get(`${url}/payment-out/prized-group`, {
+            params: { userId, groupId: card.group_id?._id, ticket: card.tickets },
+          })
+        )
+      );
+      const newPrizedMap = {};
+      filtered.forEach((card, i) => {
+        const groupId = card.group_id?._id;
+        if (!groupId) return;
+        const result = results[i];
+        if (result.status === "fulfilled") {
+          const data = result.value.data;
+          // Shape: { success, data: { payouts: [...], summary: {} } }
+          const payouts = data?.data?.payouts;
+          const isPrized = Array.isArray(payouts) ? payouts.length > 0 : false;
+          newPrizedMap[groupId] = isPrized;
+        } else {
+          newPrizedMap[groupId] = false;
+        }
+      });
+      setPrizedMap(newPrizedMap);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   }, [userId]);
 
   const fetchAuctionDetails = useCallback(async (groupId, groupName) => {
@@ -373,13 +499,13 @@ const AuctionList = ({ navigation }) => {
   useFocusEffect(useCallback(() => {
     fetchUserTickets();
     setIsShowingRecords(false);
-    setAuctionData({ records: [], loading: false, error: null, selectedGroupId: null, highlightedCardId: null, selectedGroupName: "", selectedGroupValue: null });
+    setAuctionData({ records: [], loading: false, error: null, selectedGroupId: null, highlightedCardId: null, selectedGroupName: "", selectedGroupValue: null, selectedTicket: null });
   }, [fetchUserTickets]));
 
   const handleViewDetails = (enrollmentId, groupId, tickets, groupName, groupValue) => {
     Vibration.vibrate(50);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setAuctionData(prev => ({ ...prev, selectedGroupId: groupId, highlightedCardId: enrollmentId, selectedGroupName: groupName, selectedGroupValue: groupValue }));
+    setAuctionData(prev => ({ ...prev, selectedGroupId: groupId, highlightedCardId: enrollmentId, selectedGroupName: groupName, selectedGroupValue: groupValue, selectedTicket: tickets }));
     setIsShowingRecords(true);
     fetchAuctionDetails(groupId, groupName);
   };
@@ -388,7 +514,7 @@ const AuctionList = ({ navigation }) => {
     Vibration.vibrate(50);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsShowingRecords(false);
-    setAuctionData(prev => ({ ...prev, records: [], selectedGroupName: "", selectedGroupValue: null }));
+    setAuctionData(prev => ({ ...prev, records: [], selectedGroupName: "", selectedGroupValue: null, selectedTicket: null }));
   };
 
   const handleBidRequest = useCallback((card) => {
@@ -397,6 +523,15 @@ const AuctionList = ({ navigation }) => {
       selectedGroupId: card.group_id?._id,
       selectedEnrollmentId: card._id,
       preselectedGroup: { group_id: card.group_id, tickets: card.tickets, _id: card._id, group_name: card.group_id?.group_name },
+    });
+  }, [navigation, userId]);
+
+  const handlePrizedInfo = useCallback((card) => {
+    Vibration.vibrate(50);
+    navigation.navigate("PrizedScreen", {
+      userId,
+      groupId: card.group_id?._id,
+      ticket: card.tickets,
     });
   }, [navigation, userId]);
 
@@ -428,16 +563,6 @@ const AuctionList = ({ navigation }) => {
               </View>
               <Text style={styles.pageSubtitle}>Explore all your auction activities, past and present, right here.</Text>
 
-              {/* Prized Groups banner */}
-              <TouchableOpacity style={styles.prizedBanner} onPress={() => navigation.navigate("PrizedScreen")} activeOpacity={0.88}>
-                <LinearGradient colors={[Colors.deepBlue, Colors.primary]} start={[0, 0]} end={[1, 1]} style={styles.prizedBannerGradient}>
-                  <View style={styles.prizedBannerDecor} />
-                  <MaterialCommunityIcons name="trophy" size={20} color={Colors.gold} />
-                  <Text style={styles.prizedBannerText}>VIEW YOUR PRIZED GROUPS</Text>
-                  <MaterialIcons name="chevron-right" size={20} color={Colors.card} />
-                </LinearGradient>
-              </TouchableOpacity>
-
               {isLoading ? (
                 <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
               ) : filteredCards.length === 0 ? (
@@ -452,7 +577,9 @@ const AuctionList = ({ navigation }) => {
                       key={card._id} card={card} index={index}
                       onSelect={handleViewDetails}
                       isHighlighted={auctionData.highlightedCardId === card._id}
+                      isPrized={!!prizedMap[card.group_id?._id]}
                       onBidRequest={() => handleBidRequest(card)}
+                      onPrizedInfo={() => handlePrizedInfo(card)}
                     />
                   ))}
                 </ScrollView>
@@ -468,6 +595,8 @@ const AuctionList = ({ navigation }) => {
               onCommencementPress={handleCommencementPress}
               selectedGroupName={auctionData.selectedGroupName}
               selectedGroupValue={auctionData.selectedGroupValue}
+              selectedTicket={auctionData.selectedTicket}
+              isPrized={!!prizedMap[auctionData.selectedGroupId]}
             />
           )}
         </View>
@@ -495,127 +624,177 @@ const styles = StyleSheet.create({
   pageTitle: { fontSize: 26, fontWeight: "900", color: Colors.primary, letterSpacing: -0.4 },
   pageSubtitle: { fontSize: 13, color: Colors.textMedium, marginBottom: 16, lineHeight: 20 },
 
-  // Prized banner
-  prizedBanner: {
-    marginBottom: 16, borderRadius: 14, overflow: "hidden",
-    ...Platform.select({
-      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.22, shadowRadius: 10 },
-      android: { elevation: 7 },
-    }),
-  },
-  prizedBannerGradient: { flexDirection: "row", alignItems: "center", paddingVertical: 13, paddingHorizontal: 16, borderRadius: 14, overflow: "hidden" },
-  prizedBannerDecor: { position: "absolute", width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.04)", top: -25, right: 30 },
-  prizedBannerText: { flex: 1, fontSize: 13, fontWeight: "800", color: Colors.card, marginLeft: 12, letterSpacing: 0.5 },
-
-  // ─── GROUP CARD (LARGER) ───────────────────────────────────────────────────
+  // ─── GROUP CARD ───────────────────────────────────────────────────────────────
   groupCard: {
     backgroundColor: Colors.card,
-    borderRadius: 20,
-    marginBottom: 20,
+    borderRadius: 18,
+    marginBottom: 18,
     overflow: "hidden",
     ...Platform.select({
-      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.13, shadowRadius: 14 },
-      android: { elevation: 9 },
+      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 16 },
+      android: { elevation: 10 },
     }),
   },
-  groupCardHighlighted: { borderWidth: 2, borderColor: Colors.gold },
-
-  groupCardHeader: {
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-    overflow: "hidden",
+  groupCardPrized: {
+    borderWidth: 1.5,
+    borderColor: Colors.gold,
   },
-  groupCardHeaderRow: { flexDirection: "row", alignItems: "center" },
-
+  cardCanvas: { flexDirection: "row" },
+  leftAccentBar: {
+    width: 5,
+    backgroundColor: Colors.primary,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+  },
+  cardInner: { flex: 1, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12 },
+  cardTopRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 10 },
   groupCardName: {
-    flex: 1,
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: "800",
-    color: Colors.card,
-    letterSpacing: 0.2,
+    color: Colors.textDark,
+    letterSpacing: 0.1,
+    marginBottom: 5,
+  },
+  ticketRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  ticketText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: Colors.textMedium,
+  },
+  ticketNum: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: Colors.accentBlue,
   },
 
-  typeTag: {
-    paddingHorizontal: 12,
+  // Slant box tag
+  slantTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 10,
-    backgroundColor: Colors.card,
-    marginLeft: 10,
+    borderRadius: 4,
+    transform: [{ skewX: "-10deg" }],
+    marginLeft: 8,
+    marginTop: 2,
   },
-  typeTagFree: { backgroundColor: "#FFF4E6" },
-  typeTagText: { fontSize: 12, fontWeight: "700", color: Colors.textDark },
+  slantTagFree: { backgroundColor: Colors.accentOrange },
+  slantTagPrized: { backgroundColor: Colors.gold },
+  slantTagText: {
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+    transform: [{ skewX: "10deg" }],
+  },
 
-  groupCardValueRow: {
+  cardMidDivider: { height: 1, backgroundColor: Colors.lightDivider, marginBottom: 10 },
+
+  valueRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    marginBottom: 12,
   },
-  groupCardValueLabel: {
-    fontSize: 11,
-    fontWeight: "600",
+  valueLabel: {
+    fontSize: 9,
+    fontWeight: "700",
     color: Colors.textLight,
+    letterSpacing: 1.4,
     textTransform: "uppercase",
-    letterSpacing: 1.1,
   },
-  groupCardValue: {
-    fontSize: 24,
+  valueAmount: {
+    fontSize: 20,
     fontWeight: "900",
     color: Colors.primary,
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
   },
 
-  cardDivider: { height: 1, backgroundColor: Colors.lightDivider },
-
-  actionRow: {
+  actionRow: { flexDirection: "row", gap: 8 },
+  actionChip: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.dataPanelBg,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  actionBtn: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 18,
-  },
-  actionIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 13,
-    backgroundColor: Colors.card,
-    alignItems: "center",
     justifyContent: "center",
-    marginBottom: 7,
-    ...Platform.select({
-      ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-      android: { elevation: 3 },
-    }),
+    paddingVertical: 9,
+    borderRadius: 10,
+    gap: 5,
   },
-  actionBtnLabel: {
+  actionChipBid: {
+    backgroundColor: Colors.Green,
+  },
+  actionChipPrized: {
+    backgroundColor: Colors.gold,
+  },
+  actionChipDetails: {
+    backgroundColor: Colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  actionChipText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textDark,
-    textAlign: "center",
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
-  actionSep: { width: 1, height: 42, backgroundColor: Colors.border },
 
   // Summary card
   summaryCard: {
     backgroundColor: Colors.card, borderRadius: 16, marginBottom: 14, overflow: "hidden",
     ...Platform.select({
-      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.12, shadowRadius: 12 },
+      ios: { shadowColor: "#0E7C5B", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 14 },
       android: { elevation: 8 },
     }),
   },
-  summaryCardHeader: { paddingVertical: 14, paddingHorizontal: 16, overflow: "hidden" },
-  summaryHeaderDecor1: { position: "absolute", width: 90, height: 90, borderRadius: 45, backgroundColor: "rgba(255,255,255,0.04)", top: -25, right: 10 },
-  summaryHeaderDecor2: { position: "absolute", width: 55, height: 55, borderRadius: 28, backgroundColor: "rgba(245,197,24,0.07)", bottom: -8, left: 70 },
-  summaryHeaderInner: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
-  summaryGroupName: { flex: 1, fontSize: 14, fontWeight: "800", color: Colors.card, textTransform: "uppercase", letterSpacing: 0.4 },
-  summaryGroupValue: { fontSize: 22, fontWeight: "900", color: Colors.gold, letterSpacing: -0.4 },
-  summaryStatsBlock: { backgroundColor: Colors.dataPanelBg },
+  summaryCardHeader: { paddingVertical: 16, paddingHorizontal: 16, overflow: "hidden" },
+  summaryDiagStripe1: {
+    position: "absolute", width: 140, height: 140,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    transform: [{ rotate: "35deg" }],
+    top: -60, right: -30,
+  },
+  summaryDiagStripe2: {
+    position: "absolute", width: 80, height: 80,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    transform: [{ rotate: "35deg" }],
+    bottom: -30, left: 40,
+  },
+  summaryHeaderTopRow: {
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between", marginBottom: 2,
+  },
+  summaryEyebrow: { fontSize: 9, fontWeight: "700", color: "rgba(255,255,255,0.55)", letterSpacing: 1.6, textTransform: "uppercase" },
+  summaryPrizedSlantTag: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: Colors.gold,
+    paddingHorizontal: 9, paddingVertical: 4,
+    borderRadius: 4,
+    transform: [{ skewX: "-10deg" }],
+  },
+  summaryPrizedSlantText: {
+    fontSize: 9, fontWeight: "900", color: "#7B0D1E",
+    letterSpacing: 0.9, transform: [{ skewX: "10deg" }],
+  },
+  summaryGroupName: { fontSize: 18, fontWeight: "900", color: Colors.card, letterSpacing: 0.1, marginTop: 6 },
+  summaryTicketRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },
+  summaryTicketText: { fontSize: 12, fontWeight: "500", color: "rgba(255,255,255,0.7)" },
+  summaryTicketNum: { fontSize: 14, fontWeight: "900", color: Colors.card },
+  summaryGroupValue: { fontSize: 24, fontWeight: "900", color: "#7FFFD4", letterSpacing: -0.4, marginTop: 6 },
+
+  // 4-row stats list
+  summaryStatsList: { backgroundColor: Colors.card, paddingVertical: 4 },
+  summaryStatRow: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 16, paddingVertical: 12,
+  },
+  summaryStatDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
+  summaryStatRowLabel: { flex: 1, fontSize: 13, fontWeight: "600", color: Colors.textDark },
+  summaryStatRowValue: { fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
+  summaryStatSep: { height: 1, backgroundColor: Colors.lightDivider, marginHorizontal: 16 },
+
   statRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 18, paddingVertical: 11 },
   statDivider: { height: 1, backgroundColor: Colors.border, marginHorizontal: 18 },
   statLabel: { fontSize: 13, fontWeight: "600", color: Colors.textDark },
