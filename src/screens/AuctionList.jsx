@@ -59,7 +59,7 @@ const formatDate = (ds) => {
   try {
     const d = new Date(ds);
     if (!isNaN(d.getTime())) return d.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
-  } catch (e) {}
+  } catch (e) { }
   return "N/A";
 };
 
@@ -68,7 +68,7 @@ const calcCommencementDate = (ds) => {
   try {
     const d = new Date(ds);
     if (!isNaN(d.getTime())) { d.setDate(d.getDate() - 10); return d.toISOString().split("T")[0]; }
-  } catch (e) {}
+  } catch (e) { }
   return "";
 };
 
@@ -152,6 +152,7 @@ const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, 
           <View style={styles.cardInner}>
             {/* Top: group name + slant tag */}
             <View style={styles.cardTopRow}>
+
               <View style={{ flex: 1 }}>
                 <Text style={styles.groupCardName} numberOfLines={1}>{group_name || "—"}</Text>
                 {/* Ticket number right below group name */}
@@ -161,15 +162,28 @@ const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, 
                     <Text style={styles.ticketText}>Ticket <Text style={styles.ticketNum}>{tickets}</Text></Text>
                   </View>
                 ) : null}
+
+                {/* ✅ Next Auction Date */}
+                {/* FIX: Added !isPrized condition here */}
+                {card.nextAuctionDate && !isPrized && (
+                  <View style={styles.ticketRow}>
+                    <MaterialCommunityIcons name="calendar-clock" size={13} color={Colors.accentOrange} />
+                    <Text style={styles.ticketText}>
+                      Next Auction{" "}
+                      <Text style={styles.ticketNum}>{formatDate(card.nextAuctionDate)}</Text>
+                    </Text>
+                  </View>
+                )}
               </View>
+
               {/* Slant box tag */}
               {formattedType ? (
                 <View style={[styles.slantTag, isFree && styles.slantTagFree, isPrized && styles.slantTagPrized]}>
                   {isPrized
                     ? <MaterialCommunityIcons name="trophy" size={10} color={Colors.deepBlue} style={{ marginRight: 3 }} />
                     : isFree
-                    ? <MaterialCommunityIcons name="tag" size={10} color={Colors.card} style={{ marginRight: 3 }} />
-                    : <MaterialCommunityIcons name="gavel" size={10} color={Colors.card} style={{ marginRight: 3 }} />
+                      ? <MaterialCommunityIcons name="tag" size={10} color={Colors.card} style={{ marginRight: 3 }} />
+                      : <MaterialCommunityIcons name="gavel" size={10} color={Colors.card} style={{ marginRight: 3 }} />
                   }
                   <Text style={[styles.slantTagText, (isFree || !isPrized) && { color: Colors.card }, isPrized && { color: Colors.deepBlue }]}>
                     {isPrized ? "PRIZED" : formattedType.toUpperCase()}
@@ -220,16 +234,6 @@ const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, 
 };
 
 // ─── Summary Card ─────────────────────────────────────────────────────────────
-const StatRow = ({ label, value, valueColor, isFirst }) => (
-  <>
-    {!isFirst && <View style={styles.statDivider} />}
-    <View style={styles.statRow}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, { color: valueColor }]}>{value}</Text>
-    </View>
-  </>
-);
-
 const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCount, commencementCount, selectedTicket, isPrized }) => (
   <FadeSlide delay={0}>
     <View style={styles.summaryCard}>
@@ -353,9 +357,9 @@ const AuctionRecordsView = ({ records, onBack, isLoading, error, commencementDat
   if (isLoading) return <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />;
 
   const hasCommencement = !!(commencementData && (commencementData.group_name || commencementData.commencement_date));
-  const totalRecords  = records.length + (hasCommencement ? 1 : 0);
-  const normalCount   = records.filter(r => (r.auction_type || "").toLowerCase() === "normal").length;
-  const freeCount     = records.filter(r => (r.auction_type || "").toLowerCase() === "free").length;
+  const totalRecords = records.length + (hasCommencement ? 1 : 0);
+  const normalCount = records.filter(r => (r.auction_type || "").toLowerCase() === "normal").length;
+  const freeCount = records.filter(r => (r.auction_type || "").toLowerCase() === "free").length;
   const commencementCount = hasCommencement ? 1 : 0;
 
   return (
@@ -413,7 +417,7 @@ const AuctionList = ({ navigation }) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [userTickets, setUserTickets] = useState([]);
-  // Map of groupId -> boolean (prized status)
+
   const [prizedMap, setPrizedMap] = useState({});
   const [isShowingRecords, setIsShowingRecords] = useState(false);
   const [auctionData, setAuctionData] = useState({
@@ -423,20 +427,58 @@ const AuctionList = ({ navigation }) => {
   });
   const [commencementAuctionData, setCommencementAuctionData] = useState(null);
 
+  // 1. Fetch User Tickets AND Next Auction Dates
   const fetchUserTickets = useCallback(async () => {
-    if (!userId) { setIsLoading(false); return; }
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
+
     try {
       const res = await axios.post(`${url}/enroll/get-user-tickets/${userId}`);
+
       if (res.status === 200) {
         const tickets = res.data || [];
-        setUserTickets(tickets);
-        // After fetching tickets, check prized status for each group
-        fetchPrizedStatuses(tickets);
+
+        // 🔹 Get next auction date for each group (Required for non-prized cards)
+        const updatedTickets = await Promise.all(
+          tickets.map(async (card) => {
+            try {
+              const groupId = card.group_id?._id;
+              if (!groupId) return card;
+
+              const auctionRes = await axios.get(`${url}/auction/group/${groupId}`);
+
+              if (auctionRes.status === 200 && auctionRes.data.length > 0) {
+                const auctions = auctionRes.data;
+                const latestAuction = auctions[auctions.length - 1];
+                return {
+                  ...card,
+                  nextAuctionDate: latestAuction?.next_date || null,
+                };
+              }
+              return { ...card, nextAuctionDate: null };
+            } catch (err) {
+              console.log("Auction fetch error:", err);
+              return { ...card, nextAuctionDate: null };
+            }
+          })
+        );
+
+        setUserTickets(updatedTickets);
+
+        // 2. After fetching enriched tickets, check prized status
+        fetchPrizedStatuses(updatedTickets);
       }
-    } catch (e) { console.error(e); setIsLoading(false); }
+    } catch (e) {
+      console.error(e);
+      setIsLoading(false);
+    }
   }, [userId]);
 
+  // 3. Logic from your prompt: Check Prized Status
   const fetchPrizedStatuses = useCallback(async (tickets) => {
     if (!userId || !tickets || tickets.length === 0) {
       setIsLoading(false);
@@ -518,12 +560,39 @@ const AuctionList = ({ navigation }) => {
   };
 
   const handleBidRequest = useCallback((card) => {
+
+    const nextAuctionDate = card.nextAuctionDate;
+
+    if (!nextAuctionDate) {
+      Alert.alert("Auction Not Scheduled", "Next auction date is not available.");
+      return;
+    }
+
+    const now = new Date();
+    const auctionDate = new Date(nextAuctionDate);
+
+    const diffHours = (auctionDate - now) / (1000 * 60 * 60);
+
+    if (diffHours > 48) {
+      Alert.alert(
+        "Bid Request Not Open",
+        `Right now you can't raise request.\n\nBid request opens 48 hours before auction.\n\nNext Auction Date: ${formatDate(nextAuctionDate)}`
+      );
+      return;
+    }
+
     navigation.navigate("BidRequest", {
       userId,
       selectedGroupId: card.group_id?._id,
       selectedEnrollmentId: card._id,
-      preselectedGroup: { group_id: card.group_id, tickets: card.tickets, _id: card._id, group_name: card.group_id?.group_name },
+      preselectedGroup: {
+        group_id: card.group_id,
+        tickets: card.tickets,
+        _id: card._id,
+        group_name: card.group_id?.group_name,
+      },
     });
+
   }, [navigation, userId]);
 
   const handlePrizedInfo = useCallback((card) => {

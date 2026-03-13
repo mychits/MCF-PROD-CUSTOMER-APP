@@ -618,13 +618,6 @@ const BidRequest = ({ navigation, route }) => {
                               </View>
 
                               <View style={styles.row}>
-                                <Text style={styles.leftText}>Next Auction Date</Text>
-                                <Text style={styles.rightText}>
-                                  {displayNextAuctionDate ? displayNextAuctionDate.split("-").reverse().join("-") : "N/A"}
-                                </Text>
-                              </View>
-
-                              <View style={styles.row}>
                                 <Text style={styles.leftText}>Bid Percentage</Text>
                                 <Text style={styles.rightText}>{displayBidPercentage ? `${displayBidPercentage}%` : "N/A"}</Text>
                               </View>
