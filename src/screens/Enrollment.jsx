@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useContext, useRef } from "react";
 import {
     View,
@@ -22,10 +20,7 @@ import { NetworkContext } from '../context/NetworkProvider';
 import Toast from 'react-native-toast-message';
 import { ContextProvider } from "../context/UserProvider"
 
-// START: LOTTIE IMPORT PLACEHOLDER
-// import LottieView from 'lottie-react-native'; 
-// const enrollmentLottie = require('../../assets/animations/enrollment-confirm.json'); 
-// END: LOTTIE IMPORT PLACEHOLDER
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const formatNumberIndianStyle = (num) => {
     if (num === null || num === undefined) return "0";
@@ -47,18 +42,24 @@ const getVacantSeats = (card) => {
     const appDisplaySeats = parseInt(card.app_display_vacany_seat, 10);
     if (!isNaN(appDisplaySeats) && appDisplaySeats > 0) return appDisplaySeats;
     const totalMembers = parseInt(card.number_of_members, 10) || 0;
-    const enrolledMembers = parseInt(card.enrolled_members, 10) || 0; 
+    const enrolledMembers = parseInt(card.enrolled_members, 10) || 0;
     const calculatedSeats = totalMembers - enrolledMembers;
     return Math.max(0, calculatedSeats);
 };
 
-// START: STYLISH POSTER COMPONENT (UNIQUE COLOR LINES)
+// ─────────────────────────────────────────────────────────────
+// STYLISH POSTER SLIDER  — with visible gaps between cards
+// ─────────────────────────────────────────────────────────────
+const CARD_GAP       = 12;   // gap between cards
+const SIDE_PADDING   = 16;   // left/right padding so next card peeks
+const CARD_WIDTH     = SCREEN_WIDTH - SIDE_PADDING * 2 - CARD_GAP; // card is slightly narrower than screen
+
 const StylishPosterSlider = ({ data, onPress }) => {
     const scrollRef = useRef(null);
-    const screenWidth = Dimensions.get('window').width;
-    
-    const CARD_WIDTH = screenWidth; 
     const [currentIndex, setCurrentIndex] = useState(0);
+
+    // Each "snap interval" = card width + one gap
+    const snapInterval = CARD_WIDTH + CARD_GAP;
 
     useEffect(() => {
         if (data.length <= 1) return;
@@ -66,93 +67,282 @@ const StylishPosterSlider = ({ data, onPress }) => {
             const nextIndex = (currentIndex + 1) % data.length;
             setCurrentIndex(nextIndex);
             scrollRef.current?.scrollTo({
-                x: nextIndex * CARD_WIDTH,
+                x: nextIndex * snapInterval,
                 animated: true,
             });
-        }, 3500); 
+        }, 3500);
         return () => clearInterval(timer);
-    }, [currentIndex, data.length, CARD_WIDTH]);
+    }, [currentIndex, data.length, snapInterval]);
 
     if (!data || data.length === 0) return null;
 
     return (
-        <View style={styles.posterContainer}>
+        <View style={posterStyles.wrapper}>
             <ScrollView
                 ref={scrollRef}
                 horizontal
-                pagingEnabled
+                pagingEnabled={false}
                 showsHorizontalScrollIndicator={false}
                 decelerationRate="fast"
-                snapToInterval={CARD_WIDTH}
+                snapToInterval={snapInterval}
                 snapToAlignment="start"
+                contentContainerStyle={{
+                    paddingLeft: SIDE_PADDING,
+                    paddingRight: SIDE_PADDING,
+                }}
+                onMomentumScrollEnd={(e) => {
+                    const index = Math.round(e.nativeEvent.contentOffset.x / snapInterval);
+                    setCurrentIndex(index);
+                }}
             >
                 {data.map((item, index) => (
                     <TouchableOpacity
                         key={item._id}
                         activeOpacity={0.9}
                         onPress={() => onPress(item)}
-                        style={[styles.posterCard, { width: CARD_WIDTH }]}
+                        style={[
+                            posterStyles.card,
+                            { marginRight: index < data.length - 1 ? CARD_GAP : 0 },
+                        ]}
                     >
-                        {/* 1. Base Background */}
-                        <View style={styles.posterBackground} />
-                        
-                        {/* 2. UNIQUE SLANT LINES */}
-                        {/* Line 1: Vibrant Pink (Top Left) */}
-                        <View style={styles.slantLinePink} />
-                        
-                        {/* Line 2: Soft Gold (Middle Accent) */}
-                        <View style={styles.slantLineGold} />
+                        {/* Base dark blue background */}
+                        <View style={posterStyles.posterBackground} />
 
-                        {/* Line 3: Electric Cyan (Bottom Right) */}
-                        <View style={styles.slantLineCyan} />
+                        {/* Slant line — Pink */}
+                        <View style={posterStyles.slantLinePink} />
+                        {/* Slant line — Gold */}
+                        <View style={posterStyles.slantLineGold} />
+                        {/* Slant line — Cyan */}
+                        <View style={posterStyles.slantLineCyan} />
 
-                        {/* 3. Content Layout */}
-                        <View style={styles.posterContentLayout}>
-                            
-                            {/* Left: Text Area */}
-                            <View style={styles.posterTextSection}>
-                             
-                                
-                                <Text style={styles.offerTextLine1}>
-                                    Get ₹ {formatNumberIndianStyle(item.group_value)}
+                        {/* Content */}
+                        <View style={posterStyles.contentLayout}>
+                            {/* Left: text */}
+                            <View style={posterStyles.textSection}>
+                                <Text style={posterStyles.offerLineGet}>Get</Text>
+                                <Text
+                                    style={posterStyles.offerLine1}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                    minimumFontScale={0.6}
+                                >
+                                    {`₹${formatNumberIndianStyle(item.group_value)}`}
                                 </Text>
-
-                                <View style={styles.offerTextLine2Container}>
-                                    <Text style={styles.offerTextLine2Prefix}>By investing </Text>
-                                    <Text style={styles.offerTextLine2Amount}>₹ {formatNumberIndianStyle(item.monthly_installment)}</Text>
-                                    <Text style={styles.offerTextLine2Suffix}>/monthly</Text>
+                                <View style={posterStyles.offerLine2Row}>
+                                    <Text style={posterStyles.offerLine2Prefix}>By investing </Text>
+                                    <Text style={posterStyles.offerLine2Amount}>
+                                        ₹{formatNumberIndianStyle(item.monthly_installment)}
+                                    </Text>
+                                    <Text style={posterStyles.offerLine2Suffix}>/monthly</Text>
                                 </View>
                             </View>
 
-                            {/* Right: Image Area */}
-                            <View style={styles.posterImageSection}>
-                                <View style={styles.imageShadowBg} />
-                                <Image 
-                                    source={require('../../assets/GIRL-IMGES.png')} 
-                                    style={styles.posterImage} 
+                            {/* Right: image */}
+                            <View style={posterStyles.imageSection}>
+                                <View style={posterStyles.imageShadowBg} />
+                                <Image
+                                    source={require('../../assets/GIRL-IMGES.png')}
+                                    style={posterStyles.posterImage}
                                     resizeMode="contain"
                                 />
-                                <View style={styles.floatingPriceTag}>
-                                    <Text style={styles.floatingPriceText}>
+                                <View style={posterStyles.floatingTag}>
+                                    <Text style={posterStyles.floatingTagText}>
                                         {item.group_members} Members
                                     </Text>
                                 </View>
                             </View>
-
                         </View>
                     </TouchableOpacity>
                 ))}
             </ScrollView>
+
+            {/* Dot indicators */}
+            {data.length > 1 && (
+                <View style={posterStyles.dotsRow}>
+                    {data.map((_, i) => (
+                        <View
+                            key={i}
+                            style={[
+                                posterStyles.dot,
+                                i === currentIndex && posterStyles.dotActive,
+                            ]}
+                        />
+                    ))}
+                </View>
+            )}
         </View>
     );
 };
-// END: STYLISH POSTER COMPONENT
+
+const posterStyles = StyleSheet.create({
+    wrapper: {
+        marginBottom: 12,
+        marginTop: 8,
+    },
+    card: {
+        width: CARD_WIDTH,
+        height: 150,
+        borderRadius: 18,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 7,
+    },
+    posterBackground: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#053B90',
+    },
+    slantLinePink: {
+        position: 'absolute',
+        width: '200%',
+        height: 300,
+        backgroundColor: 'rgba(255, 46, 99, 0.20)',
+        top: -100,
+        left: -80,
+        transform: [{ rotate: '25deg' }],
+        zIndex: 1,
+    },
+    slantLineGold: {
+        position: 'absolute',
+        width: '120%',
+        height: 150,
+        backgroundColor: 'rgba(255, 201, 60, 0.12)',
+        top: 20,
+        right: -50,
+        transform: [{ rotate: '-35deg' }],
+        zIndex: 1,
+    },
+    slantLineCyan: {
+        position: 'absolute',
+        width: '200%',
+        height: 250,
+        backgroundColor: 'rgba(0, 210, 252, 0.15)',
+        bottom: -80,
+        right: -50,
+        transform: [{ rotate: '-15deg' }],
+        zIndex: 1,
+    },
+    contentLayout: {
+        flex: 1,
+        flexDirection: 'row',
+        zIndex: 2,
+        paddingHorizontal: 20,
+        paddingTop: 8,
+    },
+    textSection: {
+        flex: 1.4,
+        justifyContent: 'center',
+    },
+    offerLineGet: {
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.85)',
+        fontWeight: '600',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        marginBottom: 2,
+    },
+    offerLine1: {
+        fontSize: 25,
+        color: '#FFFFFF',
+        fontWeight: '900',
+        lineHeight: 32,
+        flexShrink: 1,
+    },
+    offerLine2Row: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        marginTop: 2,
+    },
+    offerLine2Prefix: {
+        fontSize: 10,
+        color: '#E0E0E0',
+        marginBottom: 2,
+    },
+    offerLine2Amount: {
+        fontSize: 18,
+        color: '#FFC93C',
+        fontWeight: 'bold',
+        marginLeft: 4,
+    },
+    offerLine2Suffix: {
+        fontSize: 11,
+        color: '#E0E0E0',
+        marginBottom: 2,
+        marginLeft: 2,
+    },
+    imageSection: {
+        flex: 1.6,
+        justifyContent: 'flex-end',
+        alignItems: 'flex-end',
+        marginBottom: -5,
+    },
+    imageShadowBg: {
+        position: 'absolute',
+        width: 75,
+        height: 100,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        borderRadius: 10,
+        bottom: 0,
+        right: 10,
+        transform: [{ rotate: '-10deg' }],
+        zIndex: -1,
+    },
+    posterImage: {
+        width: 110,
+        height: 140,
+        transform: [{ rotate: '-5deg' }],
+    },
+    floatingTag: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 15,
+        borderWidth: 1,
+        borderColor: '#FF2E63',
+        transform: [{ rotate: '5deg' }],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        zIndex: 5,
+    },
+    floatingTagText: {
+        color: '#053B90',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    dotsRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 8,
+        gap: 5,
+    },
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#C5D5EA',
+    },
+    dotActive: {
+        width: 18,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#053B90',
+    },
+});
+// ─────────────────────────────────────────────────────────────
 
 
 const Enrollment = ({ route, navigation }) => {
     const { groupFilter } = route.params || {};
     const [appUser, setAppUser] = useContext(ContextProvider);
-    const userId = appUser?.userId || appUser?.user_id; 
+    const userId = appUser?.userId || appUser?.user_id;
     const [selectedCardIndex, setSelectedCardIndex] = useState(null);
     const [cardsData, setCardsData] = useState([]);
 
@@ -284,11 +474,11 @@ const Enrollment = ({ route, navigation }) => {
         });
         const endedGroups = cardsData.filter(card => new Date(card.end_date) <= now);
         const vacantGroups = cardsData.filter(card => getVacantSeats(card) > 0);
-        
+
         if (selectedGroup === "AllGroups") return { new: newGroups, ongoing: ongoingGroups, ended: endedGroups, vacant: [] };
         else if (selectedGroup === "NewGroups") return { new: cardsData, ongoing: [], ended: [], vacant: [] };
         else if (selectedGroup === "OngoingGroups") return { new: [], ongoing: cardsData, ended: [], vacant: [] };
-        else if (selectedGroup === "VacantGroups") return { new: [], ongoing: [], ended: [], vacant: cardsData }; 
+        else if (selectedGroup === "VacantGroups") return { new: [], ongoing: [], ended: [], vacant: cardsData };
         return { new: [], ongoing: [], ended: [], vacant: [] };
     };
 
@@ -298,21 +488,21 @@ const Enrollment = ({ route, navigation }) => {
         if (selectedGroupId) { navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId }); }
         else { setModalMessage("Error: Could not retrieve group ID."); setEnrollmentModalVisible(true); }
     };
-    
-    const handleJoinNow = async (card) => { 
+
+    const handleJoinNow = async (card) => {
         if (!isConnected || !isInternetReachable) { Toast.show({ type: "error", text1: "No Internet Connection", text2: "Please check your network and try again.", position: "bottom", visibilityTime: 3000 }); return; }
         const selectedGroupId = card._id;
         if (!selectedGroupId) { Toast.show({ type: "error", text1: "Error", text2: "Could not retrieve group ID for enrollment.", position: "bottom", visibilityTime: 3000 }); return; }
-        const vacantSeats = getVacantSeats(card); 
+        const vacantSeats = getVacantSeats(card);
         if (vacantSeats === 0) { Toast.show({ type: "info", text1: "No Seats Available", text2: "This group currently has no vacant seats.", position: "bottom", visibilityTime: 3000 }); return; }
         navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId });
     };
 
     const NoGroupsIllustration = require('../../assets/Nogroup.png');
-    
+
     const InstallmentRow = ({ amount, label, timeUnit, colors }) => {
         if (amount === undefined || amount === null || amount === "") return null;
-        const formattedAmount = formatNumberIndianStyle(amount); 
+        const formattedAmount = formatNumberIndianStyle(amount);
         if (formattedAmount === "0") return null;
         return (
             <View style={[styles.installmentRowSmall, { backgroundColor: colors.primary, borderLeftColor: colors.secondary }]}>
@@ -332,22 +522,22 @@ const Enrollment = ({ route, navigation }) => {
                     const type = getGroupType(card);
                     if (type === 'new') return 'New';
                     if (type === 'ongoing') return 'Ongoing';
-                    return 'Group'; 
+                    return 'Group';
                 default: return "Group";
             }
         };
         const formatDate = (dateString) => {
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
             const date = new Date(dateString);
-            if (isNaN(date)) return dateString; 
+            if (isNaN(date)) return dateString;
             return date.toLocaleDateString('en-GB', options);
         };
         const vacantSeats = getVacantSeats(card);
-        const isCurrentCardJoining = isJoining && joinGroupId === card._id; 
+        const isCurrentCardJoining = isJoining && joinGroupId === card._id;
         const badgeText = getFilterDisplayName(currentFilter);
         const shouldShowBadge = !(currentFilter === "AllGroups" && getGroupType(card) === 'ended');
         const monthlyInstallment = card.monthly_installment;
-        
+
         return (
             <>
                 <View style={styles.cardHeaderSmall}>
@@ -390,7 +580,7 @@ const Enrollment = ({ route, navigation }) => {
                         <Text style={[styles.detailValueSmall, styles.highlightedVacantSeatsSmall]}>{vacantSeats}</Text>
                     </View>
                 </View>
-                <View style={[styles.installmentDetailsStandalone, {  backgroundColor: colors.primary }]}>
+                <View style={[styles.installmentDetailsStandalone, { backgroundColor: colors.primary }]}>
                     <InstallmentRow amount={monthlyInstallment} label="Monthly Installment" timeUnit="month" colors={colors} />
                 </View>
                 <View style={styles.viewMoreContainerSmall}>
@@ -440,11 +630,11 @@ const Enrollment = ({ route, navigation }) => {
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScrollContainer}>
                             <View style={styles.chipsContainer}>
                                 <TouchableOpacity style={[styles.chip, selectedGroup === "NewGroups" && styles.selectedChip]} onPress={() => setSelectedGroup("NewGroups")}>
-                                    <Ionicons name="sparkles" size={16} color={selectedGroup === "NewGroups" ? '#fff' : '#666'} style={styles.chipIcon}/>
+                                    <Ionicons name="sparkles" size={16} color={selectedGroup === "NewGroups" ? '#fff' : '#666'} style={styles.chipIcon} />
                                     <Text style={[styles.chipText, selectedGroup === "NewGroups" && styles.selectedChipText]}>New Groups</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={[styles.chip, selectedGroup === "OngoingGroups" && styles.selectedChip]} onPress={() => setSelectedGroup("OngoingGroups")}>
-                                    <Ionicons name="hourglass" size={16} color={selectedGroup === "OngoingGroups" ? '#fff' : '#666'} style={styles.chipIcon}/>
+                                    <Ionicons name="hourglass" size={16} color={selectedGroup === "OngoingGroups" ? '#fff' : '#666'} style={styles.chipIcon} />
                                     <Text style={[styles.chipText, selectedGroup === "OngoingGroups" && styles.selectedChipText]}>Ongoing Groups</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.moreOptionsButton} onPress={() => setMoreFiltersModalVisible(true)}>
@@ -454,12 +644,10 @@ const Enrollment = ({ route, navigation }) => {
                         </ScrollView>
                     </View>
 
-                    {/* START: STYLISH POSTER SLIDER */}
-                    <StylishPosterSlider 
-                        data={cardsData} 
-                        onPress={handleEnrollment} 
+                    <StylishPosterSlider
+                        data={cardsData}
+                        onPress={handleEnrollment}
                     />
-                    {/* END: STYLISH POSTER SLIDER */}
 
                     <ScrollView contentContainerStyle={styles.scrollContentContainer} showsVerticalScrollIndicator={false}>
                         {(() => {
@@ -500,7 +688,7 @@ const Enrollment = ({ route, navigation }) => {
                             } else if (selectedGroup === "AllGroups") {
                                 groupsToDisplay = [...newGroups, ...ongoingGroups, ...endedGroups]; noGroupsTitle = "No Groups Available"; noGroupsMessage = "It looks like there are no groups that match your current filter. Try changing the filter or check back later for new additions!";
                             }
-                            
+
                             if (groupsToDisplay.length === 0) {
                                 return (
                                     <View style={styles.emptyStateContainer}>
@@ -517,7 +705,6 @@ const Enrollment = ({ route, navigation }) => {
                 </View>
             </View>
 
-            {/* Modals remain same */}
             <Modal visible={enrollmentModalVisible} transparent={true} onRequestClose={() => setEnrollmentModalVisible(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
@@ -545,7 +732,6 @@ const Enrollment = ({ route, navigation }) => {
 
 
 const styles = StyleSheet.create({
-    // ... (Standard Layout Styles) ...
     safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
@@ -555,7 +741,7 @@ const styles = StyleSheet.create({
     mainContentWrapper: { flex: 1, alignItems: 'center', paddingVertical: 1, backgroundColor: '#053B90', paddingHorizontal: 15 },
     innerContentArea: { flex: 1, backgroundColor: '#F5F5F5', marginHorizontal: 0, borderRadius: 15, paddingVertical: 15, paddingBottom: 25, width: '104%' },
     filterContainer: { paddingHorizontal: 15, paddingBottom: 10 },
-    chipsScrollContainer: { paddingRight: 30, paddingLeft: 5 }, 
+    chipsScrollContainer: { paddingRight: 30, paddingLeft: 5 },
     chipsContainer: { flexDirection: 'row', gap: 10, alignItems: 'center' },
     chip: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 5, backgroundColor: '#E0EFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center' },
     selectedChip: { backgroundColor: '#053B90', borderColor: '#053B90', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 },
@@ -563,170 +749,6 @@ const styles = StyleSheet.create({
     chipText: { fontSize: 12, fontWeight: '600', color: '#4A4A4A' },
     selectedChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
     moreOptionsButton: { paddingHorizontal: 10, paddingVertical: 10, backgroundColor: '#E0EFFF', borderRadius: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center', alignItems: 'center' },
-    
-    // START: STYLISH POSTER STYLES (UNIQUE COLOR SLANT LINES) - UPDATED HEIGHTS
-    posterContainer: {
-        height: 150, // Decreased from 190
-        marginBottom: 20,
-        marginTop: 10,
-        alignItems: 'center',
-    },
-    posterCard: {
-        height: 150, // Decreased from 190 (Must match posterContainer)
-        overflow: 'hidden', 
-        borderRadius: 20, 
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    posterBackground: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#053B90', 
-    },
-    
-    // 1. Vibrant Pink Slant (Top Left)
-    slantLinePink: {
-        position: 'absolute',
-        width: '200%',
-        height: 300,
-        backgroundColor: 'rgba(255, 46, 99, 0.20)', // Vibrant Pink
-        top: -100,
-        left: -80,
-        transform: [{ rotate: '25deg' }],
-        zIndex: 1,
-    },
-    // 2. Soft Gold Slant (Middle Accent)
-    slantLineGold: {
-        position: 'absolute',
-        width: '120%',
-        height: 150,
-        backgroundColor: 'rgba(255, 201, 60, 0.12)', // Gold
-        top: 20,
-        right: -50,
-        transform: [{ rotate: '-35deg' }],
-        zIndex: 1,
-    },
-    // 3. Electric Cyan Slant (Bottom Right)
-    slantLineCyan: {
-        position: 'absolute',
-        width: '200%',
-        height: 250,
-        backgroundColor: 'rgba(0, 210, 252, 0.15)', // Electric Cyan
-        bottom: -80,
-        right: -50,
-        transform: [{ rotate: '-15deg' }],
-        zIndex: 1,
-    },
-
-    posterContentLayout: {
-        flex: 1,
-        flexDirection: 'row',
-        zIndex: 2, 
-        paddingHorizontal: 20, 
-        paddingTop: 8,
-    },
-    posterTextSection: {
-        flex: 1.4,
-        justifyContent: 'center',
-    },
-    badgeContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.25)', 
-        alignSelf: 'flex-start',
-        paddingHorizontal: 6,
-        paddingVertical: 3,
-        borderRadius: 4,
-        marginBottom: 8, 
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.4)'
-    },
-    badgeText: {
-        color: '#fff', 
-        fontSize: 9,
-        fontWeight: '800',
-        letterSpacing: 1,
-    },
-    offerTextLine1: {
-        fontSize: 25, 
-        color: '#FFFFFF', 
-        fontWeight: '900',
-        lineHeight: 32,
-    },
-    offerTextLine2Container: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        marginTop: 2,
-    },
-    offerTextLine2Prefix: {
-        fontSize: 12,
-        color: '#E0E0E0',
-        marginBottom: 2, 
-    },
-    offerTextLine2Amount: {
-        fontSize: 18,
-        color: '#FFC93C', // Changed to Gold to match lines
-        fontWeight: 'bold',
-        marginLeft: 4,
-    },
-    offerTextLine2Suffix: {
-        fontSize: 11,
-        color: '#E0E0E0',
-        marginBottom: 2,
-        marginLeft: 2,
-    },
-    
-    posterImageSection: {
-        flex: 1.6,
-        justifyContent: 'flex-end',
-        alignItems: 'flex-end',
-        marginBottom: -5,
-    },
-    imageShadowBg: {
-        position: 'absolute',
-        width: 75,   // Decreased from 90
-        height: 100, // Decreased from 120
-        backgroundColor: 'rgba(0,0,0,0.2)',
-        borderRadius: 10,
-        bottom: 0,
-        right: 10,
-        transform: [{ rotate: '-10deg' }],
-        zIndex: -1,
-    },
-    posterImage: {
-        width: 110,   // Decreased from 130
-        height: 140,  // Decreased from 175
-        transform: [{ rotate: '-5deg' }],
-        shadowColor: '#000',
-        shadowOffset: { width: -2, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-    },
-    floatingPriceTag: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 15,
-        borderWidth: 1,
-        borderColor: '#FF2E63', // Pink border to match line
-        transform: [{ rotate: '5deg' }], 
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        zIndex: 5,
-    },
-    floatingPriceText: {
-        color: '#053B90',
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
-    // END: STYLISH POSTER STYLES
-
-    // ... (List Styles Unchanged) ...
     scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
     groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
     card: { flexDirection: 'column', justifyContent: 'space-between', padding: 10, marginVertical: 6, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3, elevation: 4, width: '105%', alignSelf: 'center' },
@@ -746,7 +768,7 @@ const styles = StyleSheet.create({
     cardDetailsRowSmall: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, },
     detailItemSmall: { flex: 1, alignItems: 'center', paddingHorizontal: 2, },
     detailLabelSmall: { fontSize: 9, fontWeight: '500', color: '#777', marginBottom: 1, },
-    detailValueSmall: { fontSize: 12, fontWeight: '700', textAlign: 'center', },
+    detailValueSmall: { fontSize: 10, fontWeight: '700', textAlign: 'center', },
     highlightedVacantSeatsSmall: { backgroundColor: '#1de94cff', color: '#060806ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, fontWeight: 'bold', overflow: 'hidden', },
     installmentDetailsStandalone: { marginTop: 5, marginBottom: 10, borderRadius: 8, borderWidth: 1, borderColor: '#E0E0E0', overflow: 'hidden', paddingHorizontal: 5, paddingVertical: 5, },
     installmentRowSmall: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, borderLeftWidth: 4, },

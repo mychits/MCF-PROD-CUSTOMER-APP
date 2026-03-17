@@ -171,7 +171,7 @@ const ConfirmationModal = ({ visible, onClose, formData, onConfirm, isSubmitting
               </View>
               <Text style={confirmStyles.summaryLabel}>Loan Amount</Text>
               <Text style={[confirmStyles.summaryValue, confirmStyles.amountHighlight]}>
-                ₹ {Number(formData.loanAmount || 0).toLocaleString("en-IN")}
+                ₹{Number(formData.loanAmount || 0).toLocaleString("en-IN")}
               </Text>
             </View>
             <View style={confirmStyles.divider} />
@@ -1032,7 +1032,7 @@ const MyLoan = ({ route, navigation }) => {
                             <Text style={styles.errorText}>{paymentsError}</Text>
                           ) : (
                             <Text style={[styles.detailValue, styles.summaryValue, { color: Colors.primaryBlue }]}>
-                              ₹ {formatNumberIndianStyle(totalLoanBalance)}
+                              ₹{formatNumberIndianStyle(totalLoanBalance)}
                             </Text>
                           )}
                         </View>
@@ -1046,23 +1046,17 @@ const MyLoan = ({ route, navigation }) => {
                           <Ionicons name="cash-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon} />
                           <Text style={styles.detailLabelVertical}>Original Loan Amount</Text>
                           <Text style={[styles.detailValueVertical, { color: Colors.primaryBlue, fontWeight: '900' }]}>
-                            ₹ {formatNumberIndianStyle(loanAmount)}
+                            ₹{formatNumberIndianStyle(loanAmount)}
                           </Text>
                         </View>
                         <View style={styles.summaryDetailItem}>
                           <Ionicons name="checkmark-circle-outline" size={20} color={Colors.successGreen} style={styles.detailIcon} />
                           <Text style={styles.detailLabelVertical}>TOTAL PAID</Text>
                           <Text style={[styles.detailValueVertical, { color: Colors.successGreen, fontWeight: '900' }]}>
-                            ₹ {formatNumberIndianStyle(totalRepayment)}
+                            ₹{formatNumberIndianStyle(totalRepayment)}
                           </Text>
                         </View>
-                        <View style={styles.summaryDetailItem}>
-                          <Ionicons name="calculator-outline" size={20} color={Colors.primaryBlue} style={styles.detailIcon} />
-                          <Text style={styles.detailLabelVertical}>Remaining Balance</Text>
-                          <Text style={[styles.detailValueVertical, { color: Colors.primaryBlue, fontWeight: '900' }]}>
-                            ₹ {formatNumberIndianStyle(totalLoanBalance)}
-                          </Text>
-                        </View>
+                       
                       </View>
                     )}
                   </View>
@@ -1081,7 +1075,7 @@ const MyLoan = ({ route, navigation }) => {
                               <Text style={styles.dateText}>{new Date(pay.pay_date).toLocaleDateString()}</Text>
                             </View>
                             <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                              <Text style={styles.amountText}>₹ {formatNumberIndianStyle(pay.amount)}</Text>
+                              <Text style={styles.amountText}>₹{formatNumberIndianStyle(pay.amount)}</Text>
                             </View>
                           </View>
                         </View>
@@ -1153,7 +1147,7 @@ const MyLoan = ({ route, navigation }) => {
                           <Ionicons name="cash-outline" size={20} color={Colors.vibrantBlue} style={styles.detailIcon} />
                           <Text style={styles.detailLabelVertical}>Loan Amount</Text>
                           <Text style={[styles.detailValueVertical, styles.amountValueStyle]}>
-                            ₹ {formatNumberIndianStyle(loan.loan_amount)}
+                            ₹{formatNumberIndianStyle(loan.loan_amount)}
                           </Text>
                         </View>
                         <View style={styles.detailItemVertical}>
@@ -1635,7 +1629,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 15, color: Colors.darkText, paddingVertical: 10 },
   fieldErrorContainer: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5, marginLeft: 2 },
   fieldErrorText: { fontSize: 12, color: Colors.errorRed, fontWeight: "500", flex: 1 },
-  purposeGrid: { flexDirection: "row", flexWrap: "nowrap", gap: 6 },
+  purposeGrid: { flexDirection: "row", flexWrap: "nowrap", gap: 4 },
   purposeChip: {
     flex: 1,
     flexDirection: "column",
