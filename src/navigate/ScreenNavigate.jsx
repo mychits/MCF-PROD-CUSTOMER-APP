@@ -35,6 +35,7 @@ import MyLoan from "../screens/MyLoan.jsx";
 import OffersScreen from "../screens/OffersScreen.jsx"; ``
 import RewardsScreen from "../screens/RewardsScreen.jsx";
 import Dashboard from "../screens/Dashboard.jsx";
+import loanReq from "../screens/loanReq.jsx";
 import PayOnline from "../screens/PayOnline.jsx";
 import OnlineAuction from "../screens/OnlineAuction.jsx";
 // import Holdedgroups from "../screens/Holdedgroups.jsx";
@@ -367,6 +368,11 @@ export default function ScreenNavigate() {
           <Stack.Screen
             name="Dashboard"
             component={Dashboard}
+            options={{ headerShown: false }}
+          />
+            <Stack.Screen
+            name="loanReq"
+            component={loanReq}
             options={{ headerShown: false }}
           />
           <Stack.Screen
