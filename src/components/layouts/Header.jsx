@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   },
   profileName: {
     color: "#fff",
-    fontSize: width * 0.045,
+    fontSize: width * 0.04,
     fontWeight: "700",
   },
   customerId: {

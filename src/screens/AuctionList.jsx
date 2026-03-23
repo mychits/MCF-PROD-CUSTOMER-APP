@@ -1,14 +1,15 @@
+
 import React, { useState, useCallback, useContext, useRef, useEffect } from "react";
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   ActivityIndicator, StatusBar, Image, Platform, Vibration,
-  LayoutAnimation, NativeModules, Dimensions, Alert, Animated, Easing,
+  LayoutAnimation, NativeModules, Alert, Animated, Easing, Dimensions,
 } from "react-native";
 import url from "../data/url";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
 import Header from "../components/layouts/Header";
-import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NoGroupImage from "../../assets/Nogroup.png";
@@ -19,9 +20,12 @@ if (Platform.OS === "android" && NativeModules.UIManager) {
   NativeModules.UIManager.setLayoutAnimationEnabledExperimental?.(true);
 }
 
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
 const Colors = {
   primary: "#053B90",
   primaryLight: "#1F55A4",
+  primaryDark: "#020E2C",
   backgroundLight: "#F0F4FA",
   card: "#FFFFFF",
   textDark: "#1A1A2E",
@@ -30,6 +34,7 @@ const Colors = {
   accentOrange: "#F48024",
   accentBlue: "#3F51B5",
   successGreen: "#10B981",
+  darkGreen: "#0F6B3A",
   gold: "#F5C518",
   goldDark: "#D4A017",
   error: "#EF4444",
@@ -37,6 +42,8 @@ const Colors = {
   lightDivider: "#F3F4F6",
   deepBlue: "#020E2C",
   dataPanelBg: "#F8FAFC",
+  skyBlue: "#B3E5FC",
+  teal: "#006064",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -58,7 +65,7 @@ const formatDate = (ds) => {
   try {
     const d = new Date(ds);
     if (!isNaN(d.getTime())) return d.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
-  } catch (e) {}
+  } catch (e) { }
   return "N/A";
 };
 
@@ -66,8 +73,11 @@ const calcCommencementDate = (ds) => {
   if (!ds) return "";
   try {
     const d = new Date(ds);
-    if (!isNaN(d.getTime())) { d.setDate(d.getDate() - 10); return d.toISOString().split("T")[0]; }
-  } catch (e) {}
+    if (!isNaN(d.getTime())) {
+      d.setDate(d.getDate() - 10);
+      return d.toISOString().split("T")[0];
+    }
+  } catch (e) { }
   return "";
 };
 
@@ -77,12 +87,265 @@ const FadeSlide = ({ children, delay = 0 }) => {
   const slide = useRef(new Animated.Value(28)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fade, { toValue: 1, duration: 360, delay, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(slide, { toValue: 0, duration: 360, delay, easing: Easing.out(Easing.exp), useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 400, delay, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(slide, { toValue: 0, duration: 400, delay, easing: Easing.out(Easing.exp), useNativeDriver: true }),
     ]).start();
   }, []);
   return <Animated.View style={{ opacity: fade, transform: [{ translateY: slide }] }}>{children}</Animated.View>;
 };
+
+// ─── Page Banner (matches Home sky blue section) ────────────────────────────
+// FIXED: Added filter and setFilter to props
+const AuctionBanner = ({ userName, totalGroups, prizedCount, filter, setFilter }) => (
+  <FadeSlide delay={0}>
+    <View style={styles.bannerCard}>
+      <View style={styles.bannerRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.bannerGreeting}>Your Auctions</Text>
+          <Text style={styles.bannerName}>{userName || "Member"}</Text>
+          <Text style={styles.bannerSub}>Track bids, records & commencements</Text>
+        </View>
+        <View style={styles.bannerIconCircle}>
+          <MaterialIcons name="gavel" size={34} color={Colors.primary} />
+        </View>
+      </View>
+      
+      {/* Quick Actions Bar inside Banner */}
+      <View style={styles.quickActionsBar}>
+        <TouchableOpacity
+          style={[styles.quickActionItem, filter === 'ALL' && styles.selectedFilter]}
+          onPress={() => setFilter("ALL")}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.quickActionIcon, { backgroundColor: "#B3E5FC" }]}>
+            <MaterialIcons name="layers" size={22} color={Colors.primary} />
+          </View>
+          <Text style={styles.quickActionText}>Groups</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionItem, filter === 'PRIZED' && styles.selectedFilter]}
+          onPress={() => setFilter("PRIZED")}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.quickActionIcon, { backgroundColor: "#FFF8DC" }]}>
+            <MaterialIcons name="emoji-events" size={22} color={Colors.goldDark} />
+          </View>
+          <Text style={styles.quickActionText}>Prized</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionItem, filter === 'ACTIVE' && styles.selectedFilter]}
+          onPress={() => setFilter("ACTIVE")}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.quickActionIcon, { backgroundColor: "#E8F5E9" }]}>
+            <MaterialIcons name="bolt" size={22} color={Colors.darkGreen} />
+          </View>
+          <Text style={styles.quickActionText}>Unprized</Text>
+        </TouchableOpacity>
+      </View>
+
+    </View>
+ 
+  </FadeSlide >
+);
+
+// ─── GroupCard — Home service-card style ──────────────────────────────────────
+const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, index, isPrized }) => {
+  const {
+    _id,
+    group_id,
+    ticket,
+    nextAuctionDate,
+    next_auction_date,
+  } = card;
+
+  const groupName = group_id?.group_name || "";
+  const groupValue = group_id?.group_value || "0";
+  const groupObjId = group_id?._id || group_id;
+  const ticketNum = ticket ?? card.tickets;
+  const safeType = group_id?.auction_type || "";
+  const formattedType = safeType ? safeType.charAt(0).toUpperCase() + safeType.slice(1) : "";
+  const isFree = safeType.toLowerCase() === "free";
+  const displayNextAuction = nextAuctionDate || next_auction_date || null;
+
+  // Pick icon bg color like Home service cards
+  const accentColor = isPrized ? "#7c36a8ff" : isFree ? "#EF6C00" : Colors.primary;
+  const lightBg = isPrized ? "#EDE7F6" : isFree ? "#FFF3E0" : "#E3F2FD";
+
+  return (
+    <FadeSlide delay={index * 90}>
+      <View style={[styles.groupCard, isPrized && styles.groupCardPrized, isHighlighted && styles.groupCardHighlighted]}>
+        {/* Top accent bar matching Home service cards */}
+        <LinearGradient
+          colors={isPrized ? ["#F5C518", "#D4A017"] : isFree ? ["#F48024", "#d05d00"] : [Colors.primary, Colors.primaryLight]}
+          start={[0, 0]} end={[1, 0]}
+          style={styles.cardTopStripe}
+        />
+
+        <View style={styles.cardBody}>
+          {/* Header row */}
+          <View style={styles.cardHeaderRow}>
+            <View style={[styles.cardIconCircle, { backgroundColor: lightBg }]}>
+              <MaterialIcons
+                name={isPrized ? "emoji-events" : isFree ? "local-offer" : "gavel"}
+                size={26}
+                color={accentColor}
+              />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.cardGroupName} numberOfLines={1}>{groupName || "—"}</Text>
+              {ticketNum !== undefined && ticketNum !== null && (
+                <View style={styles.ticketPill}>
+                  <MaterialCommunityIcons name="ticket-outline" size={12} color={Colors.primary} />
+                  <Text style={styles.ticketPillText}>Ticket #{ticketNum}</Text>
+                </View>
+              )}
+            </View>
+            {/* Status badge */}
+            {isPrized ? (
+              <View style={[styles.statusBadge, { backgroundColor: "#FFF8DC" }]}>
+                <MaterialCommunityIcons name="trophy" size={11} color="#9A6F00" />
+                <Text style={[styles.statusBadgeText, { color: "#9A6F00" }]}>PRIZED</Text>
+              </View>
+            ) : formattedType ? (
+              <View style={[styles.statusBadge, isFree ? { backgroundColor: "#FFF3E0" } : { backgroundColor: "#E3F2FD" }]}>
+                <Text style={[styles.statusBadgeText, { color: isFree ? "#EF6C00" : Colors.primary }]}>
+                  {formattedType.toUpperCase()}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Value row */}
+          <View style={styles.cardValueSection}>
+            <View style={styles.cardValueBox}>
+              <Text style={styles.cardValueLabel}>GROUP VALUE</Text>
+              <Text style={[styles.cardValueAmount, isPrized && { color: Colors.goldDark }]}>
+                ₹ {formatNumberIndianStyle(groupValue)}
+              </Text>
+            </View>
+            {displayNextAuction && !isPrized && (
+              <View style={styles.cardDateBox}>
+                <MaterialCommunityIcons name="calendar-clock" size={13} color={Colors.accentOrange} />
+                <View style={{ marginLeft: 5 }}>
+                  <Text style={styles.cardDateLabel}>Next Auction</Text>
+                  <Text style={styles.cardDateValue}>{formatDate(displayNextAuction)}</Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Action buttons — styled like Home pay buttons */}
+          <View style={styles.cardActionsRow}>
+            {isPrized ? (
+              <TouchableOpacity
+                style={[styles.cardBtn, styles.cardBtnPrized]}
+                onPress={onPrizedInfo}
+                activeOpacity={0.8}
+              >
+                <View style={styles.cardBtnIconCircle}>
+                  <MaterialCommunityIcons name="trophy" size={16} color="#9A6F00" />
+                </View>
+                <View>
+                  <Text style={[styles.cardBtnTitle, { color: "#7A5500" }]}>Prized Info</Text>
+                  <Text style={styles.cardBtnSub}>View details</Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.cardBtn, styles.cardBtnBid]}
+                onPress={onBidRequest}
+                activeOpacity={0.8}
+              >
+                <View style={styles.cardBtnIconCircle}>
+                  <MaterialCommunityIcons name="handshake" size={16} color={Colors.darkGreen} />
+                </View>
+                <View>
+                  <Text style={[styles.cardBtnTitle, { color: Colors.darkGreen }]}>Bid Request</Text>
+                  <Text style={styles.cardBtnSub}>Place a bid</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.cardBtn, styles.cardBtnDetails]}
+              onPress={() => onSelect(_id, groupObjId, ticketNum, groupName, groupValue)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.cardBtnIconCircle}>
+                <MaterialIcons name="timeline" size={16} color={Colors.primary} />
+              </View>
+              <View>
+                <Text style={[styles.cardBtnTitle, { color: Colors.primary }]}>Auction Details</Text>
+                <Text style={styles.cardBtnSub}>Full history</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </FadeSlide>
+  );
+};
+
+// ─── Summary Card ─────────────────────────────────────────────────────────────
+const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCount, commencementCount, selectedTicket, isPrized }) => (
+  <FadeSlide delay={0}>
+    <View style={styles.summaryCard}>
+      <LinearGradient
+        colors={isPrized ? ["#7c36a8ff", "#9C27B0", "#BA68C8"] : ["#0F4C3A", "#0E7C5B", "#14A87A"]}
+        start={[0, 0]} end={[1, 1]}
+        style={styles.summaryGradientHeader}
+      >
+        {/* decorative stripes */}
+        <View style={styles.summaryStripe1} />
+        <View style={styles.summaryStripe2} />
+
+        <View style={styles.summaryHeaderTop}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <MaterialCommunityIcons name="chart-timeline-variant" size={13} color="rgba(255,255,255,0.6)" style={{ marginRight: 4 }} />
+            <Text style={styles.summaryEyebrow}>AUCTION OVERVIEW</Text>
+          </View>
+          {isPrized && (
+            <View style={styles.summaryPrizedBadge}>
+              <MaterialCommunityIcons name="trophy" size={9} color="#7B0D1E" />
+              <Text style={styles.summaryPrizedText}>PRIZED</Text>
+            </View>
+          )}
+        </View>
+
+        <Text style={styles.summaryGroupName} numberOfLines={1}>{groupName}</Text>
+        {selectedTicket !== undefined && selectedTicket !== null && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+            <MaterialCommunityIcons name="ticket-outline" size={13} color="rgba(255,255,255,0.7)" />
+            <Text style={styles.summaryTicketText}>
+              Ticket <Text style={styles.summaryTicketNum}>{selectedTicket}</Text>
+            </Text>
+          </View>
+        )}
+        <Text style={styles.summaryGroupValue}>
+          {groupValue ? `₹ ${formatNumberIndianStyle(groupValue)}` : ""}
+        </Text>
+      </LinearGradient>
+
+      {/* Stats grid — like Home bottomContainer */}
+      <View style={styles.summaryStatsGrid}>
+        {[
+          { label: "Auction Records", value: totalRecords, color: Colors.textDark },
+          { label: "Normal Auction", value: normalCount, color: Colors.primary },
+          { label: "Free Auction", value: freeCount, color: Colors.accentOrange },
+          { label: "First Payment", value: commencementCount, color: Colors.accentBlue },
+        ].map((item, i) => (
+          <View key={i} style={styles.summaryStatBox}>
+            <Text style={[styles.summaryStatValue, { color: item.color }]}>{item.value}</Text>
+            <Text style={styles.summaryStatLabel}>{item.label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  </FadeSlide>
+);
 
 // ─── CommencementRecordCard ────────────────────────────────────────────────────
 const CommencementRecordCard = ({ groupName, firstAuctionDate, onPress }) => {
@@ -98,168 +361,125 @@ const CommencementRecordCard = ({ groupName, firstAuctionDate, onPress }) => {
   if (!firstAuctionDate && !groupName) return null;
 
   return (
-    <TouchableOpacity
-      style={[styles.recordCard, styles.commencementCard, isClose && styles.commencementCardClose, isPassed && styles.commencementCardPassed]}
-      onPress={onPress} activeOpacity={0.8}
-    >
-      <View style={[styles.chipRow, { backgroundColor: Colors.accentOrange }]}>
-        <MaterialCommunityIcons name="rocket-launch" size={12} color={Colors.card} />
-        <Text style={styles.chipText}>RECORD 1 · COMMENCEMENT</Text>
-      </View>
-      <View style={styles.datePanelRow}>
-        <View style={styles.datePanel}>
-          <MaterialCommunityIcons name="calendar-start" size={17} color={Colors.accentBlue} />
-          <Text style={styles.datePanelLabel}>commencement date</Text>
-          <Text style={[styles.datePanelValue, { color: Colors.primary }]}>
-            {firstAuctionDate ? formatDate(commencementStr) : "Not Set"}
-          </Text>
-        </View>
-        <View style={styles.datePanelDivider} />
-        <View style={styles.datePanel}>
-          <MaterialCommunityIcons name="calendar-end" size={17} color={Colors.accentBlue} />
-          <Text style={styles.datePanelLabel}>next auction date</Text>
-          <Text style={styles.datePanelValue}>{firstAuctionDate ? formatDate(firstAuctionDate) : "N/A"}</Text>
-        </View>
-      </View>
-      <View style={styles.infoBlock}>
-        <View style={styles.infoRowBlock}>
-          <Text style={styles.infoRowLabel}>Auction Type</Text>
-          <Text style={[styles.infoRowValue, { color: Colors.accentOrange, fontWeight: "800" }]}>COMMENCEMENT</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// ─── GroupCard ────────────────────────────────────────────────────────────────
-const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, index }) => {
-  const { group_id, tickets, _id } = card;
-  const { group_name, group_value, auction_type } = group_id || {};
-  const safeType = auction_type || "";
-  const formattedType = safeType ? safeType.charAt(0).toUpperCase() + safeType.slice(1) : "";
-  const isFree = safeType.toLowerCase() === "free";
-
-  return (
-    <FadeSlide delay={index * 80}>
-      <View style={[styles.groupCard, isHighlighted && styles.groupCardHighlighted]}>
-        {/* Header */}
-        <LinearGradient colors={[Colors.deepBlue, Colors.primary]} start={[0, 0]} end={[1, 1]} style={styles.groupCardHeader}>
-          <View style={styles.groupCardHeaderRow}>
-            <Text style={styles.groupCardName} numberOfLines={1}>{group_name || "—"}</Text>
-            {formattedType ? (
-              <View style={[styles.typeTag, isFree && styles.typeTagFree]}>
-                <Text style={[styles.typeTagText, isFree && { color: Colors.accentOrange }]}>{formattedType}</Text>
-              </View>
-            ) : null}
-          </View>
+    <FadeSlide delay={100}>
+      <TouchableOpacity
+        style={[styles.recordCard, { borderWidth: 1.5, borderColor: isClose ? Colors.error : Colors.accentOrange }]}
+        onPress={onPress} activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={isClose ? ["#FF6B35", "#F48024"] : ["#F48024", "#E8690A"]}
+          start={[0, 0]} end={[1, 0]}
+          style={styles.recordChipBar}
+        >
+          <MaterialCommunityIcons name="rocket-launch" size={12} color="#fff" />
+          <Text style={styles.recordChipText}>RECORD 1 · COMMENCEMENT</Text>
         </LinearGradient>
 
-        {/* Value row */}
-        <View style={styles.groupCardValueRow}>
-          <Text style={styles.groupCardValueLabel}>group value</Text>
-          <Text style={styles.groupCardValue}>₹ {formatNumberIndianStyle(group_value)}</Text>
+        <View style={styles.recordDatesRow}>
+          <View style={styles.recordDateBox}>
+            <View style={[styles.recordDateIconCircle, { backgroundColor: "#E3F2FD" }]}>
+              <MaterialCommunityIcons name="calendar-start" size={16} color={Colors.accentBlue} />
+            </View>
+            <Text style={styles.recordDateLabel}>Commencement Date</Text>
+            <Text style={[styles.recordDateValue, { color: Colors.primary }]}>
+              {firstAuctionDate ? formatDate(commencementStr) : "Not Set"}
+            </Text>
+          </View>
+          <View style={styles.recordDateDivider} />
+          <View style={styles.recordDateBox}>
+            <View style={[styles.recordDateIconCircle, { backgroundColor: "#FFF3E0" }]}>
+              <MaterialCommunityIcons name="calendar-end" size={16} color={Colors.accentOrange} />
+            </View>
+            <Text style={styles.recordDateLabel}>Next Auction Date</Text>
+            <Text style={styles.recordDateValue}>{firstAuctionDate ? formatDate(firstAuctionDate) : "N/A"}</Text>
+          </View>
         </View>
 
-        <View style={styles.cardDivider} />
-
-        {/* Actions */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => onSelect(_id, group_id?._id, tickets, group_name, group_value)} activeOpacity={0.8}>
-            <View style={styles.actionIconWrap}><MaterialIcons name="list-alt" size={24} color={Colors.primary} /></View>
-            <Text style={styles.actionBtnLabel}>View Auctions</Text>
-          </TouchableOpacity>
-          <View style={styles.actionSep} />
-          <TouchableOpacity style={styles.actionBtn} onPress={onBidRequest} activeOpacity={0.8}>
-            <View style={styles.actionIconWrap}><MaterialCommunityIcons name="handshake" size={24} color={Colors.primary} /></View>
-            <Text style={styles.actionBtnLabel}>Bid Request</Text>
-          </TouchableOpacity>
-          <View style={styles.actionSep} />
-          <TouchableOpacity style={styles.actionBtn} onPress={() => onSelect(_id, group_id?._id, tickets, group_name, group_value)} activeOpacity={0.8}>
-            <View style={styles.actionIconWrap}><MaterialIcons name="timeline" size={24} color={Colors.primary} /></View>
-            <Text style={styles.actionBtnLabel}>Auction Details</Text>
-          </TouchableOpacity>
+        <View style={styles.recordInfoRow}>
+          <Text style={styles.recordInfoLabel}>Auction Type</Text>
+          <View style={[styles.recordTypePill, { backgroundColor: "#FFF3E0" }]}>
+            <Text style={[styles.recordTypePillText, { color: Colors.accentOrange }]}>COMMENCEMENT</Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </FadeSlide>
   );
 };
 
-// ─── Summary Card ─────────────────────────────────────────────────────────────
-const StatRow = ({ label, value, valueColor, isFirst }) => (
-  <>
-    {!isFirst && <View style={styles.statDivider} />}
-    <View style={styles.statRow}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, { color: valueColor }]}>{value}</Text>
-    </View>
-  </>
-);
-
-const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCount, commencementCount }) => (
-  <FadeSlide delay={0}>
-    <View style={styles.summaryCard}>
-      <LinearGradient colors={[Colors.deepBlue, Colors.primary]} start={[0, 0]} end={[1, 1]} style={styles.summaryCardHeader}>
-        <View style={styles.summaryHeaderDecor1} />
-        <View style={styles.summaryHeaderDecor2} />
-        <View style={styles.summaryHeaderInner}>
-          <MaterialCommunityIcons name="trophy-outline" size={20} color={Colors.gold} style={{ marginRight: 8 }} />
-          <Text style={styles.summaryGroupName} numberOfLines={1}>{groupName}</Text>
-        </View>
-        <Text style={styles.summaryGroupValue}>{groupValue ? `₹ ${formatNumberIndianStyle(groupValue)}` : ""}</Text>
-      </LinearGradient>
-      <View style={styles.summaryStatsBlock}>
-        <StatRow label="Total Records"   value={totalRecords}      valueColor={Colors.textDark}    isFirst />
-        <StatRow label="Auction Normal"  value={normalCount}       valueColor={Colors.primary} />
-        <StatRow label="Auction Free"    value={freeCount}         valueColor={Colors.accentOrange} />
-        <StatRow label="Commencement"    value={commencementCount} valueColor={Colors.accentBlue} />
-      </View>
-    </View>
-  </FadeSlide>
-);
-
-// ─── Auction Record Card ───────────────────────────────────────────────────────
+// ─── AuctionRecordCard ────────────────────────────────────────────────────────
 const AuctionRecordCard = ({ record, recordNumber, index }) => {
   const isFree = record.auction_type?.toLowerCase() === "free";
-  const typeLabel = record.auction_type ? record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1) : "Normal";
+  const typeLabel = record.auction_type
+    ? record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1)
+    : "Normal";
+  const accentColor = isFree ? Colors.accentOrange : Colors.primary;
+  const lightBg = isFree ? "#FFF3E0" : "#E3F2FD";
+
   return (
     <FadeSlide delay={index * 70}>
       <View style={styles.recordCard}>
-        <View style={styles.chipRow}>
-          <MaterialCommunityIcons name="gavel" size={12} color={Colors.card} />
-          <Text style={styles.chipText}>RECORD {recordNumber}</Text>
+        <LinearGradient
+          colors={isFree ? ["#F48024", "#E8690A"] : [Colors.primary, Colors.primaryLight]}
+          start={[0, 0]} end={[1, 0]}
+          style={styles.recordChipBar}
+        >
+          <MaterialCommunityIcons name="gavel" size={12} color="#fff" />
+          <Text style={styles.recordChipText}>RECORD {recordNumber}</Text>
+        </LinearGradient>
+
+        {/* Date panels */}
+        <View style={styles.recordDatesRow}>
+          <View style={styles.recordDateBox}>
+            <View style={[styles.recordDateIconCircle, { backgroundColor: "#E3F2FD" }]}>
+              <MaterialCommunityIcons name="calendar-start" size={16} color={Colors.accentBlue} />
+            </View>
+            <Text style={styles.recordDateLabel}>Auction Date</Text>
+            <Text style={styles.recordDateValue}>{formatDate(record.auction_date)}</Text>
+          </View>
+          <View style={styles.recordDateDivider} />
+          <View style={styles.recordDateBox}>
+            <View style={[styles.recordDateIconCircle, { backgroundColor: "#E8F5E9" }]}>
+              <MaterialCommunityIcons name="calendar-end" size={16} color={Colors.successGreen} />
+            </View>
+            <Text style={styles.recordDateLabel}>Next Date</Text>
+            <Text style={styles.recordDateValue}>{formatDate(record.next_date)}</Text>
+          </View>
         </View>
-        <View style={styles.datePanelRow}>
-          <View style={styles.datePanel}>
-            <MaterialCommunityIcons name="calendar-start" size={17} color={Colors.accentBlue} />
-            <Text style={styles.datePanelLabel}>auction date</Text>
-            <Text style={styles.datePanelValue}>{formatDate(record.auction_date)}</Text>
+
+        {/* Info rows */}
+        <View style={styles.recordInfoSection}>
+          <View style={styles.recordInfoRow}>
+            <Text style={styles.recordInfoLabel}>Auction Type</Text>
+            <View style={[styles.recordTypePill, { backgroundColor: lightBg }]}>
+              <Text style={[styles.recordTypePillText, { color: accentColor }]}>{typeLabel}</Text>
+            </View>
           </View>
-          <View style={styles.datePanelDivider} />
-          <View style={styles.datePanel}>
-            <MaterialCommunityIcons name="calendar-end" size={17} color={Colors.accentBlue} />
-            <Text style={styles.datePanelLabel}>next date</Text>
-            <Text style={styles.datePanelValue}>{formatDate(record.next_date)}</Text>
-          </View>
-        </View>
-        <View style={styles.infoBlock}>
-          <View style={styles.infoRowBlock}>
-            <Text style={styles.infoRowLabel}>Auction Type</Text>
-            <Text style={[styles.infoRowValue, { color: isFree ? Colors.accentOrange : Colors.textDark }]}>{typeLabel}</Text>
-          </View>
-          <View style={styles.infoBlockDivider} />
-          <View style={styles.infoRowBlock}>
-            <Text style={styles.infoRowLabel}>Bid Percentage</Text>
-            <Text style={styles.infoRowValue}>{record.bid_percentage || "0"}%</Text>
+          <View style={styles.recordInfoDivider} />
+          <View style={styles.recordInfoRow}>
+            <Text style={styles.recordInfoLabel}>Bid Percentage</Text>
+            <Text style={styles.recordInfoValue}>{record.bid_percentage || "0"}%</Text>
           </View>
         </View>
-        <View style={styles.metricsRow}>
-          <View style={styles.metricBox}>
-            <Text style={styles.metricLabel}>winning ticket</Text>
-            <Text style={styles.metricValueDark}>{record.ticket || "N/A"}</Text>
+
+        {/* Metrics row — styled like Home pay button row */}
+        <View style={styles.recordMetricsRow}>
+          <View style={[styles.recordMetricBox, { backgroundColor: Colors.dataPanelBg }]}>
+            <View style={styles.recordMetricIconCircle}>
+              <MaterialCommunityIcons name="ticket-confirmation" size={16} color={Colors.textMedium} />
+            </View>
+            <Text style={styles.recordMetricLabel}>Winning Ticket</Text>
+            <Text style={styles.recordMetricValue}>{record.ticket || "N/A"}</Text>
           </View>
-          <LinearGradient colors={[Colors.primary, Colors.primaryLight]} start={[0, 0]} end={[1, 0]} style={styles.metricBoxHighlight}>
-            <Text style={styles.metricLabelLight}>bid amount</Text>
-            <Text style={styles.metricValueGold}>₹ {formatNumberIndianStyle(record.bid_amount)}</Text>
+          <LinearGradient
+            colors={[Colors.primary, Colors.primaryLight]}
+            start={[0, 0]} end={[1, 0]}
+            style={styles.recordMetricBoxHighlight}
+          >
+            <View style={[styles.recordMetricIconCircle, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
+              <MaterialIcons name="currency-rupee" size={16} color="#fff" />
+            </View>
+            <Text style={styles.recordMetricLabelLight}>Bid Amount</Text>
+            <Text style={styles.recordMetricValueGold}>₹ {formatNumberIndianStyle(record.bid_amount)}</Text>
           </LinearGradient>
         </View>
       </View>
@@ -268,19 +488,24 @@ const AuctionRecordCard = ({ record, recordNumber, index }) => {
 };
 
 // ─── AuctionRecordsView ────────────────────────────────────────────────────────
-const AuctionRecordsView = ({ records, onBack, isLoading, error, commencementData, onCommencementPress, selectedGroupName, selectedGroupValue }) => {
+const AuctionRecordsView = ({
+  records, onBack, isLoading, error, commencementData,
+  onCommencementPress, selectedGroupName, selectedGroupValue, selectedTicket, isPrized,
+}) => {
   if (isLoading) return <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />;
 
   const hasCommencement = !!(commencementData && (commencementData.group_name || commencementData.commencement_date));
-  const totalRecords  = records.length + (hasCommencement ? 1 : 0);
-  const normalCount   = records.filter(r => (r.auction_type || "").toLowerCase() === "normal").length;
-  const freeCount     = records.filter(r => (r.auction_type || "").toLowerCase() === "free").length;
+  const totalRecords = records.length + (hasCommencement ? 1 : 0);
+  const normalCount = records.filter(r => (r.auction_type || "").toLowerCase() === "normal").length;
+  const freeCount = records.filter(r => (r.auction_type || "").toLowerCase() === "free").length;
   const commencementCount = hasCommencement ? 1 : 0;
 
   return (
     <View style={styles.recordsContainer}>
       <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-        <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+        <View style={[styles.cardBtnIconCircle, { backgroundColor: Colors.backgroundLight }]}>
+          <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
+        </View>
         <Text style={styles.backBtnText}>Back to Groups</Text>
       </TouchableOpacity>
 
@@ -298,22 +523,41 @@ const AuctionRecordsView = ({ records, onBack, isLoading, error, commencementDat
             normalCount={normalCount}
             freeCount={freeCount}
             commencementCount={commencementCount}
+            selectedTicket={selectedTicket}
+            isPrized={isPrized}
           />
 
-          <Text style={styles.sectionDividerLabel}>Auction Records</Text>
+          <View style={styles.sectionLabelRow}>
+            <View style={styles.sectionLabelLine} />
+            <Text style={styles.sectionLabelText}>Auction Records</Text>
+            <View style={styles.sectionLabelLine} />
+          </View>
 
           {records.map((record, index) => (
-            <AuctionRecordCard key={record._id || `rec-${index}`} record={record} recordNumber={totalRecords - index} index={index} />
+            <AuctionRecordCard
+              key={record._id || `rec-${index}`}
+              record={record}
+              recordNumber={totalRecords - index}
+              index={index}
+            />
           ))}
 
           {hasCommencement && (
-            <CommencementRecordCard groupName={commencementData.group_name} firstAuctionDate={commencementData.commencement_date} onPress={onCommencementPress} />
+            <CommencementRecordCard
+              groupName={commencementData.group_name}
+              firstAuctionDate={commencementData.commencement_date}
+              onPress={onCommencementPress}
+            />
           )}
 
           {records.length === 0 && hasCommencement && (
             <View style={styles.noDataPlaceholder}>
-              <MaterialCommunityIcons name="information-outline" size={24} color={Colors.primaryLight} />
-              <Text style={styles.noDataPlaceholderText}>This group's auctions have not started yet. See the commencement card above for details.</Text>
+              <View style={[styles.cardIconCircle, { backgroundColor: "#E3F2FD", alignSelf: "center", marginBottom: 10 }]}>
+                <MaterialCommunityIcons name="information-outline" size={24} color={Colors.primaryLight} />
+              </View>
+              <Text style={styles.noDataPlaceholderText}>
+                This group's auctions have not started yet. See the commencement card above for details.
+              </Text>
             </View>
           )}
         </ScrollView>
@@ -329,23 +573,53 @@ const AuctionList = ({ navigation }) => {
   const userId = appUser?.userId;
 
   const [isLoading, setIsLoading] = useState(true);
-  const [userTickets, setUserTickets] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [userName, setUserName] = useState(""); 
+
+  const [filter, setFilter] = useState("ALL");
+
   const [isShowingRecords, setIsShowingRecords] = useState(false);
   const [auctionData, setAuctionData] = useState({
     records: [], loading: false, error: null,
     selectedGroupId: null, highlightedCardId: null,
-    selectedGroupName: "", selectedGroupValue: null,
+    selectedGroupName: "", selectedGroupValue: null, selectedTicket: null,
   });
   const [commencementAuctionData, setCommencementAuctionData] = useState(null);
 
-  const fetchUserTickets = useCallback(async () => {
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (userId) {
+          if (appUser?.full_name || appUser?.name) {
+            setUserName(appUser.full_name || appUser.name);
+          } else {
+            const response = await axios.get(`${url}/user/get-user-by-id/${userId}`);
+            setUserName(response.data.full_name || response.data.name || "");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [userId, appUser]);
+
+  const fetchEnrollments = useCallback(async () => {
     if (!userId) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-      const res = await axios.post(`${url}/enroll/get-user-tickets/${userId}`);
-      if (res.status === 200) setUserTickets(res.data || []);
-    } catch (e) { console.error(e); }
-    finally { setIsLoading(false); }
+      const res = await axios.get(`${url}/auction/enrolls-info/users/${userId}`);
+      if (res.status === 200) {
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setEnrollments(raw);
+      }
+    } catch (e) {
+      console.error("fetchEnrollments error:", e.message);
+      setEnrollments([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [userId]);
 
   const fetchAuctionDetails = useCallback(async (groupId, groupName) => {
@@ -363,7 +637,10 @@ const AuctionList = ({ navigation }) => {
         setAuctionData(prev => ({ ...prev, records: records.slice().reverse() }));
       }
     } catch (e) {
-      setAuctionData(prev => ({ ...prev, error: "No auction records found. Auction may not have started yet." }));
+      setAuctionData(prev => ({
+        ...prev,
+        error: "No auction records found. Auction may not have started yet.",
+      }));
       setCommencementAuctionData({ group_name: groupName || "Selected Group", commencement_date: null });
     } finally {
       setAuctionData(prev => ({ ...prev, loading: false }));
@@ -371,15 +648,26 @@ const AuctionList = ({ navigation }) => {
   }, []);
 
   useFocusEffect(useCallback(() => {
-    fetchUserTickets();
+    fetchEnrollments();
     setIsShowingRecords(false);
-    setAuctionData({ records: [], loading: false, error: null, selectedGroupId: null, highlightedCardId: null, selectedGroupName: "", selectedGroupValue: null });
-  }, [fetchUserTickets]));
+    setAuctionData({
+      records: [], loading: false, error: null,
+      selectedGroupId: null, highlightedCardId: null,
+      selectedGroupName: "", selectedGroupValue: null, selectedTicket: null,
+    });
+  }, [fetchEnrollments]));
 
-  const handleViewDetails = (enrollmentId, groupId, tickets, groupName, groupValue) => {
+  const handleViewDetails = (enrollmentId, groupId, ticket, groupName, groupValue) => {
     Vibration.vibrate(50);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setAuctionData(prev => ({ ...prev, selectedGroupId: groupId, highlightedCardId: enrollmentId, selectedGroupName: groupName, selectedGroupValue: groupValue }));
+    setAuctionData(prev => ({
+      ...prev,
+      selectedGroupId: groupId,
+      highlightedCardId: enrollmentId,
+      selectedGroupName: groupName,
+      selectedGroupValue: groupValue,
+      selectedTicket: ticket,
+    }));
     setIsShowingRecords(true);
     fetchAuctionDetails(groupId, groupName);
   };
@@ -388,26 +676,76 @@ const AuctionList = ({ navigation }) => {
     Vibration.vibrate(50);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsShowingRecords(false);
-    setAuctionData(prev => ({ ...prev, records: [], selectedGroupName: "", selectedGroupValue: null }));
+    setAuctionData(prev => ({
+      ...prev, records: [], selectedGroupName: "", selectedGroupValue: null, selectedTicket: null,
+    }));
   };
 
   const handleBidRequest = useCallback((card) => {
+    const nextAuctionDate = card.next_auction_date || card.nextAuctionDate || null;
+    if (!nextAuctionDate) {
+      Alert.alert("Auction Not Scheduled", "Next auction date is not available.");
+      return;
+    }
+    const now = new Date();
+    const auctionDate = new Date(nextAuctionDate);
+    const diffHours = (auctionDate - now) / (1000 * 60 * 60);
+    if (diffHours > 48) {
+      Alert.alert(
+        "Bid Request Not Open",
+        `Right now you can't raise a request.\n\nBid request opens 48 hours before auction.\n\nNext Auction Date: ${formatDate(nextAuctionDate)}`
+      );
+      return;
+    }
     navigation.navigate("BidRequest", {
       userId,
       selectedGroupId: card.group_id?._id,
       selectedEnrollmentId: card._id,
-      preselectedGroup: { group_id: card.group_id, tickets: card.tickets, _id: card._id, group_name: card.group_id?.group_name },
+      preselectedGroup: {
+        group_id: card.group_id,
+        tickets: card.ticket,
+        _id: card._id,
+        group_name: card.group_id?.group_name,
+      },
+    });
+  }, [navigation, userId]);
+
+  const handlePrizedInfo = useCallback((card) => {
+    Vibration.vibrate(50);
+    navigation.navigate("PrizedScreen", {
+      userId,
+      groupId: card.group_id?._id,
+      ticket: card.ticket,
     });
   }, [navigation, userId]);
 
   const handleCommencementPress = () => {
     Vibration.vibrate(50);
     if (!commencementAuctionData?.commencement_date) {
-      Alert.alert("Auction Not Started", `The first auction date for ${commencementAuctionData?.group_name} has not been set yet.`);
+      Alert.alert(
+        "Auction Not Started",
+        `The first auction date for ${commencementAuctionData?.group_name} has not been set yet.`
+      );
     }
   };
 
-  const filteredCards = userTickets.filter(c => c.group_id !== null);
+  const isCardPrized = (card) => {
+    const val = card.isPrized;
+    if (typeof val === "boolean") return val;
+    if (typeof val === "string") return val.toLowerCase() === "true";
+    return false;
+  };
+
+  const validCards = enrollments.filter(c => c.group_id && c.group_id._id);
+
+  const filteredCards = validCards.filter(card => {
+    const isPrized = isCardPrized(card);
+    if (filter === "PRIZED") return isPrized;
+    if (filter === "ACTIVE") return !isPrized;
+    return true;
+  });
+
+  const prizedCount = validCards.filter(c => isCardPrized(c)).length;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -418,43 +756,60 @@ const AuctionList = ({ navigation }) => {
         <View style={styles.innerBox}>
           {!isShowingRecords ? (
             <>
-              {/* Page header */}
-              <View style={styles.pageHeaderRow}>
-                <View>
-                  <Text style={styles.pageEyebrow}>auction activities</Text>
-                  <Text style={styles.pageTitle}>Auctions</Text>
-                </View>
-                <MaterialCommunityIcons name="gavel" size={34} color={Colors.primary} style={{ opacity: 0.85 }} />
+              <View style={styles.sectionTitleWrapper}>
+                <Text style={styles.sectionTitleText}>Auctions</Text>
               </View>
-              <Text style={styles.pageSubtitle}>Explore all your auction activities, past and present, right here.</Text>
-
-              {/* Prized Groups banner */}
-              <TouchableOpacity style={styles.prizedBanner} onPress={() => navigation.navigate("PrizedScreen")} activeOpacity={0.88}>
-                <LinearGradient colors={[Colors.deepBlue, Colors.primary]} start={[0, 0]} end={[1, 1]} style={styles.prizedBannerGradient}>
-                  <View style={styles.prizedBannerDecor} />
-                  <MaterialCommunityIcons name="trophy" size={20} color={Colors.gold} />
-                  <Text style={styles.prizedBannerText}>VIEW YOUR PRIZED GROUPS</Text>
-                  <MaterialIcons name="chevron-right" size={20} color={Colors.card} />
-                </LinearGradient>
-              </TouchableOpacity>
 
               {isLoading ? (
                 <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
-              ) : filteredCards.length === 0 ? (
+              ) : validCards.length === 0 ? (
                 <View style={styles.noDataContainer}>
                   <Image source={NoGroupImage} style={styles.noDataImage} resizeMode="contain" />
                   <Text style={styles.noDataText}>No groups found for this user.</Text>
                 </View>
               ) : (
                 <ScrollView contentContainerStyle={styles.groupListContent} showsVerticalScrollIndicator={false}>
-                  {filteredCards.map((card, index) => (
-                    <GroupCard
-                      key={card._id} card={card} index={index}
-                      onSelect={handleViewDetails}
-                      isHighlighted={auctionData.highlightedCardId === card._id}
-                      onBidRequest={() => handleBidRequest(card)}
-                    />
-                  ))}
+                  {/* FIXED: Passing filter and setFilter as props here */}
+                  <AuctionBanner
+                    userName={userName}
+                    totalGroups={validCards.length}
+                    prizedCount={prizedCount}
+                    filter={filter}
+                    setFilter={setFilter}
+                  />
+
+                  {/* REMOVED DUPLICATE quickActionsBar block from here to prevent UI duplication */}
+
+                  <View style={styles.groupsLabelRow}>
+                    <MaterialCommunityIcons name="layers-outline" size={14} color={Colors.textLight} />
+                    <Text style={styles.groupsLabelText}>YOUR ENROLLED GROUPS</Text>
+                  </View>
+
+                  {filteredCards.length > 0 ? (
+                    filteredCards.map((card, index) => (
+                      <GroupCard
+                        key={card._id}
+                        card={card}
+                        index={index}
+                        onSelect={handleViewDetails}
+                        isHighlighted={auctionData.highlightedCardId === card._id}
+                        isPrized={isCardPrized(card)}
+                        onBidRequest={() => handleBidRequest(card)}
+                        onPrizedInfo={() => handlePrizedInfo(card)}
+                      />
+                    ))
+                  ) : (
+                    <View style={styles.noDataContainer}>
+                      <Text style={styles.noDataText}>No records found for this filter.</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.footerNote}>
+                    <MaterialIcons name="verified-user" size={14} color={Colors.primary} />
+                    <Text style={styles.footerNoteText}>
+                      All auctions are fully compliant with the Chit Fund Act 1982
+                    </Text>
+                  </View>
                 </ScrollView>
               )}
             </>
@@ -468,6 +823,10 @@ const AuctionList = ({ navigation }) => {
               onCommencementPress={handleCommencementPress}
               selectedGroupName={auctionData.selectedGroupName}
               selectedGroupValue={auctionData.selectedGroupValue}
+              selectedTicket={auctionData.selectedTicket}
+              isPrized={!!isCardPrized(
+                validCards.find(c => c.group_id?._id === auctionData.selectedGroupId) || {}
+              )}
             />
           )}
         </View>
@@ -481,202 +840,264 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.primary },
   outerBox: {
     flex: 1, backgroundColor: Colors.backgroundLight,
-    marginHorizontal: 12, marginBottom: 50, borderRadius: 30, overflow: "hidden",
+    marginHorizontal: 10, marginBottom: 50, borderRadius: 30, overflow: "hidden",
     ...Platform.select({
       ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.25, shadowRadius: 20 },
       android: { elevation: 20 },
     }),
   },
-  innerBox: { flex: 1, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10 },
+  innerBox: { flex: 1, paddingHorizontal: 14, paddingTop: 0, paddingBottom: 10 },
 
-  // Page header
-  pageHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
-  pageEyebrow: { fontSize: 9, fontWeight: "700", color: Colors.textLight, letterSpacing: 1.6, textTransform: "uppercase", marginBottom: 2 },
-  pageTitle: { fontSize: 26, fontWeight: "900", color: Colors.primary, letterSpacing: -0.4 },
-  pageSubtitle: { fontSize: 13, color: Colors.textMedium, marginBottom: 16, lineHeight: 20 },
-
-  // Prized banner
-  prizedBanner: {
-    marginBottom: 16, borderRadius: 14, overflow: "hidden",
-    ...Platform.select({
-      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.22, shadowRadius: 10 },
-      android: { elevation: 7 },
-    }),
-  },
-  prizedBannerGradient: { flexDirection: "row", alignItems: "center", paddingVertical: 13, paddingHorizontal: 16, borderRadius: 14, overflow: "hidden" },
-  prizedBannerDecor: { position: "absolute", width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.04)", top: -25, right: 30 },
-  prizedBannerText: { flex: 1, fontSize: 13, fontWeight: "800", color: Colors.card, marginLeft: 12, letterSpacing: 0.5 },
-
-  // ─── GROUP CARD (LARGER) ───────────────────────────────────────────────────
-  groupCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 20,
-    marginBottom: 20,
-    overflow: "hidden",
-    ...Platform.select({
-      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.13, shadowRadius: 14 },
-      android: { elevation: 9 },
-    }),
-  },
-  groupCardHighlighted: { borderWidth: 2, borderColor: Colors.gold },
-
-  groupCardHeader: {
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-    overflow: "hidden",
-  },
-  groupCardHeaderRow: { flexDirection: "row", alignItems: "center" },
-
-  groupCardName: {
-    flex: 1,
-    fontSize: 19,
-    fontWeight: "800",
-    color: Colors.card,
-    letterSpacing: 0.2,
-  },
-
-  typeTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 10,
-    backgroundColor: Colors.card,
-    marginLeft: 10,
-  },
-  typeTagFree: { backgroundColor: "#FFF4E6" },
-  typeTagText: { fontSize: 12, fontWeight: "700", color: Colors.textDark },
-
-  groupCardValueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-  },
-  groupCardValueLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: Colors.textLight,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-  },
-  groupCardValue: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: Colors.primary,
-    letterSpacing: -0.4,
-  },
-
-  cardDivider: { height: 1, backgroundColor: Colors.lightDivider },
-
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.dataPanelBg,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  actionBtn: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 18,
-  },
-  actionIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 13,
-    backgroundColor: Colors.card,
+  sectionTitleWrapper: {
+    position: "relative",
+    alignSelf: "center",
+    marginTop: 20,
+    marginBottom: 16,
+    backgroundColor: "#d9dbb6ff",
+    width: 220,
+    height: 40,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 7,
-    ...Platform.select({
-      ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-      android: { elevation: 3 },
-    }),
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    zIndex: 1,
   },
-  actionBtnLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textDark,
-    textAlign: "center",
+  sectionTitleText: {
+    color: Colors.primary,
+    fontWeight: "900",
+    fontSize: 20,
+    textTransform: "capitalize",
   },
-  actionSep: { width: 1, height: 42, backgroundColor: Colors.border },
 
-  // Summary card
-  summaryCard: {
-    backgroundColor: Colors.card, borderRadius: 16, marginBottom: 14, overflow: "hidden",
+  bannerCard: {
+    backgroundColor: Colors.skyBlue,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 14,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  bannerRow: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
+  bannerGreeting: { fontSize: 13, fontWeight: "500", color: Colors.primary, opacity: 0.75, marginBottom: 2 },
+  bannerName: { fontSize: 15, fontWeight: "bold", color: Colors.primary },
+  bannerSub: { fontSize: 12, color: Colors.primaryLight, marginTop: 3 },
+  bannerIconCircle: {
+    width: 58, height: 58, borderRadius: 29,
+    backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
+    elevation: 2,
+  },
+  bannerStatsRow: {
+    flexDirection: "row", backgroundColor: "#fff",
+    borderRadius: 12, paddingVertical: 10,
+    elevation: 2, shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3,
+  },
+  bannerStatBox: { flex: 1, alignItems: "center" },
+  bannerStatValue: { fontSize: 20, fontWeight: "900", color: Colors.primary },
+  bannerStatLabel: { fontSize: 11, color: Colors.textMedium, marginTop: 2 },
+  bannerStatDivider: { width: 1, backgroundColor: Colors.border },
+
+  quickActionsBar: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 16,
+  },
+  quickActionItem: { alignItems: "center", width: "30%" },
+  selectedFilter: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  quickActionIcon: {
+    width: 46, height: 46, borderRadius: 23,
+    alignItems: "center", justifyContent: "center", marginBottom: 4,
+  },
+  quickActionText: { fontSize: 9, color: "#fff", textAlign: "center", fontWeight: "700" },
+
+  groupsLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10, paddingHorizontal: 2 },
+  groupsLabelText: {
+    fontSize: 9, fontWeight: "700", color: Colors.textLight,
+    letterSpacing: 1.6, textTransform: "uppercase",
+  },
+
+  groupCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 18, marginBottom: 14, overflow: "hidden",
+    borderWidth: 1, borderColor: Colors.border,
     ...Platform.select({
-      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.12, shadowRadius: 12 },
+      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14 },
       android: { elevation: 8 },
     }),
   },
-  summaryCardHeader: { paddingVertical: 14, paddingHorizontal: 16, overflow: "hidden" },
-  summaryHeaderDecor1: { position: "absolute", width: 90, height: 90, borderRadius: 45, backgroundColor: "rgba(255,255,255,0.04)", top: -25, right: 10 },
-  summaryHeaderDecor2: { position: "absolute", width: 55, height: 55, borderRadius: 28, backgroundColor: "rgba(245,197,24,0.07)", bottom: -8, left: 70 },
-  summaryHeaderInner: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
-  summaryGroupName: { flex: 1, fontSize: 14, fontWeight: "800", color: Colors.card, textTransform: "uppercase", letterSpacing: 0.4 },
-  summaryGroupValue: { fontSize: 22, fontWeight: "900", color: Colors.gold, letterSpacing: -0.4 },
-  summaryStatsBlock: { backgroundColor: Colors.dataPanelBg },
-  statRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 18, paddingVertical: 11 },
-  statDivider: { height: 1, backgroundColor: Colors.border, marginHorizontal: 18 },
-  statLabel: { fontSize: 13, fontWeight: "600", color: Colors.textDark },
-  statValue: { fontSize: 17, fontWeight: "900" },
+  groupCardPrized: { borderColor: Colors.gold, borderWidth: 1.5 },
+  groupCardHighlighted: { borderColor: Colors.primaryLight, borderWidth: 2 },
+  cardTopStripe: { height: 5, width: "100%" },
+  cardBody: { padding: 14 },
 
-  sectionDividerLabel: { fontSize: 9, fontWeight: "700", color: Colors.textLight, textTransform: "uppercase", letterSpacing: 1.6, textAlign: "center", marginBottom: 12 },
+  cardHeaderRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  cardIconCircle: {
+    width: 48, height: 48, borderRadius: 24,
+    alignItems: "center", justifyContent: "center",
+  },
+  cardGroupName: { fontSize: 14, fontWeight: "800", color: Colors.textDark, letterSpacing: 0.1 },
+  ticketPill: {
+    flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4,
+    backgroundColor: "#E3F2FD", borderRadius: 8,
+    paddingHorizontal: 7, paddingVertical: 3, alignSelf: "flex-start",
+  },
+  ticketPillText: { fontSize: 11, fontWeight: "700", color: Colors.primary },
+  statusBadge: {
+    flexDirection: "row", alignItems: "center", gap: 3,
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: 8, alignSelf: "flex-start",
+  },
+  statusBadgeText: { fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
 
-  // Record card
-  recordCard: {
-    backgroundColor: Colors.card, borderRadius: 14, marginBottom: 12, overflow: "hidden",
+  cardValueSection: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: Colors.dataPanelBg, borderRadius: 10,
+    padding: 10, marginBottom: 12,
+  },
+  cardValueBox: { flex: 1 },
+  cardValueLabel: { fontSize: 9, fontWeight: "700", color: Colors.textLight, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 2 },
+  cardValueAmount: { fontSize: 22, fontWeight: "900", color: Colors.primary, letterSpacing: -0.5 },
+  cardDateBox: { flexDirection: "row", alignItems: "center" },
+  cardDateLabel: { fontSize: 9, color: Colors.textLight, letterSpacing: 0.5 },
+  cardDateValue: { fontSize: 11, fontWeight: "700", color: Colors.textDark },
+
+  cardActionsRow: { flexDirection: "row", gap: 8 },
+  cardBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center",
+    paddingVertical: 10, paddingHorizontal: 10,
+    borderRadius: 12, gap: 8,
     ...Platform.select({
-      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.09, shadowRadius: 9 },
-      android: { elevation: 6 },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 3 },
+      android: { elevation: 2 },
     }),
   },
-  commencementCard: { borderWidth: 1, borderColor: Colors.accentOrange },
-  commencementCardClose: { borderColor: Colors.error, backgroundColor: "#FFF8F8" },
-  commencementCardPassed: { opacity: 0.72, borderColor: Colors.textLight },
+  cardBtnBid: { backgroundColor: "#E8F5E9", borderWidth: 1, borderColor: "#C8E6C9" },
+  cardBtnPrized: { backgroundColor: "#FFF8DC", borderWidth: 1, borderColor: "#FFE082" },
+  cardBtnDetails: { backgroundColor: "#E3F2FD", borderWidth: 1, borderColor: "#BBDEFB" },
+  cardBtnIconCircle: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
+  },
+  cardBtnTitle: { fontSize: 11, fontWeight: "bold" },
+  cardBtnSub: { fontSize: 8, color: Colors.textLight, marginTop: 1 },
 
-  chipRow: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", backgroundColor: Colors.primary, paddingVertical: 5, paddingHorizontal: 11, borderBottomRightRadius: 11 },
-  chipText: { marginLeft: 5, fontSize: 9, fontWeight: "800", color: Colors.card, letterSpacing: 0.9 },
+  summaryCard: {
+    backgroundColor: Colors.card, borderRadius: 18, marginBottom: 14, overflow: "hidden",
+    ...Platform.select({
+      ios: { shadowColor: "#0E7C5B", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12 },
+      android: { elevation: 8 },
+    }),
+  },
+  summaryGradientHeader: { paddingVertical: 18, paddingHorizontal: 16, overflow: "hidden", minHeight: 130 },
+  summaryStripe1: { position: "absolute", width: 160, height: 160, backgroundColor: "rgba(255,255,255,0.04)", transform: [{ rotate: "35deg" }], top: -70, right: -30 },
+  summaryStripe2: { position: "absolute", width: 80, height: 80, backgroundColor: "rgba(255,255,255,0.03)", transform: [{ rotate: "35deg" }], bottom: -30, left: 40 },
+  summaryHeaderTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 },
+  summaryEyebrow: { fontSize: 9, fontWeight: "700", color: "rgba(255,255,255,0.55)", letterSpacing: 1.6, textTransform: "uppercase" },
+  summaryPrizedBadge: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: Colors.gold, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  summaryPrizedText: { fontSize: 9, fontWeight: "900", color: "#7B0D1E", letterSpacing: 0.9 },
+  summaryGroupName: { fontSize: 20, fontWeight: "900", color: Colors.card, letterSpacing: 0.1, marginTop: 6 },
+  summaryTicketText: { fontSize: 12, fontWeight: "500", color: "rgba(255,255,255,0.7)" },
+  summaryTicketNum: { fontSize: 14, fontWeight: "900", color: Colors.card },
+  summaryGroupValue: { fontSize: 26, fontWeight: "900", color: "#7FFFD4", letterSpacing: -0.5, marginTop: 6 },
 
-  datePanelRow: { flexDirection: "row", backgroundColor: Colors.dataPanelBg, borderBottomWidth: 1, borderColor: Colors.lightDivider },
-  datePanel: { flex: 1, alignItems: "center", paddingVertical: 12 },
-  datePanelDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 10 },
-  datePanelLabel: { fontSize: 9, fontWeight: "600", color: Colors.textLight, textTransform: "uppercase", letterSpacing: 1.1, marginTop: 4 },
-  datePanelValue: { fontSize: 13, fontWeight: "800", color: Colors.primary, marginTop: 3 },
+  summaryStatsGrid: {
+    flexDirection: "row", flexWrap: "wrap",
+    paddingVertical: 8, paddingHorizontal: 4,
+  },
+  summaryStatBox: {
+    width: "50%", alignItems: "center",
+    paddingVertical: 12, borderBottomWidth: 1, borderRightWidth: 1, borderColor: Colors.lightDivider,
+  },
+  summaryStatValue: { fontSize: 22, fontWeight: "900", letterSpacing: -0.5 },
+  summaryStatLabel: { fontSize: 11, color: Colors.textMedium, marginTop: 3, textAlign: "center" },
 
-  infoBlock: { paddingHorizontal: 14, paddingVertical: 2, backgroundColor: Colors.card },
-  infoRowBlock: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 9 },
-  infoBlockDivider: { height: 1, backgroundColor: Colors.lightDivider },
-  infoRowLabel: { fontSize: 13, fontWeight: "500", color: Colors.textMedium },
-  infoRowValue: { fontSize: 13, fontWeight: "700", color: Colors.textDark },
+  sectionLabelRow: { flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 12 },
+  sectionLabelLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  sectionLabelText: { fontSize: 9, fontWeight: "700", color: Colors.textLight, letterSpacing: 1.6, textTransform: "uppercase" },
 
-  metricsRow: { flexDirection: "row" },
-  metricBox: { flex: 1, alignItems: "center", paddingVertical: 12, backgroundColor: Colors.dataPanelBg },
-  metricBoxHighlight: { flex: 1, alignItems: "center", paddingVertical: 12 },
-  metricLabel: { fontSize: 9, fontWeight: "700", color: Colors.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
-  metricLabelLight: { fontSize: 9, fontWeight: "700", color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
-  metricValueDark: { fontSize: 14, fontWeight: "900", color: Colors.textDark },
-  metricValueGold: { fontSize: 14, fontWeight: "900", color: Colors.gold },
+  recordCard: {
+    backgroundColor: Colors.card, borderRadius: 16, marginBottom: 12, overflow: "hidden",
+    ...Platform.select({
+      ios: { shadowColor: Colors.deepBlue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
+      android: { elevation: 5 },
+    }),
+  },
+  recordChipBar: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingVertical: 7, paddingHorizontal: 14,
+  },
+  recordChipText: { fontSize: 9, fontWeight: "800", color: "#fff", letterSpacing: 0.9 },
+  recordDatesRow: { flexDirection: "row", backgroundColor: Colors.dataPanelBg, borderBottomWidth: 1, borderColor: Colors.lightDivider },
+  recordDateBox: { flex: 1, alignItems: "center", paddingVertical: 14, gap: 4 },
+  recordDateIconCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  recordDateDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 12 },
+  recordDateLabel: { fontSize: 9, fontWeight: "600", color: Colors.textLight, textTransform: "uppercase", letterSpacing: 1 },
+  recordDateValue: { fontSize: 13, fontWeight: "800", color: Colors.textDark },
+  recordInfoSection: { paddingHorizontal: 14, paddingVertical: 2 },
+  recordInfoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10 },
+  recordInfoDivider: { height: 1, backgroundColor: Colors.lightDivider },
+  recordInfoLabel: { fontSize: 13, fontWeight: "500", color: Colors.textMedium },
+  recordInfoValue: { fontSize: 13, fontWeight: "700", color: Colors.textDark },
+  recordTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  recordTypePillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3 },
 
-  // Records view
+  recordMetricsRow: { flexDirection: "row" },
+  recordMetricBox: { flex: 1, alignItems: "center", paddingVertical: 14, gap: 4 },
+  recordMetricBoxHighlight: { flex: 1, alignItems: "center", paddingVertical: 14, gap: 4 },
+  recordMetricIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  recordMetricLabel: { fontSize: 9, fontWeight: "700", color: Colors.textLight, textTransform: "uppercase", letterSpacing: 1 },
+  recordMetricLabelLight: { fontSize: 9, fontWeight: "700", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: 1 },
+  recordMetricValue: { fontSize: 16, fontWeight: "900", color: Colors.textDark },
+  recordMetricValueGold: { fontSize: 16, fontWeight: "900", color: Colors.gold },
+
   recordsContainer: { flex: 1 },
   recordsScrollContent: { paddingBottom: 30 },
-  backBtn: {
-    flexDirection: "row", alignItems: "center", alignSelf: "flex-start",
-    paddingVertical: 8, paddingHorizontal: 13, borderRadius: 10,
-    backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.border, marginBottom: 14,
+backBtn: {
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 10,
+    alignSelf: "flex-start", 
+    paddingVertical: 8, 
+    paddingHorizontal: 12,
+    borderRadius: 12, 
+    backgroundColor: Colors.card,
+    borderWidth: 1, 
+    borderColor: Colors.border, 
+    marginBottom: 14,
+    marginTop: 20, // <--- Add this line to push the button down
     ...Platform.select({
-      ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.09, shadowRadius: 4 },
+      ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
       android: { elevation: 3 },
     }),
   },
-  backBtnText: { marginLeft: 7, fontSize: 13, fontWeight: "700", color: Colors.primary },
+
+  footerNote: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, paddingVertical: 14, marginTop: 4,
+  },
+  footerNoteText: { fontSize: 11, color: Colors.textMedium, fontStyle: "italic" },
 
   noDataContainer: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 50 },
   noDataImage: { width: 150, height: 140, marginBottom: 14 },
   noDataText: { fontSize: 14, fontWeight: "600", color: Colors.textMedium, textAlign: "center" },
-  noDataPlaceholder: { alignItems: "center", padding: 16, backgroundColor: Colors.dataPanelBg, borderRadius: 12, marginTop: 4 },
-  noDataPlaceholderText: { textAlign: "center", marginTop: 7, fontSize: 12, color: Colors.textMedium },
+  noDataPlaceholder: {
+    alignItems: "center", padding: 18, backgroundColor: Colors.dataPanelBg,
+    borderRadius: 14, marginTop: 4, borderWidth: 1, borderColor: Colors.border,
+  },
+  noDataPlaceholderText: { textAlign: "center", marginTop: 6, fontSize: 12, color: Colors.textMedium, lineHeight: 18 },
 
   groupListContent: { paddingBottom: 20 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center", minHeight: 200 },
