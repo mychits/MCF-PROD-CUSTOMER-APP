@@ -1065,17 +1065,24 @@ const styles = StyleSheet.create({
 
   recordsContainer: { flex: 1 },
   recordsScrollContent: { paddingBottom: 30 },
-  backBtn: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 12,
-    borderRadius: 12, backgroundColor: Colors.card,
-    borderWidth: 1, borderColor: Colors.border, marginBottom: 14,
+backBtn: {
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 10,
+    alignSelf: "flex-start", 
+    paddingVertical: 8, 
+    paddingHorizontal: 12,
+    borderRadius: 12, 
+    backgroundColor: Colors.card,
+    borderWidth: 1, 
+    borderColor: Colors.border, 
+    marginBottom: 14,
+    marginTop: 20, // <--- Add this line to push the button down
     ...Platform.select({
       ios: { shadowColor: Colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
       android: { elevation: 3 },
     }),
   },
-  backBtnText: { fontSize: 13, fontWeight: "700", color: Colors.primary },
 
   footerNote: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",

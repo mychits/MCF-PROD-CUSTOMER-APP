@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, useRef } from "react";
 import {
     View,
@@ -526,12 +527,18 @@ const Enrollment = ({ route, navigation }) => {
                 default: return "Group";
             }
         };
+        
+        // --- FIXED formatDate FUNCTION ---
         const formatDate = (dateString) => {
-            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            if (!dateString) return "N/A";
             const date = new Date(dateString);
-            if (isNaN(date)) return dateString;
+            if (isNaN(date.getTime())) return "N/A";
+            if (date.getFullYear() === 1970) return "N/A";
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
             return date.toLocaleDateString('en-GB', options);
         };
+        // ---------------------------------
+
         const vacantSeats = getVacantSeats(card);
         const isCurrentCardJoining = isJoining && joinGroupId === card._id;
         const badgeText = getFilterDisplayName(currentFilter);
