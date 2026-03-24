@@ -107,7 +107,7 @@ const mychitsAdvantages = [
     icon: 'lock-clock', text1: 'Join a Chit', text2: 'in Minutes', gradient: ['#FF6B6B', '#FFE66D'], action: 'navigate', targetScreen: 'Enrollment'
   },
   {
-    icon: 'gavel', text1: 'In app', text2: 'Auctions', gradient: ['#4ECDC4', '#44A08D'], action: 'navigate', targetScreen: 'AuctionList'
+    icon: 'gavel', text1: 'In app', text2: 'Auctions', gradient: ['#4ECDC4', '#44A08D']
   },
   {
     icon: 'verified-user', text1: '100%', text2: 'Secure Data', gradient: ['#00B4DB', '#0083B0']
