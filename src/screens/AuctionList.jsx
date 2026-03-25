@@ -1,25 +1,25 @@
 import React, { useState, useCallback, useContext, useRef, useEffect } from "react";
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  ActivityIndicator, StatusBar, Image, Platform, Vibration,
+  ActivityIndicator, Image, Platform, Vibration,
   LayoutAnimation, NativeModules, Alert, Animated, Easing, Dimensions,
+  StatusBar, SafeAreaView,
 } from "react-native";
-import url from "../data/url";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
-import Header from "../components/layouts/Header";
-import { MaterialIcons, MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import { MaterialIcons, MaterialCommunityIcons, Ionicons, AntDesign } from "@expo/vector-icons";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NoGroupImage from "../../assets/Nogroup.png";
 import NoRecordFoundImage from "../../assets/NoRecordFound.png";
 import { ContextProvider } from "../context/UserProvider";
+import url from "../data/url";
 
 if (Platform.OS === "android" && NativeModules.UIManager) {
   NativeModules.UIManager.setLayoutAnimationEnabledExperimental?.(true);
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const Colors = {
   primary: "#053B90",
@@ -44,6 +44,260 @@ const Colors = {
   skyBlue: "#B3E5FC",
   teal: "#006064",
 };
+
+// ─── NEW HEADER COMPONENT (Provided by User & Modified for Custom Back) ─────────────────
+const CustomHeader = ({ userId, navigation, onBackPress }) => {
+  const [userData, setUserData] = useState({
+    full_name: "",
+    phone_number: "",
+    address: "",
+  });
+
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
+  const route = useRoute();
+
+  const headerAnim = useRef(new Animated.Value(-SCREEN_HEIGHT * 0.2)).current;
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (userId) {
+          const response = await axios.get(
+            `${url}/user/get-user-by-id/${userId}`
+          );
+          setUserData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+
+    Animated.timing(headerAnim, {
+      toValue: 0,
+      duration: 1000,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [userId]);
+
+  const showBackButton = route.name !== "Home";
+
+  const toggleInfoPopup = () => {
+    setShowInfoPopup(!showInfoPopup);
+  };
+
+  const getShortenedName = (name) => {
+    if (!name) return "...";
+    const words = name.trim().split(/\s+/);
+    return words.length > 2 ? `${words[0]} ${words[1]}` : name;
+  };
+
+  return (
+    <SafeAreaView style={customHeaderStyles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
+      <Animated.View
+        style={[
+          customHeaderStyles.animatedHeaderWrapper,
+          { transform: [{ translateY: headerAnim }] },
+        ]}
+      >
+        <LinearGradient
+          colors={[Colors.primary, Colors.primary]}
+          style={customHeaderStyles.headerGradient}
+        >
+          <View style={customHeaderStyles.headerContainer}>
+            <View style={customHeaderStyles.leftContainer}>
+              {showBackButton && (
+                <TouchableOpacity
+                  onPress={() => onBackPress ? onBackPress() : navigation.goBack()}
+                  style={customHeaderStyles.backButton}
+                >
+                  <Ionicons name="arrow-back" size={28} color="#fff" />
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                activeOpacity={1}
+                style={[
+                  customHeaderStyles.profileContainer,
+                  !showBackButton && { marginLeft: SCREEN_WIDTH * 0.02 },
+                ]}
+              >
+                <Image
+                  source={require("../../assets/profile (2).png")}
+                  style={customHeaderStyles.profileImage}
+                  resizeMode="cover"
+                />
+                <View style={{ flexShrink: 1 }}>
+                  <Text
+                    style={customHeaderStyles.profileName}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {getShortenedName(userData.full_name)}
+                  </Text>
+                  <Text style={customHeaderStyles.customerId}>
+                    {userData.phone_number || "..."}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              onPress={toggleInfoPopup}
+              style={customHeaderStyles.infoIconContainer}
+            >
+              <AntDesign name="infocirlceo" size={22} color="#fff" />
+            </TouchableOpacity>
+
+            {showInfoPopup && (
+              <TouchableOpacity
+                style={customHeaderStyles.infoPopupOverlay}
+                onPress={toggleInfoPopup}
+                activeOpacity={1}
+              >
+                <View style={customHeaderStyles.infoPopup}>
+                  <TouchableOpacity
+                    onPress={toggleInfoPopup}
+                    style={customHeaderStyles.closeButton}
+                  >
+                    <AntDesign name="closecircle" size={24} color="#053B90" />
+                  </TouchableOpacity>
+
+                  <Image
+                    source={require("../../assets/Group400.png")}
+                    style={customHeaderStyles.popupImage}
+                    resizeMode="contain"
+                  />
+                  <View style={customHeaderStyles.infoPopupTextContainer}>
+                    <Text style={customHeaderStyles.mychitsText}>Mychits</Text>
+                    <Text style={customHeaderStyles.customerAppText}>Customer app</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+        </LinearGradient>
+      </Animated.View>
+    </SafeAreaView>
+  );
+};
+
+const customHeaderStyles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: Colors.primary,
+  },
+  animatedHeaderWrapper: {
+    position: "relative",
+    zIndex: 10,
+  },
+  headerGradient: {
+    paddingVertical: SCREEN_HEIGHT * 0.01,
+    paddingHorizontal: SCREEN_WIDTH * 0.04,
+    position: "relative",
+    zIndex: 10,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    position: "relative",
+    zIndex: 1,
+  },
+  leftContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  backButton: {
+    marginRight: SCREEN_WIDTH * 0.04,
+  },
+  profileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: SCREEN_WIDTH * 0.04,
+    flex: 1,
+  },
+  profileImage: {
+    width: SCREEN_WIDTH * 0.1,
+    height: SCREEN_WIDTH * 0.1,
+    borderRadius: SCREEN_WIDTH * 0.05,
+    marginRight: SCREEN_WIDTH * 0.015,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.5)",
+  },
+  profileName: {
+    color: "#fff",
+    fontSize: SCREEN_WIDTH * 0.04,
+    fontWeight: "700",
+  },
+  customerId: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: SCREEN_WIDTH * 0.028,
+  },
+  infoIconContainer: {
+    padding: SCREEN_WIDTH * 0.02,
+  },
+  infoPopupOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+  },
+  infoPopup: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    paddingVertical: SCREEN_HEIGHT * 0.02,
+    paddingHorizontal: SCREEN_WIDTH * 0.08,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 15,
+    maxWidth: SCREEN_WIDTH * 0.8,
+    position: "relative",
+  },
+  closeButton: {
+    position: "absolute",
+    top: SCREEN_HEIGHT * 0.01,
+    right: SCREEN_WIDTH * 0.02,
+    padding: SCREEN_WIDTH * 0.01,
+    zIndex: 1,
+  },
+  popupImage: {
+    width: SCREEN_WIDTH * 0.45,
+    height: SCREEN_WIDTH * 0.25,
+    marginBottom: SCREEN_HEIGHT * 0.015,
+    borderRadius: 10,
+  },
+  infoPopupTextContainer: {
+    alignItems: "center",
+    marginTop: SCREEN_HEIGHT * 0.005,
+  },
+  mychitsText: {
+    fontSize: SCREEN_WIDTH * 0.06,
+    fontWeight: "800",
+    color: "#053B90",
+    textAlign: "center",
+  },
+  customerAppText: {
+    fontSize: SCREEN_WIDTH * 0.04,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
+    marginTop: SCREEN_HEIGHT * 0.005,
+  },
+});
+// ────────────────────────────────────────────────────────────────────────────────────────────────
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatNumberIndianStyle = (num) => {
@@ -111,7 +365,7 @@ const AuctionBanner = ({ userName, filter, setFilter, filteredCount }) => (
           <MaterialIcons name="gavel" size={20} color={Colors.primary} />
         </View>
       </View>
-      
+
       <View style={styles.quickActionsBar}>
         <TouchableOpacity
           style={[styles.quickActionItem, filter === 'ALL' && styles.selectedFilter]}
@@ -188,11 +442,15 @@ const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, 
         <View style={styles.cardBody}>
           <View style={styles.cardHeaderRow}>
             <View style={[styles.cardIconCircle, { backgroundColor: lightBg }]}>
-              <MaterialIcons
-                name={isPrized ? "emoji_events" : isFree ? "local-offer" : "gavel"}
-                size={22}
-                color={accentColor}
-              />
+              {isPrized ? (
+                <MaterialIcons name="emoji-events" size={22} color={Colors.goldDark} />
+              ) : (
+                <MaterialIcons
+                  name={isFree ? "local-offer" : "gavel"}
+                  size={22}
+                  color={accentColor}
+                />
+              )}
             </View>
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.cardGroupName} numberOfLines={1}>{groupName || "—"}</Text>
@@ -269,7 +527,7 @@ const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCou
           {isPrized && <View style={styles.summaryPrizedBadge}><MaterialCommunityIcons name="trophy" size={9} color="#7B0D1E" /><Text style={styles.summaryPrizedText}>PRIZED</Text></View>}
         </View>
         <Text style={styles.summaryGroupName} numberOfLines={1}>{groupName}</Text>
-        
+
         <View style={styles.summaryDetailsRow}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <MaterialCommunityIcons name="ticket-outline" size={13} color="rgba(255,255,255,0.7)" />
@@ -279,26 +537,33 @@ const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCou
         </View>
       </LinearGradient>
 
-      <View style={styles.summaryStatsBody}>
-        <View style={styles.statsGrid}>
-          <View style={[styles.statBox, styles.statBoxTotal]}>
-            <Text style={styles.statValueTotal}>{totalRecords}</Text>
-            <Text style={styles.statLabel}>Auction Records</Text>
-          </View>
-          <View style={[styles.statBox, styles.statBoxNormal]}>
-            <Text style={styles.statValueNormal}>{normalCount}</Text>
-            <Text style={styles.statLabel}>Normal</Text>
-          </View>
-          <View style={[styles.statBox, styles.statBoxFree]}>
-            <Text style={styles.statValueFree}>{freeCount}</Text>
-            <Text style={styles.statLabel}>Free</Text>
-          </View>
-          <View style={[styles.statBox, styles.statBoxCommence]}>
-            <Text style={styles.statValueCommence}>{commencementCount}</Text>
-            <Text style={styles.statLabel}>First payment</Text>
-          </View>
-        </View>
-      </View>
+     <View style={styles.summaryStatsBody}>
+  <View style={styles.statsRow}>
+    {/* First Box */}
+    <View style={[styles.statBox, styles.statBoxTotal]}>
+      <Text style={styles.statValueTotal}>{totalRecords}</Text>
+      <Text style={styles.statLabel}>{'Auction\nRecords'}</Text>
+    </View>
+    
+    {/* Second Box */}
+    <View style={[styles.statBox, styles.statBoxNormal]}>
+      <Text style={styles.statValueNormal}>{normalCount}</Text>
+      <Text style={styles.statLabel}>Normal</Text>
+    </View>
+    
+    {/* Third Box */}
+    <View style={[styles.statBox, styles.statBoxFree]}>
+      <Text style={styles.statValueFree}>{freeCount}</Text>
+      <Text style={styles.statLabel}>Free</Text>
+    </View>
+    
+    {/* Fourth Box */}
+    <View style={[styles.statBox, styles.statBoxCommence]}>
+      <Text style={styles.statValueCommence}>{commencementCount}</Text>
+      <Text style={styles.statLabel}>{'First\npayment'}</Text>
+    </View>
+  </View>
+</View>
     </View>
   </FadeSlide>
 );
@@ -317,69 +582,60 @@ const CommencementRecordCard = ({ groupName, firstAuctionDate, onPress }) => {
   return (
     <FadeSlide delay={100}>
       <TouchableOpacity style={[styles.commencementCard]} onPress={onPress} activeOpacity={0.8}>
-        
-        {/* 1. Distinct Header (Deep Orange/Red Gradient) */}
-        <LinearGradient 
-          colors={isClose ? ["#D32F2F", "#C62828"] : ["#FF5722", "#E64A19"]} 
-          start={[0, 0]} end={[1, 0]} 
+
+        <LinearGradient
+          colors={isClose ? ["#D32F2F", "#C62828"] : ["#FF5722", "#E64A19"]}
+          start={[0, 0]} end={[1, 0]}
           style={styles.commencementHeader}
         >
           <View style={styles.commencementHeaderTop}>
-             <View style={styles.commencementTitleRow}>
-                <MaterialCommunityIcons name="rocket-launch" size={18} color="#fff" />
-                <Text style={styles.commencementTitleText}>COMMENCEMENT RECORD</Text>
-             </View>
-             <View style={styles.recordOneBadge}>
-                <Text style={styles.recordOneText}>RECORD 1</Text>
-             </View>
+            <View style={styles.commencementTitleRow}>
+              <MaterialCommunityIcons name="rocket-launch" size={18} color="#fff" />
+              <Text style={styles.commencementTitleText}>COMMENCEMENT RECORD</Text>
+            </View>
+            <View style={styles.recordOneBadge}>
+              <Text style={styles.recordOneText}>RECORD 1</Text>
+            </View>
           </View>
           {isClose && (
-             <View style={styles.urgentPill}>
-                <MaterialIcons name="notification-important" size={10} color="#fff" />
-                <Text style={styles.urgentText}>Commencing Soon</Text>
-             </View>
+            <View style={styles.urgentPill}>
+              <MaterialIcons name="notification-important" size={10} color="#fff" />
+              <Text style={styles.urgentText}>Commencing Soon</Text>
+            </View>
           )}
         </LinearGradient>
 
-        {/* 2. Vertical Timeline Body */}
         <View style={styles.commencementBody}>
-           <View style={styles.timelineContainer}>
-              
-              {/* Step 1: Group Starts */}
-              <View style={styles.timelineItem}>
-                 <View style={styles.timelineIconBox}>
-                    <MaterialCommunityIcons name="flag-variant" size={18} color={isClose ? Colors.error : Colors.accentOrange} />
-                 </View>
-                 <View style={styles.timelineContent}>
-                    <Text style={styles.timelineLabel}>Group Starts</Text>
-                    <Text style={styles.timelineDate}>{firstAuctionDate ? formatDate(commencementStr) : "Not Set"}</Text>
-                 </View>
+          <View style={styles.timelineContainer}>
+            <View style={styles.timelineItem}>
+              <View style={styles.timelineIconBox}>
+                <MaterialCommunityIcons name="flag-variant" size={18} color={isClose ? Colors.error : Colors.accentOrange} />
               </View>
-
-              {/* Dashed Line Connector */}
-              <View style={styles.timelineLine} />
-
-              {/* Step 2: First Auction */}
-              <View style={styles.timelineItem}>
-                 <View style={styles.timelineIconBox}>
-                    <MaterialCommunityIcons name="gavel" size={18} color={isClose ? Colors.error : Colors.accentOrange} />
-                 </View>
-                 <View style={styles.timelineContent}>
-                    <Text style={styles.timelineLabel}>First Auction</Text>
-                    <Text style={styles.timelineDate}>{firstAuctionDate ? formatDate(firstAuctionDate) : "N/A"}</Text>
-                 </View>
+              <View style={styles.timelineContent}>
+                <Text style={styles.timelineLabel}>Group Starts</Text>
+                <Text style={styles.timelineDate}>{firstAuctionDate ? formatDate(commencementStr) : "Not Set"}</Text>
               </View>
+            </View>
 
-           </View>
+            <View style={styles.timelineLine} />
+
+            <View style={styles.timelineItem}>
+              <View style={styles.timelineIconBox}>
+                <MaterialCommunityIcons name="gavel" size={18} color={isClose ? Colors.error : Colors.accentOrange} />
+              </View>
+              <View style={styles.timelineContent}>
+                <Text style={styles.timelineLabel}>First Auction</Text>
+                <Text style={styles.timelineDate}>{firstAuctionDate ? formatDate(firstAuctionDate) : "N/A"}</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
-        {/* 3. Footer Status */}
         <View style={styles.commencementFooter}>
-           <View style={[styles.commencementTypePill, { borderColor: isClose ? Colors.error : Colors.accentOrange }]}>
-              <Text style={[styles.commencementTypeText, { color: isClose ? Colors.error : Colors.accentOrange }]}>Auction Type: Commencement</Text>
-           </View>
+          <View style={[styles.commencementTypePill, { borderColor: isClose ? Colors.error : Colors.accentOrange }]}>
+            <Text style={[styles.commencementTypeText, { color: isClose ? Colors.error : Colors.accentOrange }]}>Auction Type: Commencement</Text>
+          </View>
         </View>
-
       </TouchableOpacity>
     </FadeSlide>
   );
@@ -389,10 +645,9 @@ const CommencementRecordCard = ({ groupName, firstAuctionDate, onPress }) => {
 const AuctionRecordCard = ({ record, recordNumber, index }) => {
   const isFree = record.auction_type?.toLowerCase() === "free";
   const typeLabel = record.auction_type ? record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1) : "Normal";
-  
-  // Define dynamic theme based on Auction Type
+
   const theme = isFree ? {
-    bg: "#FFF3E0", // Light Orange background
+    bg: "#FFF3E0",
     border: "#FFE0B2",
     primaryText: "#E65100",
     secondaryText: "#EF6C00",
@@ -400,7 +655,7 @@ const AuctionRecordCard = ({ record, recordNumber, index }) => {
     gradientEnd: "#F57C00",
     iconBg: "rgba(230, 81, 0, 0.1)"
   } : {
-    bg: "#E3F2FD", // Light Blue background
+    bg: "#E3F2FD",
     border: "#BBDEFB",
     primaryText: "#0D47A1",
     secondaryText: "#1976D2",
@@ -412,36 +667,31 @@ const AuctionRecordCard = ({ record, recordNumber, index }) => {
   return (
     <FadeSlide delay={index * 70}>
       <View style={[styles.recordCard, { backgroundColor: Colors.card, borderColor: theme.border }]}>
-        
-        {/* --- 1. HEADER: Record # (Left) | Auction Type (Right) --- */}
-        <LinearGradient 
-          colors={[theme.gradientStart, theme.gradientEnd]} 
-          start={[0, 0]} end={[1, 0]} 
+
+        <LinearGradient
+          colors={[theme.gradientStart, theme.gradientEnd]}
+          start={[0, 0]} end={[1, 0]}
           style={styles.recordChipBar}
         >
           <View style={styles.headerRow}>
-            {/* Left: Record Number */}
             <View style={styles.headerLeft}>
               <MaterialCommunityIcons name="gavel" size={14} color="#fff" />
               <Text style={styles.recordNumText}>RECORD {recordNumber}</Text>
             </View>
-
-            {/* Right: Auction Type Badge */}
             <View style={styles.headerRightBadge}>
               <Text style={styles.headerTypeText}>{typeLabel}</Text>
             </View>
           </View>
         </LinearGradient>
 
-        {/* --- 2. MIDDLE: Dates --- */}
         <View style={styles.recordDatesRow}>
           <View style={styles.recordDateBox}>
             <View style={[styles.recordDateIconCircle, { backgroundColor: theme.iconBg }]}>
               <MaterialCommunityIcons name="calendar-start" size={14} color={theme.primaryText} />
             </View>
             <View style={{ marginLeft: 6, alignItems: 'center' }}>
-               <Text style={styles.recordDateLabel}>Auction Date</Text>
-               <Text style={[styles.recordDateValue, { color: theme.primaryText }]}>{formatDate(record.auction_date)}</Text>
+              <Text style={styles.recordDateLabel}>Auction Date</Text>
+              <Text style={[styles.recordDateValue, { color: theme.primaryText }]}>{formatDate(record.auction_date)}</Text>
             </View>
           </View>
           <View style={styles.recordDateDivider} />
@@ -450,50 +700,44 @@ const AuctionRecordCard = ({ record, recordNumber, index }) => {
               <MaterialCommunityIcons name="calendar-end" size={14} color={theme.primaryText} />
             </View>
             <View style={{ marginLeft: 6, alignItems: 'center' }}>
-               <Text style={styles.recordDateLabel}>Next Date</Text>
-               <Text style={[styles.recordDateValue, { color: theme.primaryText }]}>{formatDate(record.next_date)}</Text>
+              <Text style={styles.recordDateLabel}>Next Date</Text>
+              <Text style={[styles.recordDateValue, { color: theme.primaryText }]}>{formatDate(record.next_date)}</Text>
             </View>
           </View>
         </View>
 
-        {/* --- 3. FOOTER: Bid % | Ticket | Amount --- */}
         <View style={[styles.recordFooterRow, { borderTopColor: theme.border }]}>
-          
-          {/* 1. Bid Percentage */}
+
           <View style={styles.footerMetric}>
-             <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Bid Percentage</Text>
-             <Text style={[styles.footerValue, { color: theme.primaryText }]}>{record.bid_percentage || "0"}%</Text>
+            <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Bid Percentage</Text>
+            <Text style={[styles.footerValue, { color: theme.primaryText }]}>{record.bid_percentage || "0"}%</Text>
           </View>
 
-          {/* Divider Line */}
           <View style={[styles.footerDivider, { backgroundColor: theme.border }]} />
 
-          {/* 2. Winning Ticket */}
           <View style={styles.footerMetric}>
-             <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Winning Ticket</Text>
-             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <MaterialCommunityIcons name="ticket-confirmation" size={12} color={theme.primaryText} />
-                <Text style={[styles.footerValue, { color: theme.primaryText }]}>{record.ticket || "N/A"}</Text>
-             </View>
+            <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Winning Ticket</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <MaterialCommunityIcons name="ticket-confirmation" size={12} color={theme.primaryText} />
+              <Text style={[styles.footerValue, { color: theme.primaryText }]}>{record.ticket || "N/A"}</Text>
+            </View>
           </View>
 
-          {/* Divider Line */}
           <View style={[styles.footerDivider, { backgroundColor: theme.border }]} />
 
-          {/* 3. Bid Amount */}
           <View style={styles.footerMetric}>
-             <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Bid Amount</Text>
-             <Text style={[styles.footerValue, { color: theme.primaryText, fontWeight: '900' }]}>₹ {formatNumberIndianStyle(record.bid_amount)}</Text>
+            <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Bid Amount</Text>
+            <Text style={[styles.footerValue, { color: theme.primaryText, fontWeight: '900' }]}>₹ {formatNumberIndianStyle(record.bid_amount)}</Text>
           </View>
 
         </View>
-
       </View>
     </FadeSlide>
   );
 };
 
-const AuctionRecordsView = ({ records, onBack, isLoading, error, commencementData, onCommencementPress, selectedGroupName, selectedGroupValue, selectedTicket, isPrized }) => {
+// ─── AuctionRecordsView (Removed Back Button & Added Stylist Title) ─────────────────────────────────
+const AuctionRecordsView = ({ records, isLoading, error, commencementData, onCommencementPress, selectedGroupName, selectedGroupValue, selectedTicket, isPrized }) => {
   if (isLoading) return <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />;
   const hasCommencement = !!(commencementData && (commencementData.group_name || commencementData.commencement_date));
   const totalRecords = records.length + (hasCommencement ? 1 : 0);
@@ -501,13 +745,28 @@ const AuctionRecordsView = ({ records, onBack, isLoading, error, commencementDat
   const freeCount = records.filter(r => (r.auction_type || "").toLowerCase() === "free").length;
   return (
     <View style={styles.recordsContainer}>
-      <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}><View style={[styles.cardBtnIconCircle, { backgroundColor: Colors.backgroundLight }]}><MaterialIcons name="arrow-back" size={18} color={Colors.primary} /></View><Text style={styles.backBtnText}>Back to Groups</Text></TouchableOpacity>
       {records.length === 0 && !hasCommencement ? (
         <View style={styles.noDataContainer}><Image source={NoRecordFoundImage} style={styles.noDataImage} resizeMode="contain" /><Text style={styles.noDataText}>{error || "No auction records found."}</Text></View>
       ) : (
         <ScrollView contentContainerStyle={styles.recordsScrollContent} showsVerticalScrollIndicator={false}>
           <SummaryCard groupName={selectedGroupName} groupValue={selectedGroupValue} totalRecords={totalRecords} normalCount={normalCount} freeCount={freeCount} commencementCount={hasCommencement ? 1 : 0} selectedTicket={selectedTicket} isPrized={isPrized} />
-          <View style={styles.sectionLabelRow}><View style={styles.sectionLabelLine} /><Text style={styles.sectionLabelText}>Auction Records</Text><View style={styles.sectionLabelLine} /></View>
+          
+          {/* --- UPDATED STYLIST TITLE --- */}
+          <View style={styles.sectionLabelRow}>
+            <View style={styles.sectionLabelLine} />
+            <LinearGradient
+              colors={[Colors.primary, Colors.primaryLight]}
+              start={[0, 0]}
+              end={[1, 0]}
+              style={styles.recordsTitleBadge}
+            >
+              <MaterialCommunityIcons name="gavel" size={12} color="#fff" style={{ marginRight: 6 }} />
+              <Text style={styles.recordsTitleText}>AUCTION RECORDS</Text>
+            </LinearGradient>
+            <View style={styles.sectionLabelLine} />
+          </View>
+          {/* ---------------------------- */}
+
           {records.map((record, index) => (<AuctionRecordCard key={record._id || `rec-${index}`} record={record} recordNumber={totalRecords - index} index={index} />))}
           {hasCommencement && (<CommencementRecordCard groupName={commencementData.group_name} firstAuctionDate={commencementData.commencement_date} onPress={onCommencementPress} />)}
         </ScrollView>
@@ -524,7 +783,7 @@ const AuctionList = ({ navigation }) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [enrollments, setEnrollments] = useState([]);
-  const [userName, setUserName] = useState(""); 
+  const [userName, setUserName] = useState("");
   const [filter, setFilter] = useState("ALL");
 
   const [isShowingRecords, setIsShowingRecords] = useState(false);
@@ -632,8 +891,13 @@ const AuctionList = ({ navigation }) => {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
-      <Header userId={userId} navigation={navigation} />
+
+      <CustomHeader
+        userId={userId}
+        navigation={navigation}
+        onBackPress={isShowingRecords ? handleBack : undefined}
+      />
+
       <View style={styles.outerBox}>
         <View style={styles.innerBox}>
           {!isShowingRecords ? (
@@ -659,7 +923,17 @@ const AuctionList = ({ navigation }) => {
               )}
             </>
           ) : (
-            <AuctionRecordsView records={auctionData.records} onBack={handleBack} isLoading={auctionData.loading} error={auctionData.error} commencementData={commencementAuctionData} onCommencementPress={() => Vibration.vibrate(50)} selectedGroupName={auctionData.selectedGroupName} selectedGroupValue={auctionData.selectedGroupValue} selectedTicket={auctionData.selectedTicket} isPrized={!!isCardPrized(validCards.find(c => c.group_id?._id === auctionData.selectedGroupId) || {})} />
+            <AuctionRecordsView
+              records={auctionData.records}
+              isLoading={auctionData.loading}
+              error={auctionData.error}
+              commencementData={commencementAuctionData}
+              onCommencementPress={() => Vibration.vibrate(50)}
+              selectedGroupName={auctionData.selectedGroupName}
+              selectedGroupValue={auctionData.selectedGroupValue}
+              selectedTicket={auctionData.selectedTicket}
+              isPrized={!!isCardPrized(validCards.find(c => c.group_id?._id === auctionData.selectedGroupId) || {})}
+            />
           )}
         </View>
       </View>
@@ -680,7 +954,7 @@ const styles = StyleSheet.create({
   sectionTitleText: { color: Colors.primary, fontWeight: "900", fontSize: 20 },
 
   // --- Banner Styles ---
-  bannerCard: { backgroundColor: Colors.skyBlue, borderRadius: 18, padding: 14, marginBottom: 10, elevation: 3 },
+  bannerCard: { backgroundColor: Colors.skyBlue, borderRadius: 18, padding: 14, marginBottom: 10, elevation: 3, borderWidth: 0.2, borderColor: "rgb(109, 94, 175)" },
   bannerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   bannerGreeting: { fontSize: 12, fontWeight: "500", color: Colors.primary, opacity: 0.75 },
   bannerName: { fontSize: 14, fontWeight: "bold", color: Colors.primary },
@@ -733,7 +1007,7 @@ const styles = StyleSheet.create({
   cardBtnSub: { fontSize: 7, color: Colors.textLight },
 
   // --- Summary Card Styles ---
-  summaryCard: { backgroundColor: Colors.card, borderRadius: 18, marginBottom: 14, overflow: "hidden", elevation: 8 },
+  summaryCard: { backgroundColor: Colors.card, borderRadius: 18, marginBottom: 14, overflow: "hidden", elevation: 8, marginTop: 14 },
   summaryGradientHeader: { paddingVertical: 18, paddingHorizontal: 16, paddingBottom: 14 },
   summaryStripe1: { position: "absolute", width: 160, height: 160, backgroundColor: "rgba(255,255,255,0.04)", transform: [{ rotate: "35deg" }], top: -70, right: -30 },
   summaryStripe2: { position: "absolute", width: 80, height: 80, backgroundColor: "rgba(255,255,255,0.03)", transform: [{ rotate: "35deg" }], bottom: -30, left: 40 },
@@ -748,20 +1022,45 @@ const styles = StyleSheet.create({
   summaryGroupValueInline: { fontSize: 20, fontWeight: "900", color: "#7FFFD4" },
 
   // Stats Body
-  summaryStatsBody: { backgroundColor: Colors.card, paddingVertical: 16, paddingHorizontal: 12 },
-  statsGrid: { flexDirection: 'row', justifyContent: "space-between", gap: 8 },
-  statBox: { flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: 'center', borderWidth: 1, elevation: 2 },
-  statLabel: { fontSize: 8, fontWeight: '500', marginTop: 3, textAlign:'center' },
-  statBoxTotal: { backgroundColor: "#E0F2F1", borderColor: "#B2DFDB" }, statValueTotal: { fontSize: 18, fontWeight: '900', color: "#00695C" },
-  statBoxNormal: { backgroundColor: "#E3F2FD", borderColor: "#BBDEFB" }, statValueNormal: { fontSize: 18, fontWeight: '900', color: Colors.primary },
-  statBoxFree: { backgroundColor: "#FFF3E0", borderColor: "#FFE0B2" }, statValueFree: { fontSize: 18, fontWeight: '900', color: Colors.accentOrange },
-  statBoxCommence: { backgroundColor: "#F3E5F5", borderColor: "#E1BEE7" }, statValueCommence: { fontSize: 18, fontWeight: '900', color: "#7B1FA2" },
+  summaryStatsBody: { 
+    backgroundColor: Colors.card, 
+    paddingVertical: 10, 
+    paddingHorizontal: 8, 
+  },
+  statsRow: { 
+    flexDirection: 'row', 
+    justifyContent: "space-between", 
+    gap: 6, 
+  },
+  statBox: { 
+    flex: 1, 
+    borderRadius: 10, 
+    paddingVertical: 10, 
+    paddingHorizontal: 2, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    borderWidth: 1, 
+    elevation: 2,
+    minHeight: 75, 
+  },
+  statLabel: { 
+    fontSize: 8, 
+    fontWeight: '600', 
+    marginTop: 2, 
+    textAlign:'center',
+    lineHeight: 10, 
+    height: 22, 
+  },
+  statBoxTotal: { backgroundColor: "#E0F2F1", borderColor: "#B2DFDB" }, 
+  statValueTotal: { fontSize: 14, fontWeight: '800', color: "#00695C" },
+  statBoxNormal: { backgroundColor: "#E3F2FD", borderColor: "#BBDEFB" }, 
+  statValueNormal: { fontSize: 14, fontWeight: '800', color: Colors.primary },
+  statBoxFree: { backgroundColor: "#FFF3E0", borderColor: "#FFE0B2" }, 
+  statValueFree: { fontSize: 14, fontWeight: '800', color: Colors.accentOrange },
+  statBoxCommence: { backgroundColor: "#F3E5F5", borderColor: "#E1BEE7" }, 
+  statValueCommence: { fontSize: 14, fontWeight: '800', color: "#7B1FA2" },
 
-  sectionLabelRow: { flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 12 },
-  sectionLabelLine: { flex: 1, height: 1, backgroundColor: Colors.border },
-  sectionLabelText: { fontSize: 9, fontWeight: "700", color: Colors.textLight, textTransform: "uppercase" },
-
-  // --- COMMENCEMENT CARD STYLES (NEW DESIGN) ---
+  // --- Commencement Card Styles ---
   commencementCard: {
     backgroundColor: Colors.card,
     borderRadius: 16,
@@ -769,7 +1068,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     elevation: 5,
     borderWidth: 1,
-    borderColor: "#FFCCBC", // Light Orange border
+    borderColor: "#FFCCBC",
   },
   commencementHeader: {
     paddingVertical: 14,
@@ -865,7 +1164,7 @@ const styles = StyleSheet.create({
   },
   timelineLine: {
     position: "absolute",
-    left: 17, // center of icon box (36/2) - 1
+    left: 17,
     top: 36,
     bottom: 36,
     width: 2,
@@ -896,13 +1195,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-
   // --- Record Card Styles (Standard) ---
   recordCard: { backgroundColor: Colors.card, borderRadius: 16, marginBottom: 12, overflow: "hidden", elevation: 5, borderWidth: 1, borderColor: Colors.border },
-  
-  // 1. Header Styles
-  recordChipBar: { 
-    paddingHorizontal: 12, 
+  recordChipBar: {
+    paddingHorizontal: 12,
     paddingVertical: 10,
     justifyContent: 'center',
   },
@@ -933,16 +1229,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
-
-  // 2. Date Styles (Middle)
   recordDatesRow: { flexDirection: "row", paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, borderColor: "rgba(0,0,0,0.05)" },
   recordDateBox: { flex: 1, flexDirection: "row", alignItems: "center" },
   recordDateIconCircle: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   recordDateDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 6 },
   recordDateLabel: { fontSize: 8, fontWeight: "600", color: Colors.textLight, textTransform: "uppercase" },
   recordDateValue: { fontSize: 11, fontWeight: "800", marginTop: 2 },
-
-  // 3. Footer Styles (Last Line)
   recordFooterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -975,7 +1267,6 @@ const styles = StyleSheet.create({
     height: 30,
   },
 
-  // Legacy Styles
   recordInfoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, paddingHorizontal: 14 },
   recordInfoLabel: { fontSize: 13, fontWeight: "500", color: Colors.textMedium },
   recordTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
@@ -983,8 +1274,42 @@ const styles = StyleSheet.create({
 
   recordsContainer: { flex: 1 },
   recordsScrollContent: { paddingBottom: 30 },
-  backBtn: { flexDirection: "row", alignItems: "center", gap: 10, alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.border, marginBottom: 14, elevation: 3 },
-  backBtnText: { fontSize: 13, fontWeight: "700", color: Colors.primary },
+
+  // --- NEW: STYLIST TITLE STYLES ---
+  sectionLabelRow: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginVertical: 10, 
+    gap: 6,
+  },
+  sectionLabelLine: { 
+    flex: 1, 
+    height: 1, 
+    backgroundColor: Colors.border, 
+    opacity: 0.6,
+  },
+  recordsTitleBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 30,
+    elevation: 6,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  recordsTitleText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+  },
+  // -----------------------------------
 
   footerNote: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 14 },
   footerNoteText: { fontSize: 11, color: Colors.textMedium, fontStyle: "italic" },

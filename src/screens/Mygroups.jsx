@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useContext, useRef } from "react";
 import {
   View,
@@ -23,7 +22,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import NoGroupImage from "../../assets/Nogroup.png";
-// --- IMPORTED THE NEW IMAGE ---
 import GirlImage from "../../assets/girlimage.png"; 
 import { ContextProvider } from "../context/UserProvider";
 
@@ -46,7 +44,9 @@ const Colors = {
   tableHeaderBlue: "#042D75",
   tableBorderColor: "#E0E0E0",
   warningText: "#F39C12",
-  prizedColor: "#F1C40F", // Gold color for Prized tag
+  prizedColor: "#F1C40F", 
+  prizedBadgeBg: "#FFF8DC",
+  prizedBadgeText: "#9A6F00",
 };
 
 const formatNumberIndianStyle = (num) => {
@@ -91,7 +91,7 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
                 {card.isPendingApproval && (
                     <Ionicons 
                         name="hourglass-outline" 
-                        size={20} 
+                        size={18} // Reduced size
                         color={Colors.warningText} 
                         style={{ marginLeft: 10 }} 
                     />
@@ -99,7 +99,7 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
             </View>
             <Ionicons
                 name={isExpanded ? "chevron-up" : "chevron-down"}
-                size={20}
+                size={18} // Reduced size
                 color={Colors.primaryBlue}
             />
         </TouchableOpacity>
@@ -141,7 +141,7 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
                     <Text style={accordionStyles.navigateButtonText}>
                         {card.isPendingApproval ? "Approval Pending" : "View Detailed Card"}
                     </Text>
-                    {!card.isPendingApproval && <Ionicons name="arrow-down" size={16} color="#fff" style={{ marginLeft: 5 }} />}
+                    {!card.isPendingApproval && <Ionicons name="arrow-down" size={14} color="#fff" style={{ marginLeft: 5 }} />}
                 </TouchableOpacity>
             </View>
         )}
@@ -162,8 +162,6 @@ const Mygroups = ({ navigation }) => {
   const [enrolledGroupsCount, setEnrolledGroupsCount] = useState(0);
   const [expandedIndex, setExpandedIndex] = useState(null);
   const [highlightedCardIndex, setHighlightedCardIndex] = useState(null);
-  
-  // --- NEW STATE FOR PRIZED DATA ---
   const [prizedData, setPrizedData] = useState({});
 
   const scrollViewRef = useRef(null);
@@ -172,12 +170,10 @@ const Mygroups = ({ navigation }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // --- NEW ANIMATION REFS FOR THE GIRL ---
   const girlWalkX = useRef(new Animated.Value(-50)).current;
   const girlWalkY = useRef(new Animated.Value(50)).current;
   const girlWalkRotation = useRef(new Animated.Value(-10)).current;
 
-  // Contact details
   const recipientEmail = 'info.mychits@gmail.com';
   const phoneNumber = '+919483900777';
 
@@ -198,14 +194,12 @@ const Mygroups = ({ navigation }) => {
     return () => animation.stop();
   }, [scaleAnim, slideAnim]);
 
-  // --- ANIMATION EFFECT FOR WALKING GIRL ---
   useEffect(() => {
     if (viewMode === 'held') {
       triggerWalkAnimation();
     }
   }, [viewMode]);
 
-  // --- LOGIC TO HIDE BUTTON IF NO HELD GROUPS ---
   useEffect(() => {
     if (heldGroupsData.length === 0 && viewMode === 'held') {
         setViewMode('active');
@@ -306,22 +300,21 @@ const Mygroups = ({ navigation }) => {
     }
   }, [userId]);
 
-  // --- NEW FETCH FUNCTION FOR PRIZED INFO ---
   const fetchPrizedInfo = useCallback(async () => {
     if (!userId) return;
     try {
-        // Added the new route as requested
         const response = await axios.get(`${url}/auction/enrolls-info/users/${userId}`);
         const data = response.data.data || response.data || [];
 
         const map = {};
-        // Assuming API returns array of enrollments. We map them using the same key logic: groupId-ticket
         data.forEach(item => {
+            const ticket = item.ticket || item.tickets || item.no_of_tickets;
             const gid = item.group_id?._id || item.group_id;
-            const ticket = item.tickets || item.no_of_tickets;
+            
             if (gid && ticket) {
                 const key = `${gid}-${ticket}`;
-                if (item.isPrized) {
+                const isPrized = item.isPrized === true || String(item.isPrized).toLowerCase() === 'true';
+                if (isPrized) {
                     map[key] = true;
                 }
             }
@@ -364,7 +357,6 @@ const Mygroups = ({ navigation }) => {
       const loadData = async () => {
         setLoading(true);
         if (userId) {
-            // Added fetchPrizedInfo to the parallel requests
             await Promise.all([fetchTickets(), fetchAllOverview(), fetchHeldGroups(), fetchPrizedInfo()]);
         }
         setLoading(false);
@@ -437,13 +429,13 @@ const Mygroups = ({ navigation }) => {
 
             <View style={styles.fixedSummaryWrapper}>
               <LinearGradient colors={["#0A2647", "#0C53B3"]} style={styles.summaryCardLeft}>
-                <FontAwesome5 name="wallet" size={15} color="#fff" />
+                <FontAwesome5 name="wallet" size={12} color="#fff" />
                 <Text style={styles.summaryAmount}>{paidDisplay}</Text>
                 <Text style={styles.summaryText}>Total Investment</Text>
               </LinearGradient>
 
               <LinearGradient colors={["#196F3D", "#27AE60"]} style={styles.summaryCardRight}>
-                <FontAwesome5 name="chart-line" size={15} color="#fff" />
+                <FontAwesome5 name="chart-line" size={12} color="#fff" />
                 <Text style={styles.summaryAmount}>{profitDisplay}</Text>
                 <Text style={styles.summaryText}>Total Dividend</Text>
               </LinearGradient>
@@ -452,7 +444,7 @@ const Mygroups = ({ navigation }) => {
             <ScrollView
               ref={scrollViewRef}
               style={styles.scrollWrapper}
-              contentContainerStyle={{ padding: 20, paddingBottom: 30 }}
+              contentContainerStyle={{ padding: 12, paddingBottom: 20 }} // Reduced padding
               showsVerticalScrollIndicator={false}
             >
               {heldGroupsData.length > 0 && (
@@ -464,7 +456,7 @@ const Mygroups = ({ navigation }) => {
                         setExpandedIndex(null);
                     }}
                 >
-                    <Ionicons name={viewMode === 'active' ? "hourglass-outline" : "list-outline"} size={18} color="#fff" style={{ marginRight: 8 }} />
+                    <Ionicons name={viewMode === 'active' ? "hourglass-outline" : "list-outline"} size={16} color="#fff" style={{ marginRight: 8 }} />
                     <Text style={styles.heldGroupsButtonText}>
                         {viewMode === 'active' ? 'View Holded Groups' : 'Back to Active Groups'}
                     </Text>
@@ -499,7 +491,7 @@ const Mygroups = ({ navigation }) => {
                         
                         <View style={styles.convertContent}>
                             <View style={styles.convertBadge}>
-                                <Ionicons name="sparkles" size={16} color="#D35400" />
+                                <Ionicons name="sparkles" size={14} color="#D35400" />
                                 <Text style={styles.convertBadgeText}>Reactivate Now</Text>
                             </View>
                             
@@ -513,16 +505,14 @@ const Mygroups = ({ navigation }) => {
                                     style={styles.convertButtonEmail} 
                                     onPress={() => handleContactPress('email', recipientEmail)}
                                 >
-                                    <MaterialCommunityIcons name="email-outline" size={22} color="#fff" />
-                              
+                                    <MaterialCommunityIcons name="email-outline" size={18} color="#fff" />
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
                                     style={styles.convertButtonCall} 
                                     onPress={() => handleContactPress('phone', phoneNumber)}
                                 >
-                                    <MaterialCommunityIcons name="phone-outline" size={22} color="#fff" />
-                                 
+                                    <MaterialCommunityIcons name="phone-outline" size={18} color="#fff" />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -530,11 +520,8 @@ const Mygroups = ({ navigation }) => {
                 </View>
               )}
 
-          
-
               {cardsToRender.length === 0 ? (
                 <View style={styles.noGroupWrapper}>
-               
                 </View>
               ) : (cardsToRender.map((card, index) => {
                   const ticketKey = card.tickets; 
@@ -545,7 +532,6 @@ const Mygroups = ({ navigation }) => {
                   const isCompleted = card.completed;
                   const isPending = card.isPendingApproval; 
                   
-                  // --- CHECK IF PRIZED ---
                   const isPrized = prizedData[groupReportKey];
 
                   const individualPaidAmount = isPending ? 0 : individualGroupReports[groupReportKey]?.totalPaid || 0;
@@ -568,28 +554,29 @@ const Mygroups = ({ navigation }) => {
                         <View style={[styles.cardInner, { backgroundColor: isHeldMode ? "#FFF5F5" : (isDeleted ? "#F0F0F0" : "#fff") }]}>
                           <View style={styles.cardHeader}>
                             <View style={[styles.iconCircle, { backgroundColor: isHeldMode ? "#C0392B" : (isDeleted ? "#BDC3C7" : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.secondaryBlue) }]}>
-                              <MaterialCommunityIcons name={isHeldMode ? "pause-circle" : "currency-inr"} size={28} color="#fff" />
+                              <MaterialCommunityIcons name={isHeldMode ? "pause-circle" : "currency-inr"} size={20} color="#fff" />
                             </View>
                             <View style={{ flex: 1 }}>
                               {isHeldMode ? (
                                   <LinearGradient colors={["#E74C3C", "#C0392B"]} start={{x: 0, y: 0}} end={{x: 1, y: 0}} style={styles.heldGroupBox}>
-                                      <Ionicons name="alert-circle" size={16} color="#fff" style={{ marginRight: 6 }} />
+                                      <Ionicons name="alert-circle" size={14} color="#fff" style={{ marginRight: 4 }} />
                                       <Text style={styles.heldGroupText}>{card.group_id?.group_name}</Text>
                                   </LinearGradient>
                               ) : (
-                                  <Text style={[styles.cardTitle, { color: isDeleted ? Colors.removedText : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.darkText }]}>{card.group_id?.group_name}</Text>
+                                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Text style={[styles.cardTitle, { color: isDeleted ? Colors.removedText : isPending ? Colors.warningText : isCompleted ? Colors.completedText : Colors.darkText }]}>{card.group_id?.group_name}</Text>
+                                    
+                                    {isPrized && (
+                                      <View style={[styles.statusBadge, { backgroundColor: Colors.prizedBadgeBg }]}>
+                                        <MaterialCommunityIcons name="trophy" size={9} color={Colors.prizedBadgeText} />
+                                        <Text style={[styles.statusBadgeText, { color: Colors.prizedBadgeText }]}>PRIZED</Text>
+                                      </View>
+                                    )}
+                                  </View>
                               )}
                               
-                              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
                                   <Text style={styles.ticketText}>Ticket: {ticketKey}</Text>
-                                  
-                                  {/* --- PRIZED BADGE RENDER --- */}
-                                  {isPrized && (
-                                      <View style={styles.prizedBadge}>
-                                          <FontAwesome5 name="trophy" size={10} color="#fff" />
-                                          <Text style={styles.prizedText}>Prized</Text>
-                                      </View>
-                                  )}
                               </View>
 
                               {isHeldMode ? (
@@ -614,12 +601,12 @@ const Mygroups = ({ navigation }) => {
                                     <View style={styles.dateColumn}><Text style={styles.dateLabel}>End Date</Text><Text style={styles.dateValue}>{endDate}</Text></View>
                                 </View>
                                 <View style={styles.progressHeader}><Text style={styles.progressText}>Paid</Text><Text style={styles.progressTextBold}>{paidPercentage}%</Text></View>
-                                <View style={styles.progressBar}><View style={{ width: `${paidPercentage}%`, height: 8, borderRadius: 10, backgroundColor: isPending ? Colors.mediumText : Colors.accentColor }} /></View>
-                                <View style={styles.amountRow}><View style={[styles.amountColumn, { alignItems: 'flex-start', flex: 1, paddingLeft: 10 }]}><Text style={styles.amountLabel}>Paid Amount</Text><Text style={[styles.amountValue, { color: isPending ? Colors.mediumText : Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text></View></View>
+                                <View style={styles.progressBar}><View style={{ width: `${paidPercentage}%`, height: 5, borderRadius: 5, backgroundColor: isPending ? Colors.mediumText : Colors.accentColor }} /></View>
+                                <View style={styles.amountRow}><View style={[styles.amountColumn, { alignItems: 'flex-start', flex: 1, paddingLeft: 5 }]}><Text style={styles.amountLabel}>Paid Amount</Text><Text style={[styles.amountValue, { color: isPending ? Colors.mediumText : Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text></View></View>
                                 {!isPending && (
                                   <View style={styles.paymentsButton}>
                                       <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
-                                      <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}><Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" /></Animated.View>
+                                      <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}><Ionicons name="arrow-forward-circle-outline" size={16} color="#fff" /></Animated.View>
                                   </View>
                                 )}
                               </>
@@ -639,109 +626,97 @@ const Mygroups = ({ navigation }) => {
 };
 
 const accordionStyles = StyleSheet.create({
-    listContainer: { marginBottom: 20, backgroundColor: '#fff', borderRadius: 15, borderWidth: 1, borderColor: Colors.tableBorderColor, overflow: 'hidden', elevation: 3 },
-    listTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.primaryBlue, paddingHorizontal: 15, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.tableBorderColor, backgroundColor: Colors.lightBackground },
+    listContainer: { marginBottom: 10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: Colors.tableBorderColor, overflow: 'hidden', elevation: 2 },
+    listTitle: { fontSize: 14, fontWeight: 'bold', color: Colors.primaryBlue, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.tableBorderColor, backgroundColor: Colors.lightBackground },
     itemWrapper: { borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 15, backgroundColor: '#fff' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, backgroundColor: '#fff' },
     headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    indexText: { fontSize: 14, color: Colors.mediumText, marginRight: 10, fontWeight: '500' },
-    badgeBox: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginRight: 10 },
-    badgeText: { color: '#fff', fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase' },
-    content: { paddingHorizontal: 15, paddingBottom: 15, backgroundColor: '#F9F9F9' },
-    contentRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#E0E0E0' },
-    contentLabel: { fontSize: 13, color: Colors.mediumText },
-    contentValue: { fontSize: 14, fontWeight: 'bold', color: Colors.darkText },
-    pendingApprovalText: { fontSize: 12, color: Colors.warningText, fontWeight: '500', marginTop: 5 },
-    navigateButton: { flexDirection: 'row', alignSelf: 'flex-start', marginTop: 10, backgroundColor: Colors.accentColor, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignItems: 'center' },
-    navigateButtonText: { color: '#fff', fontSize: 13, fontWeight: '600' }
+    indexText: { fontSize: 12, color: Colors.mediumText, marginRight: 8, fontWeight: '500' },
+    badgeBox: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, marginRight: 8 },
+    badgeText: { color: '#fff', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase' },
+    content: { paddingHorizontal: 12, paddingBottom: 12, backgroundColor: '#F9F9F9' },
+    contentRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#E0E0E0' },
+    contentLabel: { fontSize: 11, color: Colors.mediumText },
+    contentValue: { fontSize: 12, fontWeight: 'bold', color: Colors.darkText },
+    pendingApprovalText: { fontSize: 11, color: Colors.warningText, fontWeight: '500', marginTop: 4 },
+    navigateButton: { flexDirection: 'row', alignSelf: 'flex-start', marginTop: 8, backgroundColor: Colors.accentColor, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, alignItems: 'center' },
+    navigateButtonText: { color: '#fff', fontSize: 11, fontWeight: '600' }
 });
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.primaryBlue },
   mainWrapper: { flex: 1, backgroundColor: Colors.primaryBlue },
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10 },
-  title: { fontSize: 20, fontWeight: "bold", color: "#fff" },
-  titleBadge: { backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' },
-  titleBadgeText: { color: '#fff', fontWeight: 'bold', fontSize: 14, },
-  scrollWrapper: { flex: 1, backgroundColor: Colors.lightBackground, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
-  fixedSummaryWrapper: { flexDirection: "row", paddingHorizontal: 20, paddingBottom: 20, justifyContent: "space-between" },
-  summaryCardLeft: { flex: 1, padding: 15, borderRadius: 15, marginRight: 10, elevation: 4 },
-  summaryCardRight: { flex: 1, padding: 15, borderRadius: 15, elevation: 4 },
-  summaryAmount: { color: "#fff", fontSize: 12, fontWeight: "bold", marginTop: 5 },
-  summaryText: { color: "rgba(255,255,255,0.8)", fontSize: 8 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10 },
+  title: { fontSize: 18, fontWeight: "bold", color: "#fff" },
+  titleBadge: { backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' },
+  titleBadgeText: { color: '#fff', fontWeight: 'bold', fontSize: 12, },
+  scrollWrapper: { flex: 1, backgroundColor: Colors.lightBackground, borderTopLeftRadius: 25, borderTopRightRadius: 25 },
+  fixedSummaryWrapper: { flexDirection: "row", paddingHorizontal: 15, paddingBottom: 15, justifyContent: "space-between" },
+  summaryCardLeft: { flex: 1, padding: 12, borderRadius: 12, marginRight: 10, elevation: 3 },
+  summaryCardRight: { flex: 1, padding: 12, borderRadius: 12, elevation: 3 },
+  summaryAmount: { color: "#fff", fontSize: 11, fontWeight: "bold", marginTop: 4 },
+  summaryText: { color: "rgba(255,255,255,0.8)", fontSize: 7 },
   fullScreenLoader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  enrolledGroupsCardContainer: { marginBottom: 20 },
-  enrolledGroupsCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderRadius: 20 },
-  enrolledGroupsCount: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
-  enrolledGroupsLabel: { fontSize: 16, color: 'rgba(255,255,255,0.9)' },
+  enrolledGroupsCardContainer: { marginBottom: 15 },
+  enrolledGroupsCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, borderRadius: 15 },
+  enrolledGroupsCount: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  enrolledGroupsLabel: { fontSize: 14, color: 'rgba(255,255,255,0.9)' },
   enrolledGroupsIcon: { opacity: 0.8 },
-  heldGroupsButton: { flexDirection: 'row', backgroundColor: Colors.secondaryBlue, padding: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  heldGroupsButton: { flexDirection: 'row', backgroundColor: Colors.secondaryBlue, padding: 10, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
   heldGroupsButtonActive: { backgroundColor: "#D35400" },
-  heldGroupsButtonText: { color: '#fff', fontWeight: 'bold' },
+  heldGroupsButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   
-  convertBoxContainer: { marginBottom: 25, borderRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 5, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(5, 59, 144, 0.1)' },
-  convertBoxInner: { padding: 20, position: 'relative', minHeight: 180 },
-  girlImage: { position: 'absolute', bottom: -10, left: -10, width: 140, height: 180, zIndex: 1 },
-  convertContent: { marginLeft: 100, zIndex: 2, flex: 1 },
-  convertBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(211, 84, 0, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 8 },
-  convertBadgeText: { color: '#D35400', fontSize: 12, fontWeight: 'bold', marginLeft: 5 },
-  convertTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.primaryBlue, marginBottom: 5 },
-  convertSubtitle: { fontSize: 13, color: Colors.mediumText, lineHeight: 18, marginBottom: 15 },
+  convertBoxContainer: { marginBottom: 15, borderRadius: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(5, 59, 144, 0.1)' },
+  convertBoxInner: { padding: 15, position: 'relative', minHeight: 140 },
+  girlImage: { position: 'absolute', bottom: -10, left: -10, width: 120, height: 160, zIndex: 1 },
+  convertContent: { marginLeft: 90, zIndex: 2, flex: 1 },
+  convertBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(211, 84, 0, 0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 16, alignSelf: 'flex-start', marginBottom: 6 },
+  convertBadgeText: { color: '#D35400', fontSize: 11, fontWeight: 'bold', marginLeft: 4 },
+  convertTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.primaryBlue, marginBottom: 4 },
+  convertSubtitle: { fontSize: 12, color: Colors.mediumText, lineHeight: 16, marginBottom: 12 },
   convertButtonsRow: { flexDirection: 'row', alignItems: 'center' },
-  convertButtonEmail: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primaryBlue, paddingVertical: 10, borderRadius: 12, marginRight: 10, shadowColor: Colors.primaryBlue, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 },
-  convertButtonCall: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#27AE60', paddingVertical: 10, borderRadius: 12, shadowColor: '#27AE60', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 },
+  convertButtonEmail: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primaryBlue, paddingVertical: 8, borderRadius: 10, marginRight: 10, shadowColor: Colors.primaryBlue, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 2 },
+  convertButtonCall: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#27AE60', paddingVertical: 8, borderRadius: 10, shadowColor: '#27AE60', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 2 },
   convertButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 10, marginLeft: 6 },
 
-  cardTouchable: { marginBottom: 20, borderRadius: 20, elevation: 4, backgroundColor: "#fff" },
-  highlightedCard: { borderWidth: 2, borderColor: Colors.accentColor, transform: [{ scale: 1.02 }] },
-  cardGradient: { borderRadius: 20, padding: 2 },
-  cardInner: { borderRadius: 18, padding: 15 },
-  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
-  iconCircle: { width: 50, height: 50, borderRadius: 25, justifyContent: "center", alignItems: "center", marginRight: 15 },
-  cardTitle: { fontSize: 18, fontWeight: "bold" },
-  ticketText: { color: Colors.mediumText, fontSize: 14, marginRight: 8 },
+  // --- COMPACT CARD STYLES ---
+  cardTouchable: { marginBottom: 12, borderRadius: 16, elevation: 3, backgroundColor: "#fff" }, // Reduced marginBottom
+  highlightedCard: { borderWidth: 1.5, borderColor: Colors.accentColor, transform: [{ scale: 1.01 }] },
+  cardGradient: { borderRadius: 16, padding: 1 },
+  cardInner: { borderRadius: 15, padding: 10 }, // Reduced padding
+  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 }, // Reduced marginBottom
+  iconCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center", marginRight: 10 }, // Reduced size
+  cardTitle: { fontSize: 15, fontWeight: "bold", flex: 1 }, // Reduced font size
+  ticketText: { color: Colors.mediumText, fontSize: 12 }, // Reduced font size
   
-  // --- PRIZED BADGE STYLES ---
-  prizedBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: Colors.prizedColor,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 12,
-      marginLeft: 5
-  },
-  prizedText: {
-      color: '#fff',
-      fontSize: 11,
-      fontWeight: 'bold',
-      marginLeft: 4,
-      textTransform: 'uppercase'
-  },
+  statusBadge: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 }, // Slightly tighter padding
+  statusBadgeText: { fontSize: 7, fontWeight: "800" },
 
-  dateRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: "#F0F0F0" },
+  dateRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: "#F0F0F0" }, // Reduced spacing
   dateColumn: { flex: 1 },
-  dateLabel: { fontSize: 12, color: Colors.mediumText },
-  dateValue: { fontSize: 14, fontWeight: "600", color: Colors.darkText },
-  progressBar: { height: 8, backgroundColor: "#E0E0E0", borderRadius: 10, marginVertical: 10 },
+  dateLabel: { fontSize: 10, color: Colors.mediumText },
+  dateValue: { fontSize: 12, fontWeight: "600", color: Colors.darkText },
+  progressBar: { height: 5, backgroundColor: "#E0E0E0", borderRadius: 5, marginVertical: 6 }, // Reduced height and margin
   progressHeader: { flexDirection: "row", justifyContent: "space-between" },
-  progressText: { fontSize: 12, color: Colors.mediumText },
-  progressTextBold: { fontSize: 12, fontWeight: "bold", color: Colors.darkText },
-  amountRow: { flexDirection: "row", justifyContent: "space-between" },
-  amountLabel: { fontSize: 12, color: Colors.mediumText },
-  amountValue: { fontSize: 15, fontWeight: "bold" },
-  paymentsButton: { marginTop: 15, backgroundColor: Colors.primaryBlue, flexDirection: "row", justifyContent: "center", alignItems: "center", padding: 12, borderRadius: 12 },
-  paymentsButtonText: { color: "#fff", fontWeight: "bold", marginRight: 8 },
-  noGroupWrapper: { alignItems: 'center', marginTop: 50 },
-  noGroupImage: { width: 200, height: 200 },
-  noGroupText: { marginTop: 20, color: Colors.mediumText, textAlign: 'center' },
-  heldGroupBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', marginBottom: 4 },
-  heldGroupText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  heldDetailsContainer: { marginTop: 8, padding: 10, backgroundColor: 'rgba(231, 76, 60, 0.05)', borderRadius: 8 },
-  heldInfoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  heldInfoLabel: { fontSize: 12, color: Colors.mediumText },
-  heldInfoText: { fontSize: 12, fontWeight: '600' },
-  removalReason: { color: Colors.removedText, fontSize: 12, fontWeight: 'bold' }
+  progressText: { fontSize: 10, color: Colors.mediumText },
+  progressTextBold: { fontSize: 11, fontWeight: "bold", color: Colors.darkText },
+  amountRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
+  amountLabel: { fontSize: 10, color: Colors.mediumText },
+  amountValue: { fontSize: 13, fontWeight: "bold" },
+  paymentsButton: { marginTop: 8, backgroundColor: Colors.primaryBlue, flexDirection: "row", justifyContent: "center", alignItems: "center", padding: 8, borderRadius: 10 }, // Reduced padding and margin
+  paymentsButtonText: { color: "#fff", fontWeight: "bold", marginRight: 6, fontSize: 11 },
+  noGroupWrapper: { alignItems: 'center', marginTop: 30 },
+  noGroupImage: { width: 150, height: 150 },
+  noGroupText: { marginTop: 15, color: Colors.mediumText, textAlign: 'center', fontSize: 12 },
+  heldGroupBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4, alignSelf: 'flex-start', marginBottom: 2 },
+  heldGroupText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  heldDetailsContainer: { marginTop: 6, padding: 8, backgroundColor: 'rgba(231, 76, 60, 0.05)', borderRadius: 6 },
+  heldInfoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
+  heldInfoLabel: { fontSize: 10, color: Colors.mediumText },
+  heldInfoText: { fontSize: 10, fontWeight: '600' },
+  removalReason: { color: Colors.removedText, fontSize: 11, fontWeight: 'bold' },
+  completedText: { color: Colors.completedText, fontSize: 11, fontWeight: 'bold' },
+  pendingApprovalText: { color: Colors.warningText, fontSize: 11, fontWeight: 'bold' }
 });
 
 export default Mygroups;
