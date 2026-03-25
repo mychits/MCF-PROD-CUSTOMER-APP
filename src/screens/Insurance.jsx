@@ -171,9 +171,10 @@ const Insurance = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const postData = {
+const postData = {
         customer_id: userId,
         insurance_type: [optionType.toLowerCase()],
+        source: "mychits-customer-app", // Added the source field here
       };
       const response = await axios.post(`${url}/insurance`, postData, {
         headers: { "Content-Type": "application/json" },

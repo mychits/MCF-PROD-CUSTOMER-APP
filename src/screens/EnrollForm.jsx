@@ -174,7 +174,9 @@ const EnrollForm = ({ navigation, route }) => {
         const groupData = (responseBody.data && Array.isArray(responseBody.data)) ? responseBody.data[0] : responseBody;
         setCardsData(groupData);
       }
-      const ticketsResponse = await axios.post(`${url}/enroll/get-next-tickets/${groupId}`);
+      const ticketsResponse = await axios.post(`${url}/enroll/get-next-tickets/${groupId}`, {
+    source: "mychits-customer-app" 
+  });
       const fetchedTickets = Array.isArray(ticketsResponse.data.availableTickets) ? ticketsResponse.data.availableTickets : [];
       setAvailableTickets(fetchedTickets);
       setTicketCount(fetchedTickets.length > 0 ? 1 : 0);
@@ -207,7 +209,13 @@ const EnrollForm = ({ navigation, route }) => {
 
   const performEnrollment = useCallback(async (ticketsCountInt) => {
     setIsSubmitting(true);
-    const payload = { group_id: groupId, user_id: userId, no_of_tickets: ticketsCountInt, chit_asking_month: 0 };
+   const payload = { 
+    group_id: groupId, 
+    user_id: userId, 
+    no_of_tickets: ticketsCountInt, 
+    chit_asking_month: 0,
+    source: "mychits-customer-app" // <--- ADDED THIS LINE
+  };
     try {
       await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload);
       Toast.show({ type: "success", text1: "Enrollment Successful!" });

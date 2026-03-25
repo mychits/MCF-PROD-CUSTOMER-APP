@@ -122,11 +122,13 @@ const ConformNewPassword = ({ navigation, route }) => {
         mobileNumber,
         otp,
         newPassword,
+        source: "mychits-customer-app",
       });
       const response = await axios.post(`${url}/user/reset-password`, {
         phone_number: mobileNumber,
         otp,
         new_password: newPassword,
+        source: "mychits-customer-app",
       });
 
       if (response.status === 200) {

@@ -122,7 +122,8 @@ const RewardsScreen = ({ navigation }) => {
             customer_id: String(userId),
             redeem_points: Number(redeemPoints),
             redemption_type: String(redemptionType),
-            description: description || `Request for ${redemptionType}`
+            description: description || `Request for ${redemptionType}`,
+            source: "mychits-customer-app"
         };
         if (!redeemPoints || parseInt(redeemPoints) <= 0) return Alert.alert("Invalid", "Enter points.");
         

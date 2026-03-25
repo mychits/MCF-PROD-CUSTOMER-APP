@@ -103,7 +103,9 @@ export default function CustomerPaymentLink({ route, navigation }) {
     try {
       setLoading(true);
       const results = await Promise.allSettled([
-        axios.post(`${baseUrl}/enroll/get-user-tickets/${customer?._id}`),
+      axios.post(`${baseUrl}/enroll/get-user-tickets/${customer?._id}`, {
+          source: "mychits-customer-app", // Added source field here
+        }),
         axios.get(`${baseUrl}/loans/get-borrower-by-user-id/${customer?._id}`),
         axios.get(`${baseUrl}/pigme/get-pigme-customer-by-user-id/${customer?._id}`),
       ]);
@@ -194,6 +196,7 @@ export default function CustomerPaymentLink({ route, navigation }) {
         payment_group_tickets,
         admin_type: "68904ce8ef406d77cbc074f3",
         purpose: `${selectedItem.type.toUpperCase()} Payment`,
+        source: "mychits-customer-app", // Added source field here
       });
 
       const { linkUrl } = response.data;

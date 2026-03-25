@@ -217,7 +217,9 @@ const BidRequest = ({ navigation, route }) => {
   const fetchOverview = useCallback(async () => {
     if (!userId) return {};
     try {
-      const response = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`);
+      const response = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`, {
+      source: "mychits-customer-app" 
+    });
       const data = response.data;
       const reportsMap = {};
       data.forEach((groupReport) => {
@@ -413,6 +415,7 @@ const BidRequest = ({ navigation, route }) => {
       auction_time: formatTime(new Date()),
       referred_by: "",
       status: "Pending",
+      source: "mychits-customer-app"
     };
 
     try {

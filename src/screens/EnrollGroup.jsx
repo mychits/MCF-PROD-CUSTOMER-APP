@@ -87,7 +87,12 @@ const EnrollGroup = ({ route, navigation }) => {
       const paymentResponse = await fetch(`${url}/payment/payment-list`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ groupId, userId, ticket }),
+       body: JSON.stringify({ 
+          groupId, 
+          userId, 
+          ticket,
+          source: "mychits-customer-app" // <--- ADDED THIS LINE
+        }),
       });
       if (!paymentResponse.ok) {
         const errorData = await paymentResponse.json();

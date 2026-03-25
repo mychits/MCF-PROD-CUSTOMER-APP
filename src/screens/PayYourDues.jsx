@@ -121,8 +121,9 @@ const PayYourDues = ({ navigation, route }) => {
       return [];
     }
     try {
-      const response = await axios.post(
-        `${url}/enroll/get-user-tickets/${currentUserId}`
+    const response = await axios.post(
+        `${url}/enroll/get-user-tickets/${currentUserId}`,
+        { source: "mychits-customer-app" } // Added source field
       );
       return response.data || [];
     } catch (error) {
@@ -136,8 +137,9 @@ const PayYourDues = ({ navigation, route }) => {
       return { totalToBePaid: 0, totalPaid: 0, totalProfit: 0 };
     }
     try {
-      const response = await axios.post(
-        `${url}/enroll/get-user-tickets-report/${currentUserId}`
+    const response = await axios.post(
+        `${url}/enroll/get-user-tickets-report/${currentUserId}`,
+        { source: "mychits-customer-app" } // Added source field
       );
       const data = response.data;
 
@@ -340,12 +342,13 @@ const PayYourDues = ({ navigation, route }) => {
         throw new Error("Invalid Details");
       }
       setLoading(true);
-      const response = await axios.post(`${url}/paymentapi/app/add`, {
+ const response = await axios.post(`${url}/paymentapi/app/add`, {
         user_id: userId,
         expiry: "3600",
         amount: `${amountToPay}`,
         purpose: "Due Payment",
         payment_group_tickets: [`chit-${modalDetails.groupId}|${modalDetails.ticket}`],
+        source: "mychits-customer-app", // Added source field
       });
       const data = response.data;
       Alert.alert(

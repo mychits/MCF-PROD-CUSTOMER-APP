@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext, useRef } from "rea
 import {
   View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView,
   ActivityIndicator, Platform, Dimensions, TouchableOpacity,
-  Vibration, Animated, Easing, RefreshControl,
+  Vibration, Animated, Easing, RefreshControl, Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -225,7 +225,9 @@ const MyPassbookScreen = ({ navigation }) => {
     try {
       // Chit
       try {
-        const r = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`);
+       const r = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`, {
+          source: "mychits-customer-app" // Added source field here
+        });
         const d = Array.isArray(r.data) ? r.data : [];
         setChitGroups(d);
         setEnrolledCount(d.length);
@@ -295,97 +297,97 @@ const MyPassbookScreen = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[C.navy]} tintColor={C.navy} />}
           >
-            {/* ── CHIT PORTFOLIO ── */}
-            <FadeSlide delay={60}>
-              <SectionEyebrow label="chit fund" />
-              {chitGroups.length > 0 ? (
-                <FinanceCard
-                  gradColors={[C.deepBlue, "#0A2A6E", C.navy]}
-                  icon={<MaterialIcons name="account-balance-wallet" size={24} color={C.gold} />}
-                  title="Chit Portfolio"
-                  label="total investment"
-                  amount={fmt(totalPaid)}
-                  sub1Label={totalProfit > 0 ? "total profit" : null}
-                  sub1Value={totalProfit > 0 ? `+ ₹ ${fmt(totalProfit)}` : null}
-                  sub1Color="#4ade80"
-                  badgeText={`${enrolledCount} active`}
-                  onPress={goChits}
-                />
-              ) : (
-                <ApplyCard
-                  iconBg={C.navy} icon={<MaterialIcons name="add-circle-outline" size={22} color="#fff" />}
-                  title="Join a Chit Group" titleColor={C.navy}
-                  sub="Invest today to grow your savings."
-                  onPress={() => navigation.navigate("Discover")}
-                />
-              )}
-            </FadeSlide>
+            {/* ── WRAPPER BOX around all three sections ── */}
+            <View style={styles.allCardsWrapper}>
 
-            {/* ── PIGMY SAVINGS ── */}
-            <FadeSlide delay={140}>
-              <SectionEyebrow label="pigmy savings" />
-              {pigmeAccounts.length > 0 ? (
-                <FinanceCard
-                  gradColors={["#052E40", "#0A5570", C.teal]}
-                  icon={<FontAwesome5 name="piggy-bank" size={22} color={C.gold} />}
-                  title="Pigmy Savings"
-                  label="total savings"
-                  amount={fmt(totalPigmy)}
-                  badgeText={`${activePigmy} accounts`}
-                  onPress={goPigmy}
-                />
-              ) : (
-                <ApplyCard
-                  iconBg={C.teal} icon={<FontAwesome5 name="piggy-bank" size={20} color="#fff" />}
-                  title="Apply for Pigmy" titleColor={C.teal}
-                  sub="Start your daily savings journey."
-                  onPress={goPigmy}
-                >
-                  <View style={styles.contactBox}>
-                    <Text style={styles.contactLabel}>contact to apply</Text>
-                    <Text style={styles.contactVal}>info.mychits@gmail.com</Text>
-                    <Text style={styles.contactVal}>+91 94839 00777</Text>
-                  </View>
-                </ApplyCard>
-              )}
-            </FadeSlide>
+              {/* ── CHIT PORTFOLIO ── */}
+              <FadeSlide delay={60}>
+                <SectionEyebrow label="chit fund" />
+                {chitGroups.length > 0 ? (
+                  <FinanceCard
+                    gradColors={[C.deepBlue, "#0A2A6E", C.navy]}
+                    icon={<MaterialIcons name="account-balance-wallet" size={24} color={C.gold} />}
+                    title="Chit Portfolio"
+                    label="total investment"
+                    amount={fmt(totalPaid)}
+                    sub1Label={totalProfit > 0 ? "total profit" : null}
+                    sub1Value={totalProfit > 0 ? `+ ₹ ${fmt(totalProfit)}` : null}
+                    sub1Color="#4ade80"
+                    badgeText={`${enrolledCount} active`}
+                    onPress={goChits}
+                  />
+                ) : (
+                  <ApplyCard
+                    iconBg={C.navy} icon={<MaterialIcons name="add-circle-outline" size={22} color="#fff" />}
+                    title="Join a Chit Group" titleColor={C.navy}
+                    sub="Invest today to grow your savings."
+                    onPress={() => navigation.navigate("Discover")}
+                  />
+                )}
+              </FadeSlide>
 
-            {/* ── LOAN SUMMARY ── */}
-            <FadeSlide delay={220}>
-              <SectionEyebrow label="loans" />
-              {loans.length > 0 ? (
-                <FinanceCard
-                  gradColors={["#3D1A00", "#7A3B00", C.orange]}
-                  icon={<Ionicons name="cash-outline" size={24} color={C.gold} />}
-                  title="Loan Summary"
-                  label="outstanding balance"
-                  amount={fmt(totalLoan - totalLoanPaid)}
-                  sub1Label="total repaid"
-                  sub1Value={`₹ ${fmt(totalLoanPaid)}`}
-                  badgeText={`${activeLoan} active`}
-                  onPress={goLoans}
-                />
-              ) : (
-                <ApplyCard
-                  iconBg={C.orange} icon={<Ionicons name="cash-outline" size={22} color="#fff" />}
-                  title="Apply for a Loan" titleColor={C.orange}
-                  sub="Quick financial assistance when you need it."
-                  onPress={goLoans}
-                />
-              )}
-            </FadeSlide>
+              {/* ── PIGMY SAVINGS ── */}
+              <FadeSlide delay={140}>
+                <SectionEyebrow label="pigmy savings" />
+                {pigmeAccounts.length > 0 ? (
+                  <FinanceCard
+                    gradColors={["#052E40", "#0A5570", C.teal]}
+                    icon={<FontAwesome5 name="piggy-bank" size={22} color={C.gold} />}
+                    title="Pigmy Savings"
+                    label="total savings"
+                    amount={fmt(totalPigmy)}
+                    badgeText={`${activePigmy} accounts`}
+                    onPress={goPigmy}
+                  />
+                ) : (
+                  <ApplyCard
+                    iconBg={C.teal} icon={<FontAwesome5 name="piggy-bank" size={20} color="#fff" />}
+                    title="Apply for Pigmy" titleColor={C.teal}
+                    sub="Start your daily savings journey."
+                    onPress={goPigmy}
+                  >
+                    <View style={styles.contactBox}>
+                      <TouchableOpacity style={styles.contactIconBtn} onPress={() => Linking.openURL("mailto:info.mychits@gmail.com")}>
+                        <MaterialIcons name="email" size={18} color={C.navy} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.contactIconBtn, { backgroundColor: "#E7F7EE" }]} onPress={() => Linking.openURL("whatsapp://send?phone=919483900777")}>
+                        <FontAwesome5 name="whatsapp" size={18} color="#25D366" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.contactIconBtn, { backgroundColor: "#FEF3E7" }]} onPress={() => Linking.openURL("tel:+919483900777")}>
+                        <MaterialIcons name="call" size={18} color={C.orange} />
+                      </TouchableOpacity>
+                    </View>
+                  </ApplyCard>
+                )}
+              </FadeSlide>
 
-            {/* ── Bottom stats ── */}
-            <FadeSlide delay={300}>
-              <Text style={styles.bottomLabel}>active services</Text>
-              <StatBar
-                chit={enrolledCount}
-                pigmy={activePigmy}
-                loan={activeLoan}
-                pigmyCount={pigmeAccounts.length}
-                loanCount={loans.length}
-              />
-            </FadeSlide>
+              {/* ── LOAN SUMMARY ── */}
+              <FadeSlide delay={220}>
+                <SectionEyebrow label="loans" />
+                {loans.length > 0 ? (
+                  <FinanceCard
+                    gradColors={["#3D1A00", "#7A3B00", C.orange]}
+                    icon={<Ionicons name="cash-outline" size={24} color={C.gold} />}
+                    title="Loan Summary"
+                    label="outstanding balance"
+                    amount={fmt(totalLoan - totalLoanPaid)}
+                    sub1Label="total repaid"
+                    sub1Value={`₹ ${fmt(totalLoanPaid)}`}
+                    badgeText={`${activeLoan} active`}
+                    onPress={goLoans}
+                  />
+                ) : (
+                  <ApplyCard
+                    iconBg={C.orange} icon={<Ionicons name="cash-outline" size={22} color="#fff" />}
+                    title="Apply for a Loan" titleColor={C.orange}
+                    sub="Quick financial assistance when you need it."
+                    onPress={goLoans}
+                  />
+                )}
+              </FadeSlide>
+
+            </View>
+            {/* ── END WRAPPER BOX ── */}
 
           </ScrollView>
         )}
@@ -411,6 +413,21 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.25, shadowRadius: 20 },
       android: { elevation: 20 },
+    }),
+  },
+
+  // ── NEW: wrapper box around all three card sections ──
+  allCardsWrapper: {
+    backgroundColor: C.card,
+    borderRadius: 22,
+    padding: 14,
+    marginTop: 4,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: C.border,
+    ...Platform.select({
+      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.10, shadowRadius: 14 },
+      android: { elevation: 6 },
     }),
   },
 
@@ -478,9 +495,8 @@ const styles = StyleSheet.create({
   applyContent: { flex: 1 },
   applyTitle:   { fontSize: 15, fontWeight: "800", marginBottom: 2 },
   applySub:     { fontSize: 12, color: C.textMid },
-  contactBox:   { backgroundColor: C.bg, padding: 10, borderRadius: 10, marginTop: 8 },
-  contactLabel: { fontSize: 8, fontWeight: "700", color: C.textMid, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 },
-  contactVal:   { fontSize: 11, fontWeight: "600", color: C.textDark, marginBottom: 1 },
+  contactBox:      { flexDirection: "row", gap: 8, marginTop: 10 },
+  contactIconBtn:  { width: 34, height: 34, borderRadius: 10, backgroundColor: "#EEF3FF", alignItems: "center", justifyContent: "center" },
 
   // Bottom section
   bottomLabel: { fontSize: 9, fontWeight: "700", color: C.textLight, textTransform: "uppercase", letterSpacing: 1.8, textAlign: "center", marginBottom: 10, marginTop: 8 },

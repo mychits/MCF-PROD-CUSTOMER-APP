@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useContext, useRef, useEffect } from "react";
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
@@ -176,7 +175,6 @@ const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, 
   return (
     <FadeSlide delay={index * 90}>
       <View style={[styles.groupCard, isPrized && styles.groupCardPrized, isHighlighted && styles.groupCardHighlighted]}>
-        {/* Serial Number Badge */}
         <View style={[styles.serialNumberBadge, { backgroundColor: isPrized ? Colors.goldDark : Colors.primary }]}>
           <Text style={styles.serialNumberText}>{serialNumber}</Text>
         </View>
@@ -191,8 +189,8 @@ const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, 
           <View style={styles.cardHeaderRow}>
             <View style={[styles.cardIconCircle, { backgroundColor: lightBg }]}>
               <MaterialIcons
-                name={isPrized ? "emoji-events" : isFree ? "local-offer" : "gavel"}
-                size={22} // Reduced size
+                name={isPrized ? "emoji_events" : isFree ? "local-offer" : "gavel"}
+                size={22}
                 color={accentColor}
               />
             </View>
@@ -260,7 +258,7 @@ const GroupCard = ({ card, onSelect, isHighlighted, onBidRequest, onPrizedInfo, 
   );
 };
 
-// ─── Summary Card & Records (Same as before) ──────────────────────────────────
+// ─── Summary Card ─────────────────────────────────────────────────────────────
 const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCount, commencementCount, selectedTicket, isPrized }) => (
   <FadeSlide delay={0}>
     <View style={styles.summaryCard}>
@@ -271,18 +269,41 @@ const SummaryCard = ({ groupName, groupValue, totalRecords, normalCount, freeCou
           {isPrized && <View style={styles.summaryPrizedBadge}><MaterialCommunityIcons name="trophy" size={9} color="#7B0D1E" /><Text style={styles.summaryPrizedText}>PRIZED</Text></View>}
         </View>
         <Text style={styles.summaryGroupName} numberOfLines={1}>{groupName}</Text>
-        {selectedTicket !== undefined && selectedTicket !== null && (<View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}><MaterialCommunityIcons name="ticket-outline" size={13} color="rgba(255,255,255,0.7)" /><Text style={styles.summaryTicketText}>Ticket <Text style={styles.summaryTicketNum}>{selectedTicket}</Text></Text></View>)}
-        <Text style={styles.summaryGroupValue}>{groupValue ? `₹ ${formatNumberIndianStyle(groupValue)}` : ""}</Text>
+        
+        <View style={styles.summaryDetailsRow}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <MaterialCommunityIcons name="ticket-outline" size={13} color="rgba(255,255,255,0.7)" />
+            <Text style={styles.summaryTicketText}>Ticket <Text style={styles.summaryTicketNum}>{selectedTicket}</Text></Text>
+          </View>
+          <Text style={styles.summaryGroupValueInline}>{groupValue ? `₹ ${formatNumberIndianStyle(groupValue)}` : ""}</Text>
+        </View>
       </LinearGradient>
-      <View style={styles.summaryStatsGrid}>
-        {[{ label: "Auction Records", value: totalRecords, color: Colors.textDark }, { label: "Normal Auction", value: normalCount, color: Colors.primary }, { label: "Free Auction", value: freeCount, color: Colors.accentOrange }, { label: "First Payment", value: commencementCount, color: Colors.accentBlue }].map((item, i) => (
-          <View key={i} style={styles.summaryStatBox}><Text style={[styles.summaryStatValue, { color: item.color }]}>{item.value}</Text><Text style={styles.summaryStatLabel}>{item.label}</Text></View>
-        ))}
+
+      <View style={styles.summaryStatsBody}>
+        <View style={styles.statsGrid}>
+          <View style={[styles.statBox, styles.statBoxTotal]}>
+            <Text style={styles.statValueTotal}>{totalRecords}</Text>
+            <Text style={styles.statLabel}>Auction Records</Text>
+          </View>
+          <View style={[styles.statBox, styles.statBoxNormal]}>
+            <Text style={styles.statValueNormal}>{normalCount}</Text>
+            <Text style={styles.statLabel}>Normal</Text>
+          </View>
+          <View style={[styles.statBox, styles.statBoxFree]}>
+            <Text style={styles.statValueFree}>{freeCount}</Text>
+            <Text style={styles.statLabel}>Free</Text>
+          </View>
+          <View style={[styles.statBox, styles.statBoxCommence]}>
+            <Text style={styles.statValueCommence}>{commencementCount}</Text>
+            <Text style={styles.statLabel}>First payment</Text>
+          </View>
+        </View>
       </View>
     </View>
   </FadeSlide>
 );
 
+// ─── REDESIGNED CommencementRecordCard (Timeline/Launch Theme) ────────────────
 const CommencementRecordCard = ({ groupName, firstAuctionDate, onPress }) => {
   const commencementStr = calcCommencementDate(firstAuctionDate);
   let isClose = false;
@@ -295,40 +316,178 @@ const CommencementRecordCard = ({ groupName, firstAuctionDate, onPress }) => {
   if (!firstAuctionDate && !groupName) return null;
   return (
     <FadeSlide delay={100}>
-      <TouchableOpacity style={[styles.recordCard, { borderWidth: 1.5, borderColor: isClose ? Colors.error : Colors.accentOrange }]} onPress={onPress} activeOpacity={0.8}>
-        <LinearGradient colors={isClose ? ["#FF6B35", "#F48024"] : ["#F48024", "#E8690A"]} start={[0, 0]} end={[1, 0]} style={styles.recordChipBar}><MaterialCommunityIcons name="rocket-launch" size={12} color="#fff" /><Text style={styles.recordChipText}>RECORD 1 · COMMENCEMENT</Text></LinearGradient>
-        <View style={styles.recordDatesRow}>
-          <View style={styles.recordDateBox}><View style={[styles.recordDateIconCircle, { backgroundColor: "#E3F2FD" }]}><MaterialCommunityIcons name="calendar-start" size={16} color={Colors.accentBlue} /></View><Text style={styles.recordDateLabel}>Commencement Date</Text><Text style={[styles.recordDateValue, { color: Colors.primary }]}>{firstAuctionDate ? formatDate(commencementStr) : "Not Set"}</Text></View>
-          <View style={styles.recordDateDivider} />
-          <View style={styles.recordDateBox}><View style={[styles.recordDateIconCircle, { backgroundColor: "#FFF3E0" }]}><MaterialCommunityIcons name="calendar-end" size={16} color={Colors.accentOrange} /></View><Text style={styles.recordDateLabel}>Next Auction Date</Text><Text style={styles.recordDateValue}>{firstAuctionDate ? formatDate(firstAuctionDate) : "N/A"}</Text></View>
+      <TouchableOpacity style={[styles.commencementCard]} onPress={onPress} activeOpacity={0.8}>
+        
+        {/* 1. Distinct Header (Deep Orange/Red Gradient) */}
+        <LinearGradient 
+          colors={isClose ? ["#D32F2F", "#C62828"] : ["#FF5722", "#E64A19"]} 
+          start={[0, 0]} end={[1, 0]} 
+          style={styles.commencementHeader}
+        >
+          <View style={styles.commencementHeaderTop}>
+             <View style={styles.commencementTitleRow}>
+                <MaterialCommunityIcons name="rocket-launch" size={18} color="#fff" />
+                <Text style={styles.commencementTitleText}>COMMENCEMENT RECORD</Text>
+             </View>
+             <View style={styles.recordOneBadge}>
+                <Text style={styles.recordOneText}>RECORD 1</Text>
+             </View>
+          </View>
+          {isClose && (
+             <View style={styles.urgentPill}>
+                <MaterialIcons name="notification-important" size={10} color="#fff" />
+                <Text style={styles.urgentText}>Commencing Soon</Text>
+             </View>
+          )}
+        </LinearGradient>
+
+        {/* 2. Vertical Timeline Body */}
+        <View style={styles.commencementBody}>
+           <View style={styles.timelineContainer}>
+              
+              {/* Step 1: Group Starts */}
+              <View style={styles.timelineItem}>
+                 <View style={styles.timelineIconBox}>
+                    <MaterialCommunityIcons name="flag-variant" size={18} color={isClose ? Colors.error : Colors.accentOrange} />
+                 </View>
+                 <View style={styles.timelineContent}>
+                    <Text style={styles.timelineLabel}>Group Starts</Text>
+                    <Text style={styles.timelineDate}>{firstAuctionDate ? formatDate(commencementStr) : "Not Set"}</Text>
+                 </View>
+              </View>
+
+              {/* Dashed Line Connector */}
+              <View style={styles.timelineLine} />
+
+              {/* Step 2: First Auction */}
+              <View style={styles.timelineItem}>
+                 <View style={styles.timelineIconBox}>
+                    <MaterialCommunityIcons name="gavel" size={18} color={isClose ? Colors.error : Colors.accentOrange} />
+                 </View>
+                 <View style={styles.timelineContent}>
+                    <Text style={styles.timelineLabel}>First Auction</Text>
+                    <Text style={styles.timelineDate}>{firstAuctionDate ? formatDate(firstAuctionDate) : "N/A"}</Text>
+                 </View>
+              </View>
+
+           </View>
         </View>
-        <View style={styles.recordInfoRow}><Text style={styles.recordInfoLabel}>Auction Type</Text><View style={[styles.recordTypePill, { backgroundColor: "#FFF3E0" }]}><Text style={[styles.recordTypePillText, { color: Colors.accentOrange }]}>COMMENCEMENT</Text></View></View>
+
+        {/* 3. Footer Status */}
+        <View style={styles.commencementFooter}>
+           <View style={[styles.commencementTypePill, { borderColor: isClose ? Colors.error : Colors.accentOrange }]}>
+              <Text style={[styles.commencementTypeText, { color: isClose ? Colors.error : Colors.accentOrange }]}>Auction Type: Commencement</Text>
+           </View>
+        </View>
+
       </TouchableOpacity>
     </FadeSlide>
   );
 };
 
+// ─── UPDATED AuctionRecordCard ────────────────────────────────────────────────
 const AuctionRecordCard = ({ record, recordNumber, index }) => {
   const isFree = record.auction_type?.toLowerCase() === "free";
   const typeLabel = record.auction_type ? record.auction_type.charAt(0).toUpperCase() + record.auction_type.slice(1) : "Normal";
-  const accentColor = isFree ? Colors.accentOrange : Colors.primary;
+  
+  // Define dynamic theme based on Auction Type
+  const theme = isFree ? {
+    bg: "#FFF3E0", // Light Orange background
+    border: "#FFE0B2",
+    primaryText: "#E65100",
+    secondaryText: "#EF6C00",
+    gradientStart: "#FF9800",
+    gradientEnd: "#F57C00",
+    iconBg: "rgba(230, 81, 0, 0.1)"
+  } : {
+    bg: "#E3F2FD", // Light Blue background
+    border: "#BBDEFB",
+    primaryText: "#0D47A1",
+    secondaryText: "#1976D2",
+    gradientStart: "#2196F3",
+    gradientEnd: "#1976D2",
+    iconBg: "rgba(13, 71, 161, 0.1)"
+  };
+
   return (
     <FadeSlide delay={index * 70}>
-      <View style={styles.recordCard}>
-        <LinearGradient colors={isFree ? ["#F48024", "#E8690A"] : [Colors.primary, Colors.primaryLight]} start={[0, 0]} end={[1, 0]} style={styles.recordChipBar}><MaterialCommunityIcons name="gavel" size={12} color="#fff" /><Text style={styles.recordChipText}>RECORD {recordNumber}</Text></LinearGradient>
+      <View style={[styles.recordCard, { backgroundColor: Colors.card, borderColor: theme.border }]}>
+        
+        {/* --- 1. HEADER: Record # (Left) | Auction Type (Right) --- */}
+        <LinearGradient 
+          colors={[theme.gradientStart, theme.gradientEnd]} 
+          start={[0, 0]} end={[1, 0]} 
+          style={styles.recordChipBar}
+        >
+          <View style={styles.headerRow}>
+            {/* Left: Record Number */}
+            <View style={styles.headerLeft}>
+              <MaterialCommunityIcons name="gavel" size={14} color="#fff" />
+              <Text style={styles.recordNumText}>RECORD {recordNumber}</Text>
+            </View>
+
+            {/* Right: Auction Type Badge */}
+            <View style={styles.headerRightBadge}>
+              <Text style={styles.headerTypeText}>{typeLabel}</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        {/* --- 2. MIDDLE: Dates --- */}
         <View style={styles.recordDatesRow}>
-          <View style={styles.recordDateBox}><View style={[styles.recordDateIconCircle, { backgroundColor: "#E3F2FD" }]}><MaterialCommunityIcons name="calendar-start" size={16} color={Colors.accentBlue} /></View><Text style={styles.recordDateLabel}>Auction Date</Text><Text style={styles.recordDateValue}>{formatDate(record.auction_date)}</Text></View>
+          <View style={styles.recordDateBox}>
+            <View style={[styles.recordDateIconCircle, { backgroundColor: theme.iconBg }]}>
+              <MaterialCommunityIcons name="calendar-start" size={14} color={theme.primaryText} />
+            </View>
+            <View style={{ marginLeft: 6, alignItems: 'center' }}>
+               <Text style={styles.recordDateLabel}>Auction Date</Text>
+               <Text style={[styles.recordDateValue, { color: theme.primaryText }]}>{formatDate(record.auction_date)}</Text>
+            </View>
+          </View>
           <View style={styles.recordDateDivider} />
-          <View style={styles.recordDateBox}><View style={[styles.recordDateIconCircle, { backgroundColor: "#E8F5E9" }]}><MaterialCommunityIcons name="calendar-end" size={16} color={Colors.successGreen} /></View><Text style={styles.recordDateLabel}>Next Date</Text><Text style={styles.recordDateValue}>{formatDate(record.next_date)}</Text></View>
+          <View style={styles.recordDateBox}>
+            <View style={[styles.recordDateIconCircle, { backgroundColor: theme.iconBg }]}>
+              <MaterialCommunityIcons name="calendar-end" size={14} color={theme.primaryText} />
+            </View>
+            <View style={{ marginLeft: 6, alignItems: 'center' }}>
+               <Text style={styles.recordDateLabel}>Next Date</Text>
+               <Text style={[styles.recordDateValue, { color: theme.primaryText }]}>{formatDate(record.next_date)}</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.recordInfoSection}>
-          <View style={styles.recordInfoRow}><Text style={styles.recordInfoLabel}>Auction Type</Text><View style={[styles.recordTypePill, { backgroundColor: isFree ? "#FFF3E0" : "#E3F2FD" }]}><Text style={[styles.recordTypePillText, { color: accentColor }]}>{typeLabel}</Text></View></View>
-          <View style={styles.recordInfoDivider} /><View style={styles.recordInfoRow}><Text style={styles.recordInfoLabel}>Bid Percentage</Text><Text style={styles.recordInfoValue}>{record.bid_percentage || "0"}%</Text></View>
+
+        {/* --- 3. FOOTER: Bid % | Ticket | Amount --- */}
+        <View style={[styles.recordFooterRow, { borderTopColor: theme.border }]}>
+          
+          {/* 1. Bid Percentage */}
+          <View style={styles.footerMetric}>
+             <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Bid Percentage</Text>
+             <Text style={[styles.footerValue, { color: theme.primaryText }]}>{record.bid_percentage || "0"}%</Text>
+          </View>
+
+          {/* Divider Line */}
+          <View style={[styles.footerDivider, { backgroundColor: theme.border }]} />
+
+          {/* 2. Winning Ticket */}
+          <View style={styles.footerMetric}>
+             <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Winning Ticket</Text>
+             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <MaterialCommunityIcons name="ticket-confirmation" size={12} color={theme.primaryText} />
+                <Text style={[styles.footerValue, { color: theme.primaryText }]}>{record.ticket || "N/A"}</Text>
+             </View>
+          </View>
+
+          {/* Divider Line */}
+          <View style={[styles.footerDivider, { backgroundColor: theme.border }]} />
+
+          {/* 3. Bid Amount */}
+          <View style={styles.footerMetric}>
+             <Text style={[styles.footerLabel, { color: theme.secondaryText }]}>Bid Amount</Text>
+             <Text style={[styles.footerValue, { color: theme.primaryText, fontWeight: '900' }]}>₹ {formatNumberIndianStyle(record.bid_amount)}</Text>
+          </View>
+
         </View>
-        <View style={styles.recordMetricsRow}>
-          <View style={[styles.recordMetricBox, { backgroundColor: Colors.dataPanelBg }]}><View style={styles.recordMetricIconCircle}><MaterialCommunityIcons name="ticket-confirmation" size={16} color={Colors.textMedium} /></View><Text style={styles.recordMetricLabel}>Winning Ticket</Text><Text style={styles.recordMetricValue}>{record.ticket || "N/A"}</Text></View>
-          <LinearGradient colors={[Colors.primary, Colors.primaryLight]} start={[0, 0]} end={[1, 0]} style={styles.recordMetricBoxHighlight}><View style={[styles.recordMetricIconCircle, { backgroundColor: "rgba(255,255,255,0.15)" }]}><MaterialIcons name="currency-rupee" size={16} color="#fff" /></View><Text style={styles.recordMetricLabelLight}>Bid Amount</Text><Text style={styles.recordMetricValueGold}>₹ {formatNumberIndianStyle(record.bid_amount)}</Text></LinearGradient>
-        </View>
+
       </View>
     </FadeSlide>
   );
@@ -520,7 +679,7 @@ const styles = StyleSheet.create({
   sectionTitleWrapper: { alignSelf: "center", marginTop: 20, marginBottom: 16, backgroundColor: "#d9dbb6ff", width: 220, height: 40, borderRadius: 11, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Colors.primary },
   sectionTitleText: { color: Colors.primary, fontWeight: "900", fontSize: 20 },
 
-  // --- Banner Styles (Slightly compacted) ---
+  // --- Banner Styles ---
   bannerCard: { backgroundColor: Colors.skyBlue, borderRadius: 18, padding: 14, marginBottom: 10, elevation: 3 },
   bannerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   bannerGreeting: { fontSize: 12, fontWeight: "500", color: Colors.primary, opacity: 0.75 },
@@ -538,14 +697,13 @@ const styles = StyleSheet.create({
   groupsLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, marginTop: 4 },
   groupsLabelText: { fontSize: 9, fontWeight: "700", color: Colors.textLight, letterSpacing: 1.6, textTransform: "uppercase" },
 
-  // --- GroupCard Styles (Made Smaller) ---
+  // --- GroupCard Styles ---
   groupCard: { backgroundColor: Colors.card, borderRadius: 16, marginBottom: 10, overflow: "visible", borderWidth: 1, borderColor: Colors.border, elevation: 6 },
   groupCardPrized: { borderColor: Colors.gold, borderWidth: 1.5 },
   groupCardHighlighted: { borderColor: Colors.primaryLight, borderWidth: 2 },
   cardTopStripe: { height: 4, width: "100%", borderTopLeftRadius: 16, borderTopRightRadius: 16 },
-  cardBody: { padding: 10 }, // Reduced padding
+  cardBody: { padding: 10 },
 
-  // Serial Number Badge (Fixed Visibility & Size)
   serialNumberBadge: { position: 'absolute', top: -10, left: 12, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', zIndex: 10, borderWidth: 2, borderColor: '#fff', elevation: 4 },
   serialNumberText: { color: '#fff', fontSize: 9, fontWeight: '900' },
 
@@ -574,53 +732,254 @@ const styles = StyleSheet.create({
   cardBtnTitle: { fontSize: 10, fontWeight: "bold" },
   cardBtnSub: { fontSize: 7, color: Colors.textLight },
 
-  // --- Summary Card & Records Styles (Unchanged) ---
+  // --- Summary Card Styles ---
   summaryCard: { backgroundColor: Colors.card, borderRadius: 18, marginBottom: 14, overflow: "hidden", elevation: 8 },
-  summaryGradientHeader: { paddingVertical: 18, paddingHorizontal: 16, minHeight: 130 },
+  summaryGradientHeader: { paddingVertical: 18, paddingHorizontal: 16, paddingBottom: 14 },
   summaryStripe1: { position: "absolute", width: 160, height: 160, backgroundColor: "rgba(255,255,255,0.04)", transform: [{ rotate: "35deg" }], top: -70, right: -30 },
   summaryStripe2: { position: "absolute", width: 80, height: 80, backgroundColor: "rgba(255,255,255,0.03)", transform: [{ rotate: "35deg" }], bottom: -30, left: 40 },
   summaryHeaderTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   summaryEyebrow: { fontSize: 9, fontWeight: "700", color: "rgba(255,255,255,0.55)", textTransform: "uppercase" },
   summaryPrizedBadge: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: Colors.gold, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   summaryPrizedText: { fontSize: 9, fontWeight: "900", color: "#7B0D1E" },
-  summaryGroupName: { fontSize: 20, fontWeight: "900", color: Colors.card, marginTop: 6 },
-  summaryTicketText: { fontSize: 12, color: "rgba(255,255,255,0.7)" },
-  summaryTicketNum: { fontSize: 14, fontWeight: "900", color: Colors.card },
-  summaryGroupValue: { fontSize: 26, fontWeight: "900", color: "#7FFFD4", marginTop: 6 },
-  summaryStatsGrid: { flexDirection: "row", flexWrap: "wrap", paddingVertical: 8 },
-  summaryStatBox: { width: "50%", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderRightWidth: 1, borderColor: Colors.lightDivider },
-  summaryStatValue: { fontSize: 22, fontWeight: "900" },
-  summaryStatLabel: { fontSize: 11, color: Colors.textMedium, marginTop: 3 },
+  summaryGroupName: { fontSize: 15, fontWeight: "900", color: Colors.card, marginTop: -2 },
+  summaryDetailsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: -2 },
+  summaryTicketText: { fontSize: 13, color: "rgba(255,255,255,0.8)" },
+  summaryTicketNum: { fontSize: 15, fontWeight: "900", color: Colors.card },
+  summaryGroupValueInline: { fontSize: 20, fontWeight: "900", color: "#7FFFD4" },
+
+  // Stats Body
+  summaryStatsBody: { backgroundColor: Colors.card, paddingVertical: 16, paddingHorizontal: 12 },
+  statsGrid: { flexDirection: 'row', justifyContent: "space-between", gap: 8 },
+  statBox: { flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: 'center', borderWidth: 1, elevation: 2 },
+  statLabel: { fontSize: 8, fontWeight: '500', marginTop: 3, textAlign:'center' },
+  statBoxTotal: { backgroundColor: "#E0F2F1", borderColor: "#B2DFDB" }, statValueTotal: { fontSize: 18, fontWeight: '900', color: "#00695C" },
+  statBoxNormal: { backgroundColor: "#E3F2FD", borderColor: "#BBDEFB" }, statValueNormal: { fontSize: 18, fontWeight: '900', color: Colors.primary },
+  statBoxFree: { backgroundColor: "#FFF3E0", borderColor: "#FFE0B2" }, statValueFree: { fontSize: 18, fontWeight: '900', color: Colors.accentOrange },
+  statBoxCommence: { backgroundColor: "#F3E5F5", borderColor: "#E1BEE7" }, statValueCommence: { fontSize: 18, fontWeight: '900', color: "#7B1FA2" },
 
   sectionLabelRow: { flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 12 },
   sectionLabelLine: { flex: 1, height: 1, backgroundColor: Colors.border },
   sectionLabelText: { fontSize: 9, fontWeight: "700", color: Colors.textLight, textTransform: "uppercase" },
 
-  recordCard: { backgroundColor: Colors.card, borderRadius: 16, marginBottom: 12, overflow: "hidden", elevation: 5 },
-  recordChipBar: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 7, paddingHorizontal: 14 },
-  recordChipText: { fontSize: 9, fontWeight: "800", color: "#fff" },
-  recordDatesRow: { flexDirection: "row", backgroundColor: Colors.dataPanelBg, borderBottomWidth: 1, borderColor: Colors.lightDivider },
-  recordDateBox: { flex: 1, alignItems: "center", paddingVertical: 14, gap: 4 },
-  recordDateIconCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  recordDateDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 12 },
-  recordDateLabel: { fontSize: 9, fontWeight: "600", color: Colors.textLight, textTransform: "uppercase" },
-  recordDateValue: { fontSize: 13, fontWeight: "800", color: Colors.textDark },
-  recordInfoSection: { paddingHorizontal: 14, paddingVertical: 2 },
-  recordInfoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10 },
-  recordInfoDivider: { height: 1, backgroundColor: Colors.lightDivider },
+  // --- COMMENCEMENT CARD STYLES (NEW DESIGN) ---
+  commencementCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    marginBottom: 12,
+    overflow: "hidden",
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#FFCCBC", // Light Orange border
+  },
+  commencementHeader: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  commencementHeaderTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  commencementTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  commencementTitleText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  recordOneBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.4)",
+  },
+  recordOneText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  urgentPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(0,0,0,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  urgentText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "700",
+  },
+  commencementBody: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  timelineContainer: {
+    position: "relative",
+  },
+  timelineItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  timelineIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FFF3E0",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    zIndex: 1,
+  },
+  timelineContent: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#FFCCBC",
+  },
+  timelineLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: Colors.textLight,
+    textTransform: "uppercase",
+    marginBottom: 2,
+  },
+  timelineDate: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: Colors.textDark,
+  },
+  timelineLine: {
+    position: "absolute",
+    left: 17, // center of icon box (36/2) - 1
+    top: 36,
+    bottom: 36,
+    width: 2,
+    backgroundColor: "#FFCCBC",
+    borderStyle: "dashed",
+    borderWidth: 1,
+    borderColor: "#FFCCBC",
+  },
+  commencementFooter: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#FFE0B2",
+    alignItems: "center",
+  },
+  commencementTypePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FFF3E0",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  commencementTypeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+
+  // --- Record Card Styles (Standard) ---
+  recordCard: { backgroundColor: Colors.card, borderRadius: 16, marginBottom: 12, overflow: "hidden", elevation: 5, borderWidth: 1, borderColor: Colors.border },
+  
+  // 1. Header Styles
+  recordChipBar: { 
+    paddingHorizontal: 12, 
+    paddingVertical: 10,
+    justifyContent: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  recordNumText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  headerRightBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  headerTypeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  // 2. Date Styles (Middle)
+  recordDatesRow: { flexDirection: "row", paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, borderColor: "rgba(0,0,0,0.05)" },
+  recordDateBox: { flex: 1, flexDirection: "row", alignItems: "center" },
+  recordDateIconCircle: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  recordDateDivider: { width: 1, backgroundColor: Colors.border, marginVertical: 6 },
+  recordDateLabel: { fontSize: 8, fontWeight: "600", color: Colors.textLight, textTransform: "uppercase" },
+  recordDateValue: { fontSize: 11, fontWeight: "800", marginTop: 2 },
+
+  // 3. Footer Styles (Last Line)
+  recordFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderTopWidth: 1,
+  },
+  footerMetric: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerLabel: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: Colors.textLight,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  footerValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: Colors.textDark,
+    textAlign: 'center',
+  },
+  footerDivider: {
+    width: 1,
+    height: 30,
+  },
+
+  // Legacy Styles
+  recordInfoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, paddingHorizontal: 14 },
   recordInfoLabel: { fontSize: 13, fontWeight: "500", color: Colors.textMedium },
-  recordInfoValue: { fontSize: 13, fontWeight: "700", color: Colors.textDark },
   recordTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   recordTypePillText: { fontSize: 11, fontWeight: "800" },
-
-  recordMetricsRow: { flexDirection: "row" },
-  recordMetricBox: { flex: 1, alignItems: "center", paddingVertical: 14, gap: 4 },
-  recordMetricBoxHighlight: { flex: 1, alignItems: "center", paddingVertical: 14, gap: 4 },
-  recordMetricIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  recordMetricLabel: { fontSize: 9, fontWeight: "700", color: Colors.textLight, textTransform: "uppercase" },
-  recordMetricLabelLight: { fontSize: 9, fontWeight: "700", color: "rgba(255,255,255,0.6)", textTransform: "uppercase" },
-  recordMetricValue: { fontSize: 16, fontWeight: "900", color: Colors.textDark },
-  recordMetricValueGold: { fontSize: 16, fontWeight: "900", color: Colors.gold },
 
   recordsContainer: { flex: 1 },
   recordsScrollContent: { paddingBottom: 30 },

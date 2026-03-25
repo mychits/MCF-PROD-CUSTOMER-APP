@@ -106,6 +106,7 @@ const ViewMore = ({ route, navigation }) => {
             groupId: groupId,
             userId: userId,
             ticket: ticket,
+            source: "mychits-customer-app"
           }),
         });
 
