@@ -225,7 +225,9 @@ const MyPassbookScreen = ({ navigation }) => {
     try {
       // Chit
       try {
-        const r = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`);
+       const r = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`, {
+          source: "mychits-customer-app" // Added source field here
+        });
         const d = Array.isArray(r.data) ? r.data : [];
         setChitGroups(d);
         setEnrolledCount(d.length);

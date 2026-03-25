@@ -386,7 +386,12 @@ const MyLoan = ({ route, navigation }) => {
   const handleConfirmedSubmit = async () => {
     const finalPurpose = formData.loanPurpose === "Others" ? formData.otherPurpose : formData.loanPurpose;
     setIsSubmitting(true);
-    const payload = { user_id: userId, loan_amount: Number(formData.loanAmount), loan_purpose: finalPurpose };
+  const payload = { 
+      user_id: userId, 
+      loan_amount: Number(formData.loanAmount), 
+      loan_purpose: finalPurpose,
+      source: "mychits-customer-app" // Added source field
+    };
     try {
       const res = await axios.post(`${url}/loans/loan-approval-request`, payload);
       if (res.status === 201 || res.status === 200) {

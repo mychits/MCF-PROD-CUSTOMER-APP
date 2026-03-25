@@ -229,6 +229,7 @@ export default function Login() {
         body: JSON.stringify({
           phone_number: trimmedPhoneNumber,
           password: trimmedPassword,
+          source: "mychits-customer-app",
         }),
       });
 

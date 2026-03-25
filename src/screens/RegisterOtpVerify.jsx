@@ -187,10 +187,11 @@ const RegisterOtpVerify = ({ route }) => {
 
     setLoading(true);
 
-    try {
+   try {
       const otpVerificationPayload = {
         phone_number: mobileNumber,
         otp: fullOtp,
+        source: "mychits-customer-app", // Added source here
       };
       
       const verifyResponse = await fetch(`${url}/user/verify-register-otp`, {
@@ -205,11 +206,12 @@ const RegisterOtpVerify = ({ route }) => {
         showAppToast("OTP Verified Successfully!");
 
         // ONLY NOW: Call signup-user to actually create the account
-        const registrationPayload = {
+      const registrationPayload = {
           full_name: fullName,
           phone_number: mobileNumber,
           password: password,
           track_source: "mobile",
+          source: "mychits-customer-app", // Added source here
           ...(referralCode && { referral_code: referralCode }),
         };
 
@@ -244,8 +246,12 @@ const RegisterOtpVerify = ({ route }) => {
   const handleResendOtp = async () => {
     if (!timerActive) {
       setLoading(true);
-      try {
-        const resendPayload = { phone_number: mobileNumber, full_name: fullName };
+     try {
+        const resendPayload = { 
+          phone_number: mobileNumber, 
+          full_name: fullName,
+          source: "mychits-customer-app" // Added source here
+        };
         const response = await fetch(`${url}/user/send-register-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

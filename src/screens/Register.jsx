@@ -472,12 +472,13 @@ export default function Register() {
 
     setLoading(true);
 
-    try {
-      const payload = {
-        phone_number: phoneNumber.replace(/\s/g, ""),
-        full_name: fullName.trim(),
-        ...(referralCode.trim() && { referral_code: referralCode.trim() }),
-      };
+ try {
+    const payload = {
+      phone_number: phoneNumber.replace(/\s/g, ""),
+      full_name: fullName.trim(),
+      source: "mychits-customer-app", // Added source field here
+      ...(referralCode.trim() && { referral_code: referralCode.trim() }),
+    };
 
       const apiEndpoint = `${url}/user/signup-otp`;
 

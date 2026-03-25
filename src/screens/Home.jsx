@@ -465,7 +465,9 @@ const Home = ({ route, navigation }) => {
         }
 
         try {
-            const response = await axios.post(`${url}/enroll/get-user-tickets/${userId}`);
+            const response = await axios.post(`${url}/enroll/get-user-tickets/${userId}`, {
+            source: "mychits-customer-app"
+        });
             console.log('API Response for RM:', JSON.stringify(response.data, null, 2));
 
             if (response.data && response.data.length > 0) {

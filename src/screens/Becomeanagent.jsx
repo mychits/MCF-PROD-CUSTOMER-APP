@@ -1,4 +1,4 @@
-// Becomeanagent.jsx - (No significant changes needed here for the 404 error fix, as your POST request URL formation is correct for the intended backend setup)
+
 
 import React, { useState, useEffect, useContext } from "react";
 import {
@@ -132,6 +132,7 @@ const Becomeanagent = ({ navigation, route }) => {
         experience,
         status: "pending",
         appliedAt: new Date().toISOString(),
+        source: "mychits-customer-app",
       };
 
       const fullUrl = `${url}/become-agent/agents/become`;

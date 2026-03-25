@@ -262,12 +262,13 @@ const IntroduceNewCustomers = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`${url}/user/add-user`, {
+ const response = await axios.post(`${url}/user/add-user`, {
         full_name: fullName.trim(),
         email: email.trim(),
         phone_number: phoneNumber.trim(),
         Zipcode: zipCode.trim(),
         track_source: "mobile",
+        source: "mychits-customer-app", 
       });
       if (response.status === 201) {
         showCustomToast(response.data.message || "Customer created successfully! 🎉");

@@ -74,8 +74,9 @@ const ForgotPassword = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${url}/user/send-otp-reset-password`, {
+    const response = await axios.post(`${url}/user/send-otp-reset-password`, {
         phone_number: mobileNumber,
+        source: "mychits-customer-app", 
       });
 
       if (response.status === 200) {

@@ -79,9 +79,9 @@ const MyGroupsAndDues = ({ navigation }) => {
       console.log("Attempting to fetch groups from URL (POST):", groupsFetchUrl);
       console.log("Attempting to fetch overview from URL (POST):", overviewFetchUrl);
 
-      const [groupsResponse, overviewResponse] = await Promise.allSettled([
-        axios.post(groupsFetchUrl), // Changed to POST request
-        axios.post(overviewFetchUrl),
+     const [groupsResponse, overviewResponse] = await Promise.allSettled([
+        axios.post(groupsFetchUrl, { source: "mychits-customer-app" }), 
+        axios.post(overviewFetchUrl, { source: "mychits-customer-app" }),
       ]);
       if (groupsResponse.status === 'fulfilled' && groupsResponse.value.data) {
         const rawGroupsData = Array.isArray(groupsResponse.value.data) ? groupsResponse.value.data : [];
