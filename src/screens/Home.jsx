@@ -829,7 +829,7 @@ const services = [
                                     style={styles.onlinePayButton}
                                     onPress={() => navigation.navigate('PayOnline', { userId: userId })}
                                 >
-                                    <MaterialIcons name="payment" size={16} color="#FFFFFF" />
+                                    <MaterialIcons name="payment" size={15} color="#FFFFFF" />
                                     <Text style={styles.onlinePayButtonText}>Pay Online</Text>
                                 </TouchableOpacity>
                             </View>
@@ -1508,7 +1508,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#109c3a',
         paddingVertical: 10,
-        paddingHorizontal: 15,
+        paddingHorizontal: 12,
         borderRadius: 12,
         // High elevation makes it look "clickable"
         elevation: 8,
@@ -1519,18 +1519,18 @@ const styles = StyleSheet.create({
     },
     onlinePayButtonText: {
         color: '#FFFFFF',
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: 'bold',
         marginLeft: 6,
     },
     welcomeText: {
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: '500',
         color: '#053B90',
         opacity: 0.8
     },
     userNameText: {
-        fontSize: 22,
+        fontSize: 19,
         fontWeight: 'bold',
         color: '#053B90',
         marginTop: 2

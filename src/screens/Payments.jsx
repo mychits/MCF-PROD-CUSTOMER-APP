@@ -64,28 +64,28 @@ const TransactionCard = React.memo(({ item, onPress, showCategoryBadge, serialNu
 
     switch (item.pay_for) {
         case 'Chit':
-            icon = <MaterialCommunityIcons name="wallet-membership" size={20} color={COLORS.primary} />;
+            icon = <MaterialCommunityIcons name="wallet-membership" size={18} color={COLORS.primary} />;
             iconBg = "#E8EAF6"; 
             accentColor = COLORS.primary;
             title = item.group_name || "Chit Plan";
             subtitle = `Ticket: #${item.ticket || 'N/A'}`;
             break;
         case 'Pigmy':
-            icon = <FontAwesome5 name="piggy-bank" size={16} color="#009688" />;
+            icon = <FontAwesome5 name="piggy-bank" size={14} color="#009688" />;
             iconBg = "#E0F2F1"; 
             accentColor = "#009688";
             title = `Pigmy Savings`;
             subtitle = `ID: ${item.pigme_id || 'N/A'}`;
             break;
         case 'Loan':
-            icon = <MaterialIcons name="speed" size={20} color="#FF9800" />;
+            icon = <MaterialIcons name="speed" size={18} color="#FF9800" />;
             iconBg = "#FFF3E0"; 
             accentColor = "#FF9800";
             title = `Loan Installment`;
             subtitle = `Ref: ${item.loan_id || 'N/A'}`;
             break;
         default:
-            icon = <MaterialIcons name="payment" size={20} color={COLORS.muted} />;
+            icon = <MaterialIcons name="payment" size={18} color={COLORS.muted} />;
             iconBg = "#F1F5F9";
             accentColor = COLORS.muted;
             title = "General Payment";
@@ -125,11 +125,11 @@ const TransactionCard = React.memo(({ item, onPress, showCategoryBadge, serialNu
                 <View style={styles.cardBottomRow}>
                     <View style={styles.detailsCol}>
                         <View style={styles.infoRow}>
-                            <Ionicons name="calendar-outline" size={12} color={COLORS.muted} />
+                            <Ionicons name="calendar-outline" size={11} color={COLORS.muted} />
                             <Text style={styles.infoText}>{formatDate(item.pay_date)}</Text>
                         </View>
                         <View style={styles.infoRow}>
-                            <Ionicons name="document-text-outline" size={12} color={COLORS.muted} />
+                            <Ionicons name="document-text-outline" size={11} color={COLORS.muted} />
                             <Text style={styles.infoText}>{item.receipt_no}</Text>
                         </View>
                     </View>
@@ -230,7 +230,7 @@ const Payments = ({ navigation }) => {
 
     const EmptyState = () => (
         <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="database-off-outline" size={70} color={COLORS.muted} style={{ opacity: 0.5 }} />
+            <MaterialCommunityIcons name="database-off-outline" size={50} color={COLORS.muted} style={{ opacity: 0.5 }} />
             <Text style={styles.emptyText}>{`No transactions found for ${activeTab}`}</Text>
             <TouchableOpacity onPress={fetchPayments} style={styles.refreshBtn}>
                 <Text style={styles.refreshBtnText}>Refresh Data</Text>
@@ -305,84 +305,92 @@ const Payments = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     mainContainer: { flex: 1, backgroundColor: COLORS.primary },
-    topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 15 },
-    topBarTitle: { color: COLORS.white, fontSize: 18, fontWeight: '700' },
-    iconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-    body: { flex: 1, backgroundColor: "#F8F9FA", borderTopLeftRadius: 35, borderTopRightRadius: 35 },
+    topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 15, paddingBottom: 12 },
+    topBarTitle: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
+    iconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+    body: { flex: 1, backgroundColor: "#F8F9FA", borderTopLeftRadius: 25, borderTopRightRadius: 25 },
     loaderWrapper: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 50 },
-    loaderText: { marginTop: 12, color: COLORS.primary, fontWeight: '600', fontSize: 14 },
-    listContent: { paddingHorizontal: 20, paddingBottom: 40 },
-    headerFullWidth: { marginTop: 25 },
-    summaryCard: { borderRadius: 25, padding: 25, marginBottom: 25, elevation: 8 },
-    watermark: { position: 'absolute', right: -20, bottom: -20, width: 120, height: 120, opacity: 0.1, tintColor: COLORS.white },
-    summaryLabel: { color: COLORS.bgBlue, fontSize: 13, fontWeight: '600' },
-    summaryAmount: { color: COLORS.white, fontSize: 32, fontWeight: '800', marginVertical: 8 },
-    summaryFooter: { flexDirection: 'row', marginTop: 10, paddingTop: 15, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
+    loaderText: { marginTop: 10, color: COLORS.primary, fontWeight: '600', fontSize: 12 },
+    listContent: { paddingHorizontal: 12, paddingBottom: 20 }, // Reduced padding
+    headerFullWidth: { marginTop: 10 }, // Reduced margin
+    summaryCard: { borderRadius: 16, padding: 16, marginBottom: 12, elevation: 5 }, // Smaller card
+    watermark: { position: 'absolute', right: -10, bottom: -10, width: 90, height: 90, opacity: 0.1, tintColor: COLORS.white }, // Smaller watermark
+    summaryLabel: { color: COLORS.bgBlue, fontSize: 11, fontWeight: '600' },
+    summaryAmount: { color: COLORS.white, fontSize: 26, fontWeight: '800', marginVertical: 5 }, // Smaller font
+    summaryFooter: { flexDirection: 'row', marginTop: 5, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
     stat: { flex: 1 },
-    statVal: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
-    statLabel: { color: COLORS.muted, fontSize: 11 },
-    statDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 15 },
-    tabWrapper: { flexDirection: 'row', backgroundColor: '#E2E8F0', borderRadius: 15, padding: 5, marginBottom: 25 },
-    tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 12 },
-    tabBtnActive: { backgroundColor: COLORS.white, elevation: 2 },
-    tabBtnText: { fontSize: 13, fontWeight: '600', color: COLORS.muted },
-    tabBtnTextActive: { color: COLORS.primary, fontWeight: '700' },
-    sectionHeader: { marginBottom: 20, height: 35, justifyContent: 'center' },
-    yellowLabel: { backgroundColor: COLORS.accent, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', zIndex: 2 },
-    yellowLabelText: { color: COLORS.primary, fontWeight: '900', fontSize: 10 },
-    lineDecorator: { position: 'absolute', left: 0, right: 0, height: 1, backgroundColor: COLORS.primary, opacity: 0.1, top: 17 },
+    statVal: { color: COLORS.white, fontSize: 14, fontWeight: '700' },
+    statLabel: { color: COLORS.muted, fontSize: 10 },
+    statDivider: { width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 10 }, // Reduced height
     
-    // Updated Card Container
-    cardContainer: { backgroundColor: COLORS.white, borderRadius: 20, marginBottom: 20, elevation: 3, marginHorizontal: 4 },
+    // Tabs
+    tabWrapper: { flexDirection: 'row', backgroundColor: '#E2E8F0', borderRadius: 10, padding: 3, marginBottom: 12 }, // Smaller wrapper
+    tabBtn: { flex: 1, paddingVertical: 6, alignItems: 'center', borderRadius: 8 }, // Less padding
+    tabBtnActive: { backgroundColor: COLORS.white, elevation: 2 },
+    tabBtnText: { fontSize: 11, fontWeight: '600', color: COLORS.muted },
+    tabBtnTextActive: { color: COLORS.primary, fontWeight: '700' },
+    
+    // Section Header
+    sectionHeader: { marginBottom: 12, height: 25, justifyContent: 'center' },
+    yellowLabel: { backgroundColor: COLORS.accent, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, alignSelf: 'flex-start', zIndex: 2 },
+    yellowLabelText: { color: COLORS.primary, fontWeight: '900', fontSize: 9 },
+    lineDecorator: { position: 'absolute', left: 0, right: 0, height: 1, backgroundColor: COLORS.primary, opacity: 0.1, top: 12 },
+    
+    // --- COMPACT CARD STYLES ---
+    cardContainer: { backgroundColor: COLORS.white, borderRadius: 12, marginBottom: 10, elevation: 2, marginHorizontal: 2 }, // Smaller radius & margin
     serialBadge: {
         position: 'absolute',
-        top: -8,
-        left: -8,
+        top: -6,
+        left: -6,
         backgroundColor: COLORS.accent,
-        minWidth: 22,
-        height: 22,
-        borderRadius: 11,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
-        elevation: 4,
-        borderWidth: 1.5,
+        elevation: 3,
+        borderWidth: 1,
         borderColor: COLORS.white,
     },
-    serialText: { fontSize: 10, fontWeight: '900', color: COLORS.primary },
+    serialText: { fontSize: 9, fontWeight: '900', color: COLORS.primary },
     
-    cardInner: { padding: 16 },
+    cardInner: { padding: 10 }, // Reduced padding
     cardTopRow: { flexDirection: 'row', alignItems: 'center' },
-    iconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-    headerText: { flex: 1, marginLeft: 12 },
+    iconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' }, // Smaller icon box
+    headerText: { flex: 1, marginLeft: 10 }, // Reduced margin
     titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
-    titleText: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
-    subtitleText: { fontSize: 11, color: COLORS.muted, marginTop: 2 },
-    inlineCategoryTag: { marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-    inlineCategoryText: { fontSize: 9, fontWeight: '900' },
-    statusBadge: { backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-    statusText: { color: COLORS.success, fontSize: 9, fontWeight: '800' },
-    divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+    titleText: { fontSize: 12, fontWeight: '700', color: COLORS.primary }, // Smaller font
+    subtitleText: { fontSize: 10, color: COLORS.muted, marginTop: 1 }, // Smaller font
+    inlineCategoryTag: { marginLeft: 6, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 3 },
+    inlineCategoryText: { fontSize: 8, fontWeight: '800' }, // Smaller font
+    statusBadge: { backgroundColor: '#E8F5E9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }, // Smaller badge
+    statusText: { color: COLORS.success, fontSize: 8, fontWeight: '800' }, // Smaller font
+    divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 8 }, // Reduced margin
     cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
-    infoText: { fontSize: 11, color: COLORS.muted, marginLeft: 5 },
-    amountMain: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
-    emptyContainer: { alignItems: 'center', marginTop: 80, paddingHorizontal: 40 },
-    emptyText: { color: COLORS.muted, marginTop: 15, fontSize: 14, textAlign: 'center', fontWeight: '600' },
-    refreshBtn: { marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.primary },
-    refreshBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 13 },
+    infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 1 }, // Reduced spacing
+    infoText: { fontSize: 10, color: COLORS.muted, marginLeft: 4 }, // Smaller font
+    amountMain: { fontSize: 15, fontWeight: '800', color: COLORS.primary }, // Smaller font
+    
+    // Empty State
+    emptyContainer: { alignItems: 'center', marginTop: 60, paddingHorizontal: 40 },
+    emptyText: { color: COLORS.muted, marginTop: 10, fontSize: 12, textAlign: 'center', fontWeight: '600' }, // Smaller
+    refreshBtn: { marginTop: 15, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: COLORS.primary }, // Smaller
+    refreshBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 11 }, // Smaller
+    
+    // Modal
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 25 },
-    modalHandle: { width: 40, height: 5, backgroundColor: '#CBD5E1', borderRadius: 10, alignSelf: 'center', marginBottom: 15 },
+    modalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 25, borderTopRightRadius: 25, padding: 20 },
+    modalHandle: { width: 35, height: 4, backgroundColor: '#CBD5E1', borderRadius: 5, alignSelf: 'center', marginBottom: 12 },
     receiptBody: { alignItems: 'center' },
-    modalTitle: { fontSize: 18, fontWeight: '800', color: COLORS.primary, marginBottom: 10 },
-    receiptMainAmount: { fontSize: 36, fontWeight: '900', color: COLORS.primary, marginBottom: 20 },
-    receiptInfoGrid: { width: '100%', backgroundColor: "#F8F9FA", borderRadius: 20, padding: 20, marginBottom: 25 },
-    detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-    detailLabel: { color: COLORS.muted, fontWeight: '600', fontSize: 13 },
-    detailValue: { color: COLORS.primary, fontWeight: '700', fontSize: 13 },
-    closeModalBtn: { backgroundColor: COLORS.primary, width: '100%', padding: 16, borderRadius: 15, alignItems: 'center' },
-    closeModalBtnText: { color: COLORS.white, fontWeight: '700' }
+    modalTitle: { fontSize: 16, fontWeight: '800', color: COLORS.primary, marginBottom: 8 },
+    receiptMainAmount: { fontSize: 30, fontWeight: '900', color: COLORS.primary, marginBottom: 15 },
+    receiptInfoGrid: { width: '100%', backgroundColor: "#F8F9FA", borderRadius: 15, padding: 15, marginBottom: 20 },
+    detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+    detailLabel: { color: COLORS.muted, fontWeight: '600', fontSize: 12 },
+    detailValue: { color: COLORS.primary, fontWeight: '700', fontSize: 12 },
+    closeModalBtn: { backgroundColor: COLORS.primary, width: '100%', padding: 14, borderRadius: 12, alignItems: 'center' },
+    closeModalBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 14 }
 });
 
 export default Payments;
