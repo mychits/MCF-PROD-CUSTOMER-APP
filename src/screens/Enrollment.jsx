@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, useRef } from "react";
 import {
     View,
@@ -182,7 +181,7 @@ const posterStyles = StyleSheet.create({
     },
     card: {
         width: CARD_WIDTH,
-        height: 150,
+        height: 140, // Reduced from 150 for compactness
         borderRadius: 18,
         overflow: 'hidden',
         shadowColor: '#000',
@@ -237,7 +236,7 @@ const posterStyles = StyleSheet.create({
         justifyContent: 'center',
     },
     offerLineGet: {
-        fontSize: 14,
+        fontSize: 12, // Reduced from 14
         color: 'rgba(255,255,255,0.85)',
         fontWeight: '600',
         letterSpacing: 1,
@@ -245,10 +244,10 @@ const posterStyles = StyleSheet.create({
         marginBottom: 2,
     },
     offerLine1: {
-        fontSize: 25,
+        fontSize: 22, // Reduced from 25
         color: '#FFFFFF',
         fontWeight: '900',
-        lineHeight: 32,
+        lineHeight: 28, // Reduced from 32
         flexShrink: 1,
     },
     offerLine2Row: {
@@ -257,18 +256,18 @@ const posterStyles = StyleSheet.create({
         marginTop: 2,
     },
     offerLine2Prefix: {
-        fontSize: 10,
+        fontSize: 9, // Reduced from 10
         color: '#E0E0E0',
         marginBottom: 2,
     },
     offerLine2Amount: {
-        fontSize: 18,
+        fontSize: 16, // Reduced from 18
         color: '#FFC93C',
         fontWeight: 'bold',
         marginLeft: 4,
     },
     offerLine2Suffix: {
-        fontSize: 11,
+        fontSize: 10, // Reduced from 11
         color: '#E0E0E0',
         marginBottom: 2,
         marginLeft: 2,
@@ -281,8 +280,8 @@ const posterStyles = StyleSheet.create({
     },
     imageShadowBg: {
         position: 'absolute',
-        width: 75,
-        height: 100,
+        width: 70, // Reduced from 75
+        height: 90, // Reduced from 100
         backgroundColor: 'rgba(0,0,0,0.2)',
         borderRadius: 10,
         bottom: 0,
@@ -291,8 +290,8 @@ const posterStyles = StyleSheet.create({
         zIndex: -1,
     },
     posterImage: {
-        width: 110,
-        height: 140,
+        width: 100, // Reduced from 110
+        height: 130, // Reduced from 140
         transform: [{ rotate: '-5deg' }],
     },
     floatingTag: {
@@ -300,8 +299,8 @@ const posterStyles = StyleSheet.create({
         top: 10,
         right: 10,
         backgroundColor: '#FFFFFF',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingHorizontal: 6,
+        paddingVertical: 3,
         borderRadius: 15,
         borderWidth: 1,
         borderColor: '#FF2E63',
@@ -314,7 +313,7 @@ const posterStyles = StyleSheet.create({
     },
     floatingTagText: {
         color: '#053B90',
-        fontSize: 10,
+        fontSize: 9, // Reduced from 10
         fontWeight: 'bold',
     },
     dotsRow: {
@@ -507,7 +506,7 @@ const Enrollment = ({ route, navigation }) => {
         if (formattedAmount === "0") return null;
         return (
             <View style={[styles.installmentRowSmall, { backgroundColor: colors.primary, borderLeftColor: colors.secondary }]}>
-                <Text style={[styles.detailLabelSmall, { color: colors.darkText, fontWeight: 'bold', fontSize: 12 }]}>{label}:</Text>
+                <Text style={[styles.detailLabelSmall, { color: colors.darkText, fontWeight: 'bold', fontSize: 10 }]}>{label}:</Text>
                 <Text style={[styles.detailValueSmall, styles.highlightedInstallment, { color: colors.secondary }]}>₹ {formattedAmount} / {timeUnit}</Text>
             </View>
         );
@@ -528,7 +527,6 @@ const Enrollment = ({ route, navigation }) => {
             }
         };
         
-        // --- FIXED formatDate FUNCTION ---
         const formatDate = (dateString) => {
             if (!dateString) return "N/A";
             const date = new Date(dateString);
@@ -537,7 +535,6 @@ const Enrollment = ({ route, navigation }) => {
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
             return date.toLocaleDateString('en-GB', options);
         };
-        // ---------------------------------
 
         const vacantSeats = getVacantSeats(card);
         const isCurrentCardJoining = isJoining && joinGroupId === card._id;
@@ -550,7 +547,7 @@ const Enrollment = ({ route, navigation }) => {
                 <View style={styles.cardHeaderSmall}>
                     <View style={styles.groupMainInfoRow}>
                         <TouchableOpacity onPress={() => setSelectedCardIndex(card._id)} style={styles.radioButtonContainer}>
-                            <Ionicons name={isSelected ? "radio-button-on" : "radio-button-off"} size={24} color={isSelected ? "#053B90" : "#ccc"} />
+                            <Ionicons name={isSelected ? "radio-button-on" : "radio-button-off"} size={20} color={isSelected ? "#053B90" : "#ccc"} />
                         </TouchableOpacity>
                         <View style={styles.groupNameAndValueBlock}>
                             <View style={styles.groupValueContainerSmall}>
@@ -568,8 +565,12 @@ const Enrollment = ({ route, navigation }) => {
                         </View>
                     </View>
                 </View>
-                <View style={styles.headerSeparatorSmall} />
-                <View style={styles.cardDetailsRowSmall}>
+                
+                {/* Compact Separator */}
+                <View style={[styles.headerSeparatorSmall, { marginVertical: 4 }]} />
+                
+                {/* Compact Details Row */}
+                <View style={[styles.cardDetailsRowSmall, { marginBottom: 4 }]}>
                     <View style={styles.detailItemSmall}>
                         <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Starts</Text>
                         <Text style={[styles.detailValueSmall, { color: isSelected ? colors.text : colors.darkText }]}>{formatDate(card.start_date)}</Text>
@@ -587,16 +588,20 @@ const Enrollment = ({ route, navigation }) => {
                         <Text style={[styles.detailValueSmall, styles.highlightedVacantSeatsSmall]}>{vacantSeats}</Text>
                     </View>
                 </View>
-                <View style={[styles.installmentDetailsStandalone, { backgroundColor: colors.primary }]}>
+
+                {/* Compact Installment */}
+                <View style={[styles.installmentDetailsStandalone, { marginVertical: 4 }]}>
                     <InstallmentRow amount={monthlyInstallment} label="Monthly Installment" timeUnit="month" colors={colors} />
                 </View>
-                <View style={styles.viewMoreContainerSmall}>
-                    <TouchableOpacity style={[styles.viewMoreButtonSmall, { borderColor: colors.secondary }, (!isConnected || !isInternetReachable || isCurrentCardJoining) && { opacity: 0.5, borderColor: '#aaa' }]} onPress={() => handleEnrollment(card)} activeOpacity={0.7} disabled={!isConnected || !isInternetReachable || isCurrentCardJoining}>
-                        <Text style={[styles.viewMoreButtonTextSmall, { color: colors.secondary }]}>Details</Text>
-                        <Ionicons name="information-circle-outline" size={16} color={colors.secondary} style={styles.viewMoreIconSmall} />
+
+                {/* Compact Footer */}
+                <View style={[styles.viewMoreContainerSmall, { paddingTop: 4, marginTop: 0 }]}>
+                    <TouchableOpacity style={[styles.viewMoreButtonSmall, { borderColor: colors.secondary, paddingVertical: 6 }, (!isConnected || !isInternetReachable || isCurrentCardJoining) && { opacity: 0.5, borderColor: '#aaa' }]} onPress={() => handleEnrollment(card)} activeOpacity={0.7} disabled={!isConnected || !isInternetReachable || isCurrentCardJoining}>
+                        <Text style={[styles.viewMoreButtonTextSmall, { color: colors.secondary, fontSize: 11 }]}>Details</Text>
+                        <Ionicons name="information-circle-outline" size={14} color={colors.secondary} style={styles.viewMoreIconSmall} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.joinNowButtonSmall, { backgroundColor: colors.secondary }, ((!isConnected || !isInternetReachable || isCurrentCardJoining) || vacantSeats === 0) && { opacity: 0.5 }]} onPress={() => handleJoinNow(card)} activeOpacity={0.7} disabled={!isConnected || !isInternetReachable || isCurrentCardJoining || vacantSeats === 0} >
-                        {isCurrentCardJoining ? (<ActivityIndicator size="small" color="#fff" />) : (<Text style={styles.joinNowButtonTextSmall}>{vacantSeats === 0 ? 'No Seats' : 'Join Now'} </Text>)}
+                    <TouchableOpacity style={[styles.joinNowButtonSmall, { backgroundColor: colors.secondary, paddingVertical: 6 }, ((!isConnected || !isInternetReachable || isCurrentCardJoining) || vacantSeats === 0) && { opacity: 0.5 }]} onPress={() => handleJoinNow(card)} activeOpacity={0.7} disabled={!isConnected || !isInternetReachable || isCurrentCardJoining || vacantSeats === 0} >
+                        {isCurrentCardJoining ? (<ActivityIndicator size="small" color="#fff" />) : (<Text style={[styles.joinNowButtonTextSmall, { fontSize: 12 }]}>{vacantSeats === 0 ? 'No Seats' : 'Join Now'} </Text>)}
                     </TouchableOpacity>
                 </View>
             </>
@@ -758,34 +763,38 @@ const styles = StyleSheet.create({
     moreOptionsButton: { paddingHorizontal: 10, paddingVertical: 10, backgroundColor: '#E0EFFF', borderRadius: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
     groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
-    card: { flexDirection: 'column', justifyContent: 'space-between', padding: 10, marginVertical: 6, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3, elevation: 4, width: '105%', alignSelf: 'center' },
+    
+    // --- SMALL CARD STYLES START ---
+    card: { flexDirection: 'column', justifyContent: 'space-between', padding: 8, marginVertical: 4, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3, elevation: 4, width: '105%', alignSelf: 'center' },
     offlineCardOverlay: { opacity: 0.6 },
-    cardHeaderSmall: { flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 5, position: 'relative' },
+    cardHeaderSmall: { flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 2, position: 'relative' },
     groupMainInfoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
-    radioButtonContainer: { paddingRight: 10, marginRight: 5, },
-    groupNameAndValueBlock: { flex: 1, marginLeft: 0, overflow: 'hidden', },
-    groupValueContainerSmall: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 0, },
-    groupValueSmall: { fontSize: 25, fontWeight: 'bold', marginRight: 6, },
-    chitValueTextSmall: { fontSize: 14, fontWeight: '600', },
-    groupNameSmall: { fontSize: 15, fontWeight: 'bold', marginTop: 2, },
-    statusBadgeContainer: { flexDirection: 'row', alignItems: 'center', marginLeft: 10, },
-    statusBadge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 4, },
-    statusBadgeText: { color: 'white', fontSize: 8, fontWeight: 'bold', },
-    headerSeparatorSmall: { height: 1, width: '100%', backgroundColor: '#E0E0E0', marginVertical: 8, },
-    cardDetailsRowSmall: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, },
-    detailItemSmall: { flex: 1, alignItems: 'center', paddingHorizontal: 2, },
-    detailLabelSmall: { fontSize: 9, fontWeight: '500', color: '#777', marginBottom: 1, },
-    detailValueSmall: { fontSize: 10, fontWeight: '700', textAlign: 'center', },
-    highlightedVacantSeatsSmall: { backgroundColor: '#1de94cff', color: '#060806ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, fontWeight: 'bold', overflow: 'hidden', },
-    installmentDetailsStandalone: { marginTop: 5, marginBottom: 10, borderRadius: 8, borderWidth: 1, borderColor: '#E0E0E0', overflow: 'hidden', paddingHorizontal: 5, paddingVertical: 5, },
-    installmentRowSmall: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, borderLeftWidth: 4, },
-    highlightedInstallment: { fontSize: 14, fontWeight: 'bold', },
-    viewMoreContainerSmall: { width: '100%', alignItems: 'center', marginTop: 5, flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 0, gap: 8, borderTopWidth: 1, borderTopColor: '#E0E0E0', paddingTop: 8, },
-    viewMoreButtonSmall: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1.5, backgroundColor: 'transparent', minWidth: 100, justifyContent: 'center', flex: 1, },
-    viewMoreButtonTextSmall: { fontSize: 12, fontWeight: '700', marginRight: 3, },
+    radioButtonContainer: { paddingRight: 8, marginRight: 2, justifyContent: 'center' },
+    groupNameAndValueBlock: { flex: 1, marginLeft: 0, overflow: 'hidden', justifyContent: 'center' },
+    groupValueContainerSmall: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 0 },
+    groupValueSmall: { fontSize: 18, fontWeight: 'bold', marginRight: 4, lineHeight: 20 }, // Reduced font size
+    chitValueTextSmall: { fontSize: 10, fontWeight: '600', lineHeight: 12 }, // Reduced font size
+    groupNameSmall: { fontSize: 12, fontWeight: 'bold', marginTop: 1, lineHeight: 14 }, // Reduced font size
+    statusBadgeContainer: { flexDirection: 'row', alignItems: 'center', marginLeft: 5 },
+    statusBadge: { paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3 }, // Reduced padding
+    statusBadgeText: { color: 'white', fontSize: 7, fontWeight: 'bold' }, // Reduced font size
+    headerSeparatorSmall: { height: 0.5, width: '100%', backgroundColor: '#E0E0E0' },
+    cardDetailsRowSmall: { flexDirection: 'row', justifyContent: 'space-between' },
+    detailItemSmall: { flex: 1, alignItems: 'center', paddingHorizontal: 1 },
+    detailLabelSmall: { fontSize: 8, fontWeight: '500', color: '#777', marginBottom: 1 }, // Reduced font size
+    detailValueSmall: { fontSize: 9, fontWeight: '700', textAlign: 'center', lineHeight: 12 }, // Reduced font size
+    highlightedVacantSeatsSmall: { backgroundColor: '#1de94cff', color: '#060806ff', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6, fontWeight: 'bold', overflow: 'hidden', fontSize: 9 },
+    installmentDetailsStandalone: { borderRadius: 6, borderWidth: 1, borderColor: '#E0E0E0', overflow: 'hidden', paddingHorizontal: 4, paddingVertical: 2 },
+    installmentRowSmall: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 4, borderLeftWidth: 3 },
+    highlightedInstallment: { fontSize: 11, fontWeight: 'bold' },
+    viewMoreContainerSmall: { width: '100%', alignItems: 'center', flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 0, gap: 6, borderTopWidth: 1, borderTopColor: '#E0E0E0', paddingTop: 6 },
+    viewMoreButtonSmall: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1.5, backgroundColor: 'transparent', minWidth: 80, justifyContent: 'center', flex: 1 }, // Reduced padding
+    viewMoreButtonTextSmall: { fontSize: 11, fontWeight: '700', marginRight: 2 }, // Reduced font size
     viewMoreIconSmall: { marginLeft: 1 },
-    joinNowButtonSmall: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2, minWidth: 100, justifyContent: 'center', alignItems: 'center', flex: 1, },
-    joinNowButtonTextSmall: { color: '#fff', fontSize: 14, fontWeight: '700', },
+    joinNowButtonSmall: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2, minWidth: 80, justifyContent: 'center', alignItems: 'center', flex: 1 }, // Reduced padding
+    joinNowButtonTextSmall: { color: '#fff', fontSize: 12, fontWeight: '700' }, // Reduced font size
+    // --- SMALL CARD STYLES END ---
+
     emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
     noGroupsImage: { width: 250, height: 250, marginBottom: 20, },
     noGroupsTitle: { fontSize: 22, fontWeight: 'bold', color: '#053B90', marginBottom: 10, textAlign: 'center', },
