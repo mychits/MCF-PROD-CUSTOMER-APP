@@ -650,10 +650,27 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: "bold", color: "#fff" },
   titleBadge: { backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' },
   titleBadgeText: { color: '#fff', fontWeight: 'bold', fontSize: 12, },
-  scrollWrapper: { flex: 1, backgroundColor: Colors.lightBackground, borderTopLeftRadius: 25, borderTopRightRadius: 25 },
-  fixedSummaryWrapper: { flexDirection: "row", paddingHorizontal: 15, paddingBottom: 15, justifyContent: "space-between" },
-  summaryCardLeft: { flex: 1, padding: 12, borderRadius: 12, marginRight: 10, elevation: 3 },
-  summaryCardRight: { flex: 1, padding: 12, borderRadius: 12, elevation: 3 },
+  scrollWrapper: { flex: 1, backgroundColor: Colors.lightBackground, borderTopLeftRadius: 25, borderTopRightRadius: 25 },  fixedSummaryWrapper: { 
+    flexDirection: "row", 
+    paddingHorizontal: 15, 
+    paddingBottom: 15, 
+    justifyContent: "center", // Changed from "space-between" to "center"
+    alignItems: "center",    // Added to ensure vertical alignment
+  },
+    summaryCardLeft: { 
+    // flex: 1,  <-- REMOVE THIS LINE
+    width: 160, // <-- ADD THIS: Set desired width (e.g., 140, 150, or 160)
+    padding: 12, 
+    borderRadius: 12, 
+    marginRight: 10, // Keep this to maintain space between the two boxes
+    elevation: 3 
+  },  summaryCardRight: { 
+    // flex: 1,  <-- REMOVE THIS LINE
+    width: 160, // <-- ADD THIS: Match the width of the left box
+    padding: 12, 
+    borderRadius: 12, 
+    elevation: 3 
+  },
   summaryAmount: { color: "#fff", fontSize: 11, fontWeight: "bold", marginTop: 4 },
   summaryText: { color: "rgba(255,255,255,0.8)", fontSize: 7 },
   fullScreenLoader: { flex: 1, justifyContent: 'center', alignItems: 'center' },

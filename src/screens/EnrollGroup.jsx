@@ -91,7 +91,7 @@ const EnrollGroup = ({ route, navigation }) => {
           groupId, 
           userId, 
           ticket,
-          source: "mychits-customer-app" // <--- ADDED THIS LINE
+          source: "mychits-customer-app"
         }),
       });
       if (!paymentResponse.ok) {
@@ -180,12 +180,14 @@ const EnrollGroup = ({ route, navigation }) => {
               {/* ── Top two summary cards (Investment / Profit) ── */}
               <View style={styles.row}>
                 <View style={[styles.summaryCard, styles.investmentCardBackground]}>
-                  <Ionicons name="wallet-outline" size={26} color="#E0E0E0" style={styles.summaryIcon} />
+                  {/* Icon size reduced to 18 */}
+                  <Ionicons name="wallet-outline" size={18} color="#E0E0E0" style={styles.summaryIcon} />
                   <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(singleOverview.totalPaid || 0)}</Text>
                   <Text style={styles.summaryLabel}>Investment</Text>
                 </View>
                 <View style={[styles.summaryCard, styles.profitCardBackground]}>
-                  <Ionicons name="trending-up-outline" size={26} color="#E0E0E0" style={styles.summaryIcon} />
+                  {/* Icon size reduced to 18 */}
+                  <Ionicons name="trending-up-outline" size={18} color="#E0E0E0" style={styles.summaryIcon} />
                   <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(singleOverview.totalProfit || 0)}</Text>
                   <Text style={styles.summaryLabel}>Divident / Profit</Text>
                 </View>
@@ -197,13 +199,15 @@ const EnrollGroup = ({ route, navigation }) => {
                   onPress={() => navigation.navigate("AuctionsRecord", { userId, groupId, ticket })}
                   style={[styles.summaryCard, { borderColor: statBoxBorderColors.toBePaid, backgroundColor: "#fff" }, styles.summaryCardBordered]}
                 >
-                  <Ionicons name="wallet-outline" size={26} color={statBoxTextColors.toBePaid} style={styles.summaryIcon} />
+                  {/* Icon size reduced to 18 */}
+                  <Ionicons name="wallet-outline" size={18} color={statBoxTextColors.toBePaid} style={styles.summaryIcon} />
                   <Text style={[styles.summaryAmountAlt, { color: statBoxTextColors.toBePaid }]}>₹ {formatNumberIndianStyle(toBePaidAmount)}</Text>
                   <Text style={[styles.summaryLabelAlt, { color: statBoxTextColors.toBePaid }]}>TO BE PAID</Text>
                 </TouchableOpacity>
 
                 <View style={[styles.summaryCard, { borderColor: statBoxBorderColors.totalPaid, backgroundColor: "#fff" }, styles.summaryCardBordered]}>
-                  <Ionicons name="receipt-outline" size={26} color={statBoxTextColors.totalPaid} style={styles.summaryIcon} />
+                  {/* Icon size reduced to 18 */}
+                  <Ionicons name="receipt-outline" size={18} color={statBoxTextColors.totalPaid} style={styles.summaryIcon} />
                   <Text style={[styles.summaryAmountAlt, { color: statBoxTextColors.totalPaid }]}>₹ {formatNumberIndianStyle(singleOverview.totalPaid || 0)}</Text>
                   <Text style={[styles.summaryLabelAlt, { color: statBoxTextColors.totalPaid }]}>TOTAL PAID</Text>
                 </View>
@@ -212,7 +216,7 @@ const EnrollGroup = ({ route, navigation }) => {
                   <View style={[styles.summaryCard, { borderColor: isBalanceExcess ? statBoxBorderColors.balanceExcess : statBoxBorderColors.balance, backgroundColor: "#fff" }, styles.summaryCardBordered]}>
                     <Ionicons
                       name={isBalanceExcess ? "arrow-up-circle-outline" : "arrow-down-circle-outline"}
-                      size={26}
+                      size={18} // Icon size reduced to 18
                       color={isBalanceExcess ? statBoxTextColors.balanceExcess : statBoxTextColors.balance}
                       style={styles.summaryIcon}
                     />
@@ -307,23 +311,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 5,
-    gap: 10,
+    gap: 8, // Reduced gap
   },
   summaryCard: {
-    flex: 1, padding: 15, borderRadius: 12, alignItems: "center", justifyContent: "center", minHeight: 100,
+    flex: 1, 
+    padding: 8, // Reduced padding
+    borderRadius: 12, 
+    alignItems: "center", 
+    justifyContent: "center", 
+    minHeight: 75, // Reduced height
     ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6 },
-      android: { elevation: 6 },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+      android: { elevation: 4 },
     }),
   },
   investmentCardBackground: { backgroundColor: "#004775" },
   profitCardBackground: { backgroundColor: "#357500" },
-  summaryIcon: { marginBottom: 8, color: "#E0E0E0" },
-  summaryAmount: { fontSize: 20, fontWeight: "bold", color: "#FFFFFF" },
-  summaryLabel: { fontSize: 12, color: "#E0E0E0", marginTop: -5, textAlign: "center", fontWeight: "600" },
+  summaryIcon: { marginBottom: 4, color: "#E0E0E0" }, // Reduced margin
+  summaryAmount: { fontSize: 14, fontWeight: "bold", color: "#FFFFFF" }, // Reduced font size
+  summaryLabel: { fontSize: 9, color: "#E0E0E0", marginTop: 2, textAlign: "center", fontWeight: "600" }, // Reduced font size
   summaryCardBordered: { borderWidth: 1 },
-  summaryAmountAlt: { fontSize: 13, fontWeight: "900", textAlign: "center" },
-  summaryLabelAlt: { fontSize: 8, fontWeight: "700", textAlign: "center", marginTop: 4 },
+  summaryAmountAlt: { fontSize: 11, fontWeight: "900", textAlign: "center" }, // Reduced font size
+  summaryLabelAlt: { fontSize: 7, fontWeight: "700", textAlign: "center", marginTop: 2 }, // Reduced font size
   dropdownContainer: {
     alignItems: "center",
     paddingTop: 12,
