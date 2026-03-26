@@ -105,7 +105,7 @@ const ChitDetailItem = ({ label, value, isLink = false, index, totalItems }) => 
 
 const ChitDetailsGrid = ({ data }) => {
   const chitValue = data.group_value ? `₹ ${formatNumberIndianStyle(data.group_value)}` : 'N/A';
-  const monthlyInstallmentValue = data.monthly_installment ? `₹ ${formatNumberIndianStyle(data.monthly_installment)} /Month` : 'N/A';
+  const monthlyInstallmentValue = data.monthly_installment ? `₹ ${formatNumberIndianStyle(data.monthly_installment)} /Mo` : 'N/A'; // Shortened /Month to /Mo
   
   let rawCommencementDate = data.group_commencement_date;
   const firstAuction = data.auction && Array.isArray(data.auction) && data.auction.length > 0 ? data.auction[0] : null;
@@ -117,13 +117,13 @@ const ChitDetailsGrid = ({ data }) => {
   const commencementDateValue = rawCommencementDate ? formatDate(rawCommencementDate) : 'Pending';
 
   const details = [
-    { label: "Monthly Installment", value: monthlyInstallmentValue },
-    { label: "First Auction Date", value: commencementDateValue }, 
-    { label: "Duration", value: `${data.group_duration || 'N/A'} Months` },
-    { label: "Group Name", value: data.group_name || 'N/A' },
-    { label: "Group Members", value: data.group_members || 'N/A' },
-    { label: "Start Date", value: data.start_date ? formatDate(data.start_date) : 'N/A' },
-    { label: "End Date", value: data.end_date ? formatDate(data.end_date) : 'N/A' },
+    { label: "Installment", value: monthlyInstallmentValue }, // Shortened Label
+    { label: "1st Auction", value: commencementDateValue }, // Shortened Label
+    { label: "Duration", value: `${data.group_duration || 'N/A'} Mos` }, // Shortened Label
+    { label: "Group", value: data.group_name || 'N/A' }, // Shortened Label
+    { label: "Members", value: data.group_members || 'N/A' }, // Shortened Label
+    { label: "Starts", value: data.start_date ? formatDate(data.start_date) : 'N/A' }, // Shortened Label
+    { label: "Ends", value: data.end_date ? formatDate(data.end_date) : 'N/A' }, // Shortened Label
   ];
 
   return (
@@ -132,15 +132,13 @@ const ChitDetailsGrid = ({ data }) => {
         <Text style={styles.chitValueLabel}>Chit Value</Text>
         <Text style={styles.chitValueHeaderText}>{chitValue}</Text>
       </View>
-      <View style={{ padding: 16 }}>
-        <View style={styles.chitDetailsGridContainer}>
-          {details.map((item, index) => (
-            <ChitDetailItem key={index} label={item.label} value={item.value} index={index} totalItems={details.length} />
-          ))}
-          {details.length % 2 !== 0 && (
-            <View style={[styles.detailItem, styles.detailItemEmpty, styles.detailItemNoRightBorder, styles.detailItemNoBottomBorder]} />
-          )}
-        </View>
+      <View style={styles.chitDetailsGridContainer}>
+        {details.map((item, index) => (
+          <ChitDetailItem key={index} label={item.label} value={item.value} index={index} totalItems={details.length} />
+        ))}
+        {details.length % 2 !== 0 && (
+          <View style={[styles.detailItem, styles.detailItemEmpty, styles.detailItemNoRightBorder, styles.detailItemNoBottomBorder]} />
+        )}
       </View>
     </View>
   );
@@ -243,19 +241,18 @@ const EnrollForm = ({ navigation, route }) => {
     const durationMonths = cardsData?.group_duration || "N/A";
     const userName = appUser.name || 'User';
     
-    // Updated confirmation text to a statement
-    const confirmationText = `Dear ${userName}, you are currently enrolling in the group ${groupName}. This plan features a monthly installment of ₹ ${installmentAmount} over a duration of ${durationMonths} months for your selected ${ticketCount} ticket(s).`;
+    const confirmationText = `Dear ${userName}, you are enrolling in ${groupName}. Plan: ₹${installmentAmount}/mo for ${durationMonths} months. Tickets: ${ticketCount}.`;
 
     return (
       <Modal animationType="slide" transparent={true} visible={isConfirmModalVisible}>
         <View style={styles.modalOverlay}>
           <View style={styles.styledModalContent}>
             <View style={styles.modalAnimationPlaceholder}>
-              <Ionicons name="people-circle" size={80} color="#053B90" />
+              <Ionicons name="people-circle" size={60} color="#053B90" /> {/* Reduced icon size */}
             </View>
-            <Text style={styles.styledModalTitle}>Confirm Enrollment</Text>
+            <Text style={styles.styledModalTitle}>Confirm</Text>
             <Text style={styles.styledModalMessage}>{confirmationText}</Text>
-            <Text style={styles.styledModalAgreement}>By proceeding, you agree to the group terms and conditions.</Text>
+            <Text style={styles.styledModalAgreement}>By proceeding, you agree to terms.</Text>
             <View style={styles.styledModalButtonContainer}>
               <TouchableOpacity style={[styles.styledModalButton, styles.styledModalCancelButton]} onPress={() => setIsConfirmModalVisible(false)}>
                 <Text style={styles.styledModalCancelButtonText}>Cancel</Text>
@@ -265,7 +262,7 @@ const EnrollForm = ({ navigation, route }) => {
                 onPress={() => { setIsConfirmModalVisible(false); performEnrollment(parseInt(ticketCount, 10)); }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.styledModalConfirmButtonText}>Agree & Join</Text>}
+                {isSubmitting ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.styledModalConfirmButtonText}>Join</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -282,7 +279,7 @@ const EnrollForm = ({ navigation, route }) => {
       <Header userId={userId} navigation={navigation} />
       <View style={styles.mainContentWrapper}>
         <View style={styles.contentCard}>
-          <Text style={styles.groupInfoTitle}>Group Enrollment Details</Text>
+          <Text style={styles.groupInfoTitle}>Enrollment Details</Text>
           <ScrollView contentContainerStyle={styles.scrollContentContainer}>
             {cardsData && <ChitDetailsGrid data={cardsData} />}
             
@@ -290,7 +287,7 @@ const EnrollForm = ({ navigation, route }) => {
               <Text style={styles.ticketSelectionBoxTitle}>Select Tickets</Text>
               
               <View style={styles.unifiedTicketControlRow}>
-                <Text style={styles.quantityLabel}>Selected Tickets:</Text>
+                <Text style={styles.quantityLabel}>Tickets:</Text>
                 <View style={styles.ticketCountDisplay}>
                   <Text style={styles.ticketCountText}>{ticketCount}</Text>
                 </View>
@@ -301,24 +298,24 @@ const EnrollForm = ({ navigation, route }) => {
                     onPress={handleRemoveTicket} 
                     style={[styles.actionButtonBox, { borderColor: Colors.danger }]}
                 >
-                  <AntDesign name="minuscircleo" size={16} color={Colors.danger} />
-                  <Text style={[styles.actionButtonText, { color: Colors.danger }]}> Remove Ticket</Text>
+                  <AntDesign name="minuscircleo" size={14} color={Colors.danger} />
+                  <Text style={[styles.actionButtonText, { color: Colors.danger }]}> Remove</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
                     onPress={handleAddMoreTickets} 
                     style={[styles.actionButtonBox, { borderColor: Colors.linkBlue }]}
                 >
-                  <AntDesign name="pluscircleo" size={16} color={Colors.linkBlue} />
-                  <Text style={[styles.actionButtonText, { color: Colors.linkBlue }]}> Add More Tickets</Text>
+                  <AntDesign name="pluscircleo" size={14} color={Colors.linkBlue} />
+                  <Text style={[styles.actionButtonText, { color: Colors.linkBlue }]}> Add</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.checkboxSection}>
               <TouchableOpacity style={styles.checkboxContainer} onPress={() => setTermsAccepted(!termsAccepted)}>
-                <MaterialIcons name={termsAccepted ? "check-box" : "check-box-outline-blank"} size={24} color={termsAccepted ? Colors.primary : Colors.darkGray} />
-                <Text style={styles.checkboxLabel}>I agree to the <Text style={styles.linkText}>Terms & Conditions</Text> and <Text style={styles.linkText}>Privacy Policy</Text>.</Text>
+                <MaterialIcons name={termsAccepted ? "check-box" : "check-box-outline-blank"} size={20} color={termsAccepted ? Colors.primary : Colors.darkGray} />
+                <Text style={styles.checkboxLabel}>I agree to <Text style={styles.linkText}>Terms</Text> & <Text style={styles.linkText}>Privacy</Text>.</Text>
               </TouchableOpacity>
             </View>
 
@@ -341,52 +338,58 @@ const EnrollForm = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   fullScreenContainer: { flex: 1, backgroundColor: Colors.primary, paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0 },
-  mainContentWrapper: { flex: 1, paddingHorizontal: 3, paddingBottom: 3 },
-  contentCard: { flex: 1, backgroundColor: Colors.primaryBackground, borderRadius: 15, marginTop: 3, paddingVertical: 8, paddingHorizontal: 5 },
-  groupInfoTitle: { fontSize: 18, fontWeight: "bold", color: Colors.primary, marginBottom: 5, textAlign: "center" },
+  mainContentWrapper: { flex: 1, paddingHorizontal: 2, paddingBottom: 2 }, // Reduced padding
+  contentCard: { flex: 1, backgroundColor: Colors.primaryBackground, borderRadius: 10, marginTop: 2, paddingVertical: 5, paddingHorizontal: 3 }, // Reduced padding & radius
+  groupInfoTitle: { fontSize: 16, fontWeight: "bold", color: Colors.primary, marginBottom: 5, textAlign: "center" }, // Reduced font
   scrollContentContainer: { paddingHorizontal: 0 },
-  chitDetailsCard: { width: '98%', alignSelf: 'center', backgroundColor: Colors.white, borderRadius: 15, marginVertical: 10, overflow: 'hidden', elevation: 10 },
-  chitValueHeader: { paddingVertical: 15, backgroundColor: Colors.primary, alignItems: 'center' },
-  chitValueLabel: { fontSize: 14, color: Colors.whiteAccent, textTransform: 'uppercase' },
-  chitValueHeaderText: { fontSize: 28, fontWeight: 'bold', color: Colors.white },
-  chitDetailsGridContainer: { flexDirection: 'row', flexWrap: 'wrap', borderTopWidth: 3, borderTopColor: Colors.primaryBackground },
-  detailItem: { width: '50%', paddingHorizontal: 15, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.lightDivider, borderRightWidth: 1, borderRightColor: Colors.lightDivider },
+  
+  // --- SMALL CHIT DETAILS CARD ---
+  chitDetailsCard: { width: '99%', alignSelf: 'center', backgroundColor: Colors.white, borderRadius: 10, marginVertical: 5, overflow: 'hidden', elevation: 5 }, // Smaller radius & elevation
+  chitValueHeader: { paddingVertical: 8, backgroundColor: Colors.primary, alignItems: 'center' }, // Reduced padding
+  chitValueLabel: { fontSize: 11, color: Colors.whiteAccent, textTransform: 'uppercase' }, // Reduced font
+  chitValueHeaderText: { fontSize: 20, fontWeight: 'bold', color: Colors.white }, // Reduced font
+  chitDetailsGridContainer: { flexDirection: 'row', flexWrap: 'wrap', borderTopWidth: 2, borderTopColor: Colors.primaryBackground }, // Thinner border
+  detailItem: { width: '50%', paddingHorizontal: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.lightDivider, borderRightWidth: 1, borderRightColor: Colors.lightDivider }, // Reduced padding
   detailItemNoRightBorder: { borderRightWidth: 0 },
   detailItemNoBottomBorder: { borderBottomWidth: 0 },
-  detailLabel: { fontSize: 11, color: Colors.chitLabel, textTransform: 'uppercase' },
-  detailValue: { fontSize: 15, fontWeight: '700', color: Colors.chitValue },
-  detailValueCurrency: { fontSize: 16, fontWeight: 'bold', color: Colors.primaryText },
-  ticketSelectionBox: { backgroundColor: Colors.white, borderRadius: 15, padding: 15, marginHorizontal: 5, marginBottom: 15, elevation: 8 },
-  ticketSelectionBoxTitle: { fontSize: 18, fontWeight: "bold", textAlign: "center", marginBottom: 20 },
-  unifiedTicketControlRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  quantityLabel: { fontSize: 16, fontWeight: "600", color: Colors.primaryText },
-  ticketCountDisplay: { backgroundColor: Colors.primaryBackground, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 8, minWidth: 60, alignItems: 'center' },
-  ticketCountText: { fontSize: 22, fontWeight: "bold", color: Colors.primary },
-  
-  actionButtonsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  actionButtonBox: { flex: 0.48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderWidth: 1.5, borderRadius: 10, borderStyle: 'dashed' },
-  actionButtonText: { fontWeight: 'bold', fontSize: 13 },
+  detailLabel: { fontSize: 9, color: Colors.chitLabel, textTransform: 'uppercase' }, // Reduced font
+  detailValue: { fontSize: 12, fontWeight: '700', color: Colors.chitValue }, // Reduced font
+  detailValueCurrency: { fontSize: 13, fontWeight: 'bold', color: Colors.primaryText }, // Reduced font
+  // -------------------------------
 
-  checkboxSection: { paddingHorizontal: 10, marginVertical: 10 },
+  // --- SMALL TICKET BOX ---
+  ticketSelectionBox: { backgroundColor: Colors.white, borderRadius: 10, padding: 10, marginHorizontal: 3, marginBottom: 10, elevation: 5 }, // Reduced padding/radius
+  ticketSelectionBoxTitle: { fontSize: 16, fontWeight: "bold", textAlign: "center", marginBottom: 12 }, // Reduced margin/font
+  unifiedTicketControlRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  quantityLabel: { fontSize: 14, fontWeight: "600", color: Colors.primaryText }, // Reduced font
+  ticketCountDisplay: { backgroundColor: Colors.primaryBackground, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6, minWidth: 40, alignItems: 'center' }, // Smaller box
+  ticketCountText: { fontSize: 18, fontWeight: "bold", color: Colors.primary }, // Reduced font
+  
+  actionButtonsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }, // Reduced margin
+  actionButtonBox: { flex: 0.48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderWidth: 1.5, borderRadius: 8, borderStyle: 'dashed' }, // Reduced padding
+  actionButtonText: { fontWeight: 'bold', fontSize: 11, marginLeft: 4 }, // Reduced font
+  // ------------------------
+
+  checkboxSection: { paddingHorizontal: 5, marginVertical: 5 }, // Reduced margins
   checkboxContainer: { flexDirection: "row", alignItems: "flex-start" },
-  checkboxLabel: { marginLeft: 8, fontSize: 13, flex: 1 },
+  checkboxLabel: { marginLeft: 6, fontSize: 12, flex: 1 }, // Reduced font & margin
   linkText: { color: Colors.linkBlue, fontWeight: "bold", textDecorationLine: "underline" },
-  enrollButton: { backgroundColor: Colors.secondary, paddingVertical: 15, borderRadius: 12, alignItems: "center", marginHorizontal: 10, elevation: 12 },
+  enrollButton: { backgroundColor: Colors.secondary, paddingVertical: 12, borderRadius: 10, alignItems: "center", marginHorizontal: 5, elevation: 8 }, // Reduced padding
   enrollButtonDisabled: { backgroundColor: Colors.disabledGray, opacity: 0.7 },
-  enrollButtonText: { color: Colors.white, fontSize: 18, fontWeight: "bold" },
+  enrollButtonText: { color: Colors.white, fontSize: 16, fontWeight: "bold" }, // Reduced font
   loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
-  styledModalContent: { backgroundColor: Colors.white, borderRadius: 15, padding: 25, width: '85%', alignItems: 'center', borderWidth: 2, borderColor: '#053B90' },
-  modalAnimationPlaceholder: { width: 100, height: 100, justifyContent: 'center', alignItems: 'center', marginBottom: 10, borderRadius: 50, backgroundColor: '#E0EFFF', borderWidth: 2, borderColor: '#053B90' },
-  styledModalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
-  styledModalMessage: { fontSize: 14, textAlign: "center", lineHeight: 20, marginBottom: 10 },
+  styledModalContent: { backgroundColor: Colors.white, borderRadius: 12, padding: 20, width: '85%', alignItems: 'center', borderWidth: 2, borderColor: '#053B90' }, // Reduced padding
+  modalAnimationPlaceholder: { width: 70, height: 70, justifyContent: 'center', alignItems: 'center', marginBottom: 8, borderRadius: 35, backgroundColor: '#E0EFFF', borderWidth: 2, borderColor: '#053B90' }, // Smaller placeholder
+  styledModalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 }, // Reduced font
+  styledModalMessage: { fontSize: 13, textAlign: "center", lineHeight: 18, marginBottom: 8 }, // Reduced font
   styledModalButtonContainer: { flexDirection: "row", width: "100%" },
-  styledModalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  styledModalCancelButton: { backgroundColor: Colors.lightGray, marginRight: 10 },
-  styledModalConfirmButton: { backgroundColor: Colors.primary, marginLeft: 10 },
+  styledModalButton: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' }, // Reduced padding
+  styledModalCancelButton: { backgroundColor: Colors.lightGray, marginRight: 8 }, // Reduced margin
+  styledModalConfirmButton: { backgroundColor: Colors.primary, marginLeft: 8 }, // Reduced margin
   styledModalConfirmButtonText: { color: Colors.white, fontWeight: "bold" },
-  styledModalAgreement:{ textAlign: 'center', fontStyle:'italic', fontSize:13},
-  bottomSpacer: { height: 60 }
+  styledModalAgreement:{ textAlign: 'center', fontStyle:'italic', fontSize:11, marginBottom: 12 }, // Reduced font
+  bottomSpacer: { height: 40 }
 });
 
 export default EnrollForm;

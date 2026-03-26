@@ -91,7 +91,7 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
                 {card.isPendingApproval && (
                     <Ionicons 
                         name="hourglass-outline" 
-                        size={18} // Reduced size
+                        size={18} 
                         color={Colors.warningText} 
                         style={{ marginLeft: 10 }} 
                     />
@@ -99,7 +99,7 @@ const AccordionListItem = ({ card, index, isExpanded, onToggle, onScrollToCard }
             </View>
             <Ionicons
                 name={isExpanded ? "chevron-up" : "chevron-down"}
-                size={18} // Reduced size
+                size={18}
                 color={Colors.primaryBlue}
             />
         </TouchableOpacity>
@@ -444,7 +444,7 @@ const Mygroups = ({ navigation }) => {
             <ScrollView
               ref={scrollViewRef}
               style={styles.scrollWrapper}
-              contentContainerStyle={{ padding: 12, paddingBottom: 20 }} // Reduced padding
+              contentContainerStyle={{ padding: 12, paddingBottom: 20 }}
               showsVerticalScrollIndicator={false}
             >
               {heldGroupsData.length > 0 && (
@@ -522,6 +522,27 @@ const Mygroups = ({ navigation }) => {
 
               {cardsToRender.length === 0 ? (
                 <View style={styles.noGroupWrapper}>
+                    <Image source={NoGroupImage} style={styles.noGroupImage} />
+                    <Text style={styles.noGroupText}>
+                        {viewMode === 'held' ? 'No Held Groups Found' : 'No Active Groups'}
+                    </Text>
+                    
+                    {/* Stylistic sentence to encourage joining groups */}
+                    {viewMode === 'active' && (
+                        <Text style={styles.noGroupSubtitle}>
+                            Explore our available groups and start your savings journey today!
+                        </Text>
+                    )}
+                    
+                    {/* Show Enrollment button only if there are no Active Groups */}
+                    {viewMode === 'active' && (
+                        <TouchableOpacity 
+                            style={styles.enrollButton}
+                            onPress={() => navigation.navigate("Enrollment")}
+                        >
+                            <Text style={styles.enrollButtonText}>Enrollment</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
               ) : (cardsToRender.map((card, index) => {
                   const ticketKey = card.tickets; 
@@ -654,19 +675,17 @@ const styles = StyleSheet.create({
     flexDirection: "row", 
     paddingHorizontal: 15, 
     paddingBottom: 15, 
-    justifyContent: "center", // Changed from "space-between" to "center"
-    alignItems: "center",    // Added to ensure vertical alignment
+    justifyContent: "center",
+    alignItems: "center", 
   },
     summaryCardLeft: { 
-    // flex: 1,  <-- REMOVE THIS LINE
-    width: 160, // <-- ADD THIS: Set desired width (e.g., 140, 150, or 160)
+    width: 160, 
     padding: 12, 
     borderRadius: 12, 
-    marginRight: 10, // Keep this to maintain space between the two boxes
+    marginRight: 10, 
     elevation: 3 
   },  summaryCardRight: { 
-    // flex: 1,  <-- REMOVE THIS LINE
-    width: 160, // <-- ADD THIS: Match the width of the left box
+    width: 160, 
     padding: 12, 
     borderRadius: 12, 
     elevation: 3 
@@ -697,34 +716,62 @@ const styles = StyleSheet.create({
   convertButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 10, marginLeft: 6 },
 
   // --- COMPACT CARD STYLES ---
-  cardTouchable: { marginBottom: 12, borderRadius: 16, elevation: 3, backgroundColor: "#fff" }, // Reduced marginBottom
+  cardTouchable: { marginBottom: 12, borderRadius: 16, elevation: 3, backgroundColor: "#fff" }, 
   highlightedCard: { borderWidth: 1.5, borderColor: Colors.accentColor, transform: [{ scale: 1.01 }] },
   cardGradient: { borderRadius: 16, padding: 1 },
-  cardInner: { borderRadius: 15, padding: 10 }, // Reduced padding
-  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 }, // Reduced marginBottom
-  iconCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center", marginRight: 10 }, // Reduced size
-  cardTitle: { fontSize: 15, fontWeight: "bold", flex: 1 }, // Reduced font size
-  ticketText: { color: Colors.mediumText, fontSize: 12 }, // Reduced font size
+  cardInner: { borderRadius: 15, padding: 10 }, 
+  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 }, 
+  iconCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center", marginRight: 10 }, 
+  cardTitle: { fontSize: 15, fontWeight: "bold", flex: 1 }, 
+  ticketText: { color: Colors.mediumText, fontSize: 12 }, 
   
-  statusBadge: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 }, // Slightly tighter padding
+  statusBadge: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 }, 
   statusBadgeText: { fontSize: 7, fontWeight: "800" },
 
-  dateRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: "#F0F0F0" }, // Reduced spacing
+  dateRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: "#F0F0F0" }, 
   dateColumn: { flex: 1 },
   dateLabel: { fontSize: 10, color: Colors.mediumText },
   dateValue: { fontSize: 12, fontWeight: "600", color: Colors.darkText },
-  progressBar: { height: 5, backgroundColor: "#E0E0E0", borderRadius: 5, marginVertical: 6 }, // Reduced height and margin
+  progressBar: { height: 5, backgroundColor: "#E0E0E0", borderRadius: 5, marginVertical: 6 }, 
   progressHeader: { flexDirection: "row", justifyContent: "space-between" },
   progressText: { fontSize: 10, color: Colors.mediumText },
   progressTextBold: { fontSize: 11, fontWeight: "bold", color: Colors.darkText },
   amountRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
   amountLabel: { fontSize: 10, color: Colors.mediumText },
   amountValue: { fontSize: 13, fontWeight: "bold" },
-  paymentsButton: { marginTop: 8, backgroundColor: Colors.primaryBlue, flexDirection: "row", justifyContent: "center", alignItems: "center", padding: 8, borderRadius: 10 }, // Reduced padding and margin
+  paymentsButton: { marginTop: 8, backgroundColor: Colors.primaryBlue, flexDirection: "row", justifyContent: "center", alignItems: "center", padding: 8, borderRadius: 10 }, 
   paymentsButtonText: { color: "#fff", fontWeight: "bold", marginRight: 6, fontSize: 11 },
-  noGroupWrapper: { alignItems: 'center', marginTop: 30 },
-  noGroupImage: { width: 150, height: 150 },
-  noGroupText: { marginTop: 15, color: Colors.mediumText, textAlign: 'center', fontSize: 12 },
+  
+  // --- NO GROUP & ENROLL STYLES ---
+  noGroupWrapper: { alignItems: 'center', marginTop: 10, paddingVertical: 10, paddingHorizontal: 20 },
+  noGroupImage: { width: 150, height: 150, marginBottom: 15 },
+  noGroupText: { color: Colors.darkText, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
+  noGroupSubtitle: { 
+      color: Colors.mediumText, 
+      textAlign: 'center', 
+      fontSize: 13, 
+      marginHorizontal: 20, 
+      marginBottom: 30,
+      lineHeight: 18,
+  },
+  enrollButton: {
+      backgroundColor: Colors.primaryBlue,
+      paddingVertical: 14,
+      paddingHorizontal: 40,
+      borderRadius: 30,
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+  },
+  enrollButtonText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+  },
+
   heldGroupBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4, alignSelf: 'flex-start', marginBottom: 2 },
   heldGroupText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   heldDetailsContainer: { marginTop: 6, padding: 8, backgroundColor: 'rgba(231, 76, 60, 0.05)', borderRadius: 6 },
