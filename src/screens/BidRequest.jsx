@@ -24,8 +24,6 @@ import { ContextProvider } from "../context/UserProvider";
 import NoGroupImage from "../../assets/Nogroup.png";
 import Toast from "react-native-toast-message";
 
-// NOTE: LayoutAnimation experimental code removed to fix warning
-
 const Colors = {
   primaryBlue: "#053B90",
   secondaryBlue: "#0C53B3",
@@ -95,9 +93,9 @@ const BidRequest = ({ navigation, route }) => {
   const userId = appUser?.userId || null;
 
   const params = route?.params || {};
-  const { 
-    selectedGroupId, 
-    selectedEnrollmentId, 
+  const {
+    selectedGroupId,
+    selectedEnrollmentId,
     preselectedGroup
   } = params;
 
@@ -121,6 +119,7 @@ const BidRequest = ({ navigation, route }) => {
     bidAmount: "",
     bidPurpose: "",
     otherPurpose: "",
+    termsAccepted: false, // Add this
   });
 
   const [highlightedGroupId, setHighlightedGroupId] = useState(selectedEnrollmentId || null);
@@ -157,12 +156,11 @@ const BidRequest = ({ navigation, route }) => {
             phoneNumber: userData.phone_number || prev.phoneNumber,
           }));
         }
-      } catch (err) {}
+      } catch (err) { }
     };
     fetchUserProfile();
   }, [userId]);
 
-  // --- 1. Helper function to fetch auctions for groups ---
   const fetchAuctionsForGroups = async (enrollments) => {
     if (!enrollments || enrollments.length === 0) return;
     const uniqueGroupIds = [...new Set(enrollments.map(e => e.group_id?._id).filter(Boolean))];
@@ -218,8 +216,8 @@ const BidRequest = ({ navigation, route }) => {
     if (!userId) return {};
     try {
       const response = await axios.post(`${url}/enroll/get-user-tickets-report/${userId}`, {
-      source: "mychits-customer-app" 
-    });
+        source: "mychits-customer-app"
+      });
       const data = response.data;
       const reportsMap = {};
       data.forEach((groupReport) => {
@@ -260,8 +258,6 @@ const BidRequest = ({ navigation, route }) => {
     return existingBidRequests.some(req => req.enrollmentId === enrollmentId && req.status === 'Pending');
   };
 
-  // --- 2. REMOVED useCallback from fetchBalance ---
-  // This function now reads from the current state directly, and we won't put it in dependency arrays.
   const fetchBalance = async (enrollmentId, enrollment) => {
     if (!enrollmentId) return 0;
     try {
@@ -276,7 +272,6 @@ const BidRequest = ({ navigation, route }) => {
       } else if (response.data?.balance !== undefined) {
         balance = response.data.balance;
       } else {
-        // Fallback calculation using the CURRENT state of individualGroupReports
         const reportKey = `${enrollment.group_id?._id}-${enrollment.tickets}`;
         const paidAmount = individualGroupReports[reportKey]?.totalPaid || 0;
         const groupValue = enrollment.group_id?.group_value || 0;
@@ -298,9 +293,6 @@ const BidRequest = ({ navigation, route }) => {
     }
   };
 
-  // --- 3. Updated loadAllData ---
-  // REMOVED fetchBalance from dependencies. 
-  // fetchBalance is called directly, it doesn't need to be in the dependency list.
   const loadAllData = useCallback(async (showRefreshing = false) => {
     if (!userId) {
       setLoading(false);
@@ -313,9 +305,9 @@ const BidRequest = ({ navigation, route }) => {
       } else {
         setLoading(true);
       }
-      
+
       const enrollments = await fetchEnrollments();
-      
+
       await Promise.all([
         fetchOverview(),
         fetchExistingBidRequests()
@@ -323,11 +315,9 @@ const BidRequest = ({ navigation, route }) => {
 
       if (enrollments && enrollments.length > 0) {
         const balancePromises = enrollments.map(enrollment =>
-          fetchBalance(enrollment._id, enrollment) // Called directly
+          fetchBalance(enrollment._id, enrollment)
         );
         await Promise.all(balancePromises);
-
-        // Fetch Auctions
         await fetchAuctionsForGroups(enrollments);
       }
     } catch (error) {
@@ -365,11 +355,27 @@ const BidRequest = ({ navigation, route }) => {
     }
 
     const balance = balances[enrollment._id] || 0;
+
     if (balance > 0) {
-      Alert.alert("Cannot Place Bid", `You have a pending due of ₹ ${formatNumberIndianStyle(balance)}. Please clear your dues before placing a bid.`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Pay Now", onPress: () => handleClearDue(enrollment) }
-      ]);
+      Alert.alert(
+        "Due Balance Warning",
+        `You have a due of ₹ ${formatNumberIndianStyle(balance)}.\n\nClear due otherwise your request will be rejected.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Continue",
+            onPress: () => {
+              setSelectedEnrollment(enrollment);
+              setIsFormVisible(true);
+            }
+          },
+          {
+            text: "Pay Now",
+            onPress: () => handleClearDue(enrollment),
+            style: "default"
+          }
+        ]
+      );
       return;
     }
 
@@ -380,24 +386,37 @@ const BidRequest = ({ navigation, route }) => {
   const handleFormSubmit = async () => {
     const finalPurpose = formData.bidPurpose === "Others" ? formData.otherPurpose : formData.bidPurpose;
 
-    if (!formData.fullName.trim()) {
-      Toast.show({ type: "error", text1: "Error", text2: "Please enter your full name" });
-      return;
-    }
-    if (!formData.phoneNumber.trim() || formData.phoneNumber.length < 10) {
-      Toast.show({ type: "error", text1: "Error", text2: "Please enter a valid phone number" });
-      return;
-    }
-    if (!selectedEnrollment) {
-      Toast.show({ type: "error", text1: "Error", text2: "No enrollment selected" });
-      return;
-    }
+  if (!formData.fullName.trim()) {
+    Toast.show({ type: "error", text1: "Error", text2: "Please enter your full name" });
+    return;
+  }
+  if (!formData.phoneNumber.trim() || formData.phoneNumber.length < 10) {
+    Toast.show({ type: "error", text1: "Error", text2: "Please enter a valid phone number" });
+    return;
+  }
+  if (!formData.bidPurpose) {
+    Toast.show({ type: "error", text1: "Error", text2: "Please select the purpose of bid" });
+    return;
+  }
+  if (!formData.termsAccepted) {
+    Toast.show({ type: "error", text1: "Error", text2: "Please accept the Terms & Conditions to proceed" });
+    return;
+  }
+  if (!selectedEnrollment) {
+    Toast.show({ type: "error", text1: "Error", text2: "No enrollment selected" });
+    return;
+  }
 
     const balance = balances[selectedEnrollment._id] || 0;
+
     if (balance > 0) {
-      Toast.show({ type: "error", text1: "Cannot Place Bid", text2: `You have pending dues of ₹ ${formatNumberIndianStyle(balance)}. Please clear them first.`, position: 'bottom' });
-      setIsFormVisible(false);
-      return;
+      Toast.show({
+        type: "info",
+        text1: "Due Balance Alert",
+        text2: `You have ₹ ${formatNumberIndianStyle(balance)} due. Your request will be rejected unless dues are cleared.`,
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
     }
 
     setIsSubmitting(true);
@@ -454,25 +473,29 @@ const BidRequest = ({ navigation, route }) => {
     return Colors.excessText;
   };
 
+  // const getBalanceText = (balance) => {
+  //   if (balance > 0) return `Due: ₹ ${formatNumberIndianStyle(balance)}`;
+  //   if (balance === 0) return `Balance: ₹ 0`;
+  //   return `Excess: ₹ ${formatNumberIndianStyle(Math.abs(balance))}`;
+  // };
   const getBalanceText = (balance) => {
-    if (balance > 0) return `Due: ₹ ${formatNumberIndianStyle(balance)}`;
-    if (balance === 0) return `Balance: ₹ 0`;
-    return `Excess: ₹ ${formatNumberIndianStyle(Math.abs(balance))}`;
-  };
+  if (balance > 0) return `Due: ₹ ${formatNumberIndianStyle(balance)}`;
+  return null; // Return null for zero or negative balance
+};
 
   const isBidButtonDisabled = (enrollmentId, balance) => {
-    return balance > 0 || hasPendingBidRequest(enrollmentId);
+    return hasPendingBidRequest(enrollmentId);
   };
 
   const getButtonText = (enrollmentId, balance) => {
     if (hasPendingBidRequest(enrollmentId)) return "Pending Request";
-    if (balance > 0) return "Click To Pay Now";
+    if (balance > 0) return "Bid Request (Due Pending)";
     return "Bid Request";
   };
 
   const getButtonColors = (enrollmentId, balance) => {
     if (hasPendingBidRequest(enrollmentId)) {
-      return ["#ffffff", "#ffffff"];
+      return ["#95A5A6", "#7F8C8D"];
     }
     if (balance > 0) {
       return ["#FF416C", "#FF4B2B"];
@@ -566,13 +589,12 @@ const BidRequest = ({ navigation, route }) => {
                     });
                   }
 
-                  const displayNextAuctionDate = latestAuction?.next_date || null;
                   const displayBidPercentage = latestAuction?.bid_percentage || 0;
 
                   return (
                     <View key={`card-${index}`} style={styles.cardWrapper}>
                       <LinearGradient
-                        colors={isHighlighted ? ["#FFD700", "#FDB931"] : ["#E0F0FF", Colors.secondaryBlue]}
+                        colors={isHighlighted ? ["#FFD700", "#FDB931"] : ["#FFFFFF", "#FFFFFF"]}
                         style={[styles.cardGradient, isHighlighted && styles.highlightedGradient]}
                       >
                         <View style={styles.cardInner}>
@@ -591,9 +613,9 @@ const BidRequest = ({ navigation, route }) => {
                             )}
                           </View>
 
-                          <View>
+                          <View style={styles.progressSection}>
                             <View style={styles.progressHeader}>
-                              <Text style={styles.progressText}>Paid</Text>
+                              <Text style={styles.progressText}>Payment Progress</Text>
                               <Text style={styles.progressTextBold}>{paidPercentage}%</Text>
                             </View>
                             <View style={styles.progressBar}>
@@ -606,73 +628,69 @@ const BidRequest = ({ navigation, route }) => {
                                 }}
                               />
                             </View>
+                          </View>
 
-                            <View style={styles.amountRow}>
-                              <View style={styles.amountColumn}>
-                                <Text style={styles.amountLabel}>Chit Value</Text>
-                                <Text style={styles.amountValue}>₹ {formatNumberIndianStyle(enrollment.group_id?.group_value || 0)}</Text>
-                              </View>
-
-                              <View style={styles.amountColumn}>
-                                <Text style={styles.amountLabel}>Paid</Text>
-                                <Text style={[styles.amountValue, { color: Colors.accentColor }]}>
-                                  ₹ {formatNumberIndianStyle(individualPaidAmount)}
-                                </Text>
-                              </View>
-
-                              <View style={styles.row}>
-                                <Text style={styles.leftText}>Bid Percentage</Text>
-                                <Text style={styles.rightText}>{displayBidPercentage ? `${displayBidPercentage}%` : "N/A"}</Text>
-                              </View>
+                          <View style={styles.statsContainer}>
+                            <View style={styles.statItem}>
+                              <Text style={styles.statLabel}>Chit Value</Text>
+                              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
+                                ₹ {formatNumberIndianStyle(enrollment.group_id?.group_value || 0)}
+                              </Text>
                             </View>
+                            <View style={styles.statDivider} />
+                            <View style={styles.statItem}>
+                              <Text style={styles.statLabel}>Paid Amount</Text>
+                              <Text style={[styles.statValue, { color: Colors.successText }]} numberOfLines={1} adjustsFontSizeToFit>
+                                ₹ {formatNumberIndianStyle(individualPaidAmount)}
+                              </Text>
+                            </View>
+                            <View style={styles.statDivider} />
+                            <View style={styles.statItem}>
+                              <Text style={styles.statLabel}>Bid %</Text>
+                              <Text style={styles.statValue} numberOfLines={1}>
+                                {displayBidPercentage ? `${displayBidPercentage}%` : "N/A"}
+                              </Text>
+                            </View>
+                          </View>
 
-                            {isLoadingBalance ? (
-                              <View style={styles.balanceContainer}>
-                                <ActivityIndicator size="small" color={Colors.primaryBlue} />
-                              </View>
-                            ) : (
-                              <View style={styles.balanceContainer}>
-                                <Text style={[styles.balanceText, { color: getBalanceColor(balance) }]}>
-                                  {getBalanceText(balance)}
-                                </Text>
-                                {hasBalanceError && <Text style={styles.estimatedText}>(Estimated)</Text>}
-                                {balance > 0 && (
-                                  <Text style={styles.cantParticipateText}>
-                                    * Please clear your dues to participate in the Bid
-                                  </Text>
+                          {/* Show due amount only for customers with due balance */}
+                          {isLoadingBalance ? (
+                            <View style={styles.balanceContainer}>
+                              <ActivityIndicator size="small" color={Colors.primaryBlue} />
+                            </View>
+                          ) : balance > 0 ? (
+                            <View style={[styles.balanceContainer, { backgroundColor: Colors.dueText + '10' }]}>
+                              <Text style={[styles.balanceText, { color: Colors.dueText, fontWeight: 'bold' }]}>
+                                Due: ₹ {formatNumberIndianStyle(balance)}
+                              </Text>
+                              <Text style={styles.cantParticipateText}>
+                                * Clear due otherwise your request will be rejected
+                              </Text>
+                            </View>
+                          ) : null}
+
+                          <TouchableOpacity
+                            style={[styles.bidRequestButton, buttonDisabled && styles.bidRequestButtonDisabled]}
+                            onPress={() => handleBidRequest(enrollment)}
+                            activeOpacity={0.8}
+                            disabled={buttonDisabled}
+                          >
+                            <LinearGradient
+                              colors={getButtonColors(enrollment._id, balance)}
+                              style={styles.bidRequestGradient}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 0 }}
+                            >
+                              <View style={styles.buttonContentWrapper}>
+                                <View style={styles.buttonTextContainer}>
+                                  <Text style={styles.bidRequestButtonText}>{getButtonText(enrollment._id, balance)}</Text>
+                                </View>
+                                {!buttonDisabled && (
+                                  <MaterialCommunityIcons name={balance > 0 ? "credit-card" : "gavel"} size={20} color="#fff" />
                                 )}
                               </View>
-                            )}
-
-                            <TouchableOpacity
-                              style={[styles.bidRequestButton, buttonDisabled && styles.bidRequestButtonDisabled]}
-                              onPress={() => {
-                                if (balance > 0) {
-                                  handleClearDue(enrollment);
-                                } else {
-                                  handleBidRequest(enrollment);
-                                }
-                              }}
-                              activeOpacity={0.8}
-                              disabled={false}
-                            >
-                              <LinearGradient
-                                colors={getButtonColors(enrollment._id, balance)}
-                                style={styles.bidRequestGradient}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                              >
-                                <View style={styles.buttonContentWrapper}>
-                                  <View style={styles.buttonTextContainer}>
-                                    <Text style={styles.bidRequestButtonText}>{getButtonText(enrollment._id, balance)}</Text>
-                                  </View>
-                                  {!buttonDisabled && (
-                                    <MaterialCommunityIcons name={balance > 0 ? "credit-card" : "gavel"} size={20} color="#fff" />
-                                  )}
-                                </View>
-                              </LinearGradient>
-                            </TouchableOpacity>
-                          </View>
+                            </LinearGradient>
+                          </TouchableOpacity>
                         </View>
                       </LinearGradient>
                     </View>
@@ -689,76 +707,156 @@ const BidRequest = ({ navigation, route }) => {
       </View>
 
       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isFormVisible}
-        onRequestClose={() => {
-          setIsFormVisible(false);
-          setSelectedEnrollment(null);
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Bid Request Form</Text>
-              <TouchableOpacity onPress={() => { setIsFormVisible(false); setSelectedEnrollment(null); }}>
-                <Ionicons name="close-circle" size={30} color={Colors.mediumText} />
-              </TouchableOpacity>
-            </View>
+  animationType="slide"
+  transparent={true}
+  visible={isFormVisible}
+  onRequestClose={() => {
+    setIsFormVisible(false);
+    setSelectedEnrollment(null);
+  }}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Bid Request Form</Text>
+        <TouchableOpacity onPress={() => { setIsFormVisible(false); setSelectedEnrollment(null); }}>
+          <Ionicons name="close-circle" size={30} color={Colors.mediumText} />
+        </TouchableOpacity>
+      </View>
 
-            {selectedEnrollment && (
-              <View style={styles.selectedGroupInfo}>
-                <Text style={styles.selectedGroupText}>Group: {selectedEnrollment.group_id?.group_name}</Text>
-                <Text style={styles.selectedGroupText}>Ticket: {selectedEnrollment.tickets}</Text>
-                {balances[selectedEnrollment._id] <= 0 && (
-                  <Text style={styles.eligibleText}>✓ You are eligible to bid</Text>
-                )}
-              </View>
-            )}
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.formSectionLabel}>Personal Details:</Text>
-
-              <Text style={styles.inputLabel}>Full Name *</Text>
-              <TextInput style={styles.input} value={formData.fullName} onChangeText={(txt) => setFormData({ ...formData, fullName: txt })} placeholder="Enter Full Name" editable={!isSubmitting} />
-
-              <Text style={styles.inputLabel}>Phone Number *</Text>
-              <TextInput style={styles.input} keyboardType="phone-pad" value={formData.phoneNumber} onChangeText={(txt) => setFormData({ ...formData, phoneNumber: txt })} placeholder="Mobile Number" maxLength={10} editable={!isSubmitting} />
-
-              <Text style={styles.inputLabel}>Purpose of Bid *</Text>
-              <View style={styles.purposeGrid}>
-                {BID_PURPOSE_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[styles.purposeChip, formData.bidPurpose === option && styles.purposeChipSelected]}
-                    onPress={() => { setFormData({ ...formData, bidPurpose: option }); }}
-                    disabled={isSubmitting}
-                  >
-                    <Text style={[styles.purposeChipText, formData.bidPurpose === option && styles.purposeChipTextSelected]}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {formData.bidPurpose === "Others" && (
-                <View style={{ marginBottom: 15 }}>
-                  <Text style={styles.inputLabel}>Please specify:</Text>
-                  <TextInput style={styles.input} value={formData.otherPurpose} onChangeText={(txt) => setFormData({ ...formData, otherPurpose: txt })} placeholder="Enter your specific reason" editable={!isSubmitting} />
-                </View>
-              )}
-
-              <View style={styles.certificationBox}>
-                <Ionicons name="shield-checkmark-outline" size={18} color={Colors.mediumText} />
-                <Text style={styles.certificationText}>I certify that the information provided is true and accurate.</Text>
-              </View>
-
-              <TouchableOpacity style={[styles.submitFormButton, isSubmitting && { opacity: 0.7 }]} onPress={handleFormSubmit} disabled={isSubmitting}>
-                {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitFormButtonText}>Submit Bid Request</Text>}
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
+      {selectedEnrollment && (
+        <View style={styles.selectedGroupInfo}>
+          <Text style={styles.selectedGroupText}>Group: {selectedEnrollment.group_id?.group_name}</Text>
+          <Text style={styles.selectedGroupText}>Ticket: {selectedEnrollment.tickets}</Text>
+          {balances[selectedEnrollment._id] > 0 && (
+            <Text style={styles.dueWarningText}>⚠️ Due: ₹ {formatNumberIndianStyle(balances[selectedEnrollment._id])} - Clear due otherwise request will be rejected</Text>
+          )}
+          {balances[selectedEnrollment._id] <= 0 && (
+            <Text style={styles.eligibleText}>✓ You are eligible to bid</Text>
+          )}
         </View>
-      </Modal>
+      )}
 
+      <ScrollView 
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={styles.modalScrollContent}
+      >
+        <Text style={styles.formSectionLabel}>Personal Details:</Text>
+
+        <Text style={styles.inputLabel}>Full Name *</Text>
+        <TextInput style={styles.input} value={formData.fullName} onChangeText={(txt) => setFormData({ ...formData, fullName: txt })} placeholder="Enter Full Name" editable={!isSubmitting} />
+
+        <Text style={styles.inputLabel}>Phone Number *</Text>
+        <TextInput style={styles.input} keyboardType="phone-pad" value={formData.phoneNumber} onChangeText={(txt) => setFormData({ ...formData, phoneNumber: txt })} placeholder="Mobile Number" maxLength={10} editable={!isSubmitting} />
+
+        <Text style={styles.inputLabel}>Purpose of Bid *</Text>
+        <View style={styles.purposeGrid}>
+          {BID_PURPOSE_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.purposeChip, formData.bidPurpose === option && styles.purposeChipSelected]}
+              onPress={() => { setFormData({ ...formData, bidPurpose: option }); }}
+              disabled={isSubmitting}
+            >
+              <Text style={[styles.purposeChipText, formData.bidPurpose === option && styles.purposeChipTextSelected]}>{option}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {formData.bidPurpose === "Others" && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.inputLabel}>Please specify:</Text>
+            <TextInput style={styles.input} value={formData.otherPurpose} onChangeText={(txt) => setFormData({ ...formData, otherPurpose: txt })} placeholder="Enter your specific reason" editable={!isSubmitting} />
+          </View>
+        )}
+
+        {/* Terms & Conditions Section */}
+        <View style={styles.termsContainer}>
+          <View style={styles.termsHeader}>
+            <MaterialCommunityIcons name="file-document-outline" size={24} color={Colors.primaryBlue} />
+            <Text style={styles.termsTitle}> Terms & Conditions</Text>
+          </View>
+          
+          {/* Separate ScrollView for Terms Content */}
+          <ScrollView 
+            style={styles.termsScrollView}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+          >
+            <Text style={styles.termsText}>
+              <Text style={styles.termsBold}>1. Eligibility Requirements:</Text>{'\n'}
+              • To be eligible to make a bid, the subscriber should have paid all the instalments and not have any pending ones.{'\n'}
+              • If any balance is pending towards instalment amount, the participant will not be allowed to participate in the auction.{'\n'}
+              • If instalment balance is more than one month, full payment must be made one day prior to the auction date. Only after 30 days from full payment, the subscriber will be allowed to participate.{'\n\n'}
+              
+              <Text style={styles.termsBold}>2. Auction Participation:</Text>{'\n'}
+              • The member can either participate online or personally attend the auction in the Chit office on the date and time specified in the Chit Fund agreement.{'\n'}
+              • For online auction, customers can call the auction helpline number.{'\n'}
+              • The bid form can be sent via WhatsApp: 483900777{'\n'}
+              • Email: info.mychit@gmail.com{'\n'}
+              • For online auctions, the link will be sent to your registered mobile number on the auction day.{'\n\n'}
+              
+              <Text style={styles.termsBold}>3. Proxy Participation:</Text>{'\n'}
+              • The customer can send a proxy to participate in the auction on their behalf.{'\n'}
+              • The proxy must carry the authorisation letter & valid ID proof to participate in the auction.{'\n'}
+              • The subscriber needs to fill in all the details in the letter before signing and sending it to the Chit's office.{'\n\n'}
+              
+              <Text style={styles.termsBold}>4. Bidding Process:</Text>{'\n'}
+              • From the second month onwards, members will be able to bid for the Prize Money from the collected funds through a reverse auction.{'\n'}
+              • The highest bidder/prized subscriber wins the Prize Money for that month.{'\n'}
+              • If more than one customer bids the maximum discounted amount, a lucky draw will be conducted among them, and the winner will be allowed to take the chit.{'\n\n'}
+              
+              <Text style={styles.termsBold}>5. Prize Money & Security:</Text>{'\n'}
+              • As per Section 31 of The Chit Fund Act, 1982, every subscriber who wins the prize must furnish sufficient security to take it.{'\n'}
+              • Section 22 allows the company to collect sufficient security for the due payment of future subscriptions.{'\n'}
+              • After deducting the foreman's commission with tax, the balance amount will be paid.{'\n\n'}
+              
+              <Text style={styles.termsBold}>6. Payment Terms:</Text>{'\n'}
+              • To participate in the auction, payment should be made one day prior to the auction date.{'\n'}
+              • The prize winner must furnish sufficient security to claim it.{'\n\n'}
+              
+              <Text style={styles.termsBold}>7. Default & Termination:</Text>{'\n'}
+              • If any subscriber has not paid instalments continuously for 90 days, the chit will be terminated 30 days from the notice period date.{'\n'}
+              • Cancellation/withdrawal of chit is not allowed under any circumstances.{'\n'}
+              • If a subscriber discontinues the chit (non-payment or failure to provide security), a foreman commission of 5–7% + GST will be deducted.{'\n'}
+              • Remaining balance will be settled after substitution or completion of the chit period, whichever is earlier.{'\n'}
+              • A defaulting subscriber is liable to be penalised.{'\n\n'}
+              
+              <Text style={styles.termsBold}>8. Declaration:</Text>{'\n'}
+              By submitting this bid request, I confirm that I have read, understood, and agree to abide by all the terms and conditions mentioned above. I understand that providing false information may lead to disqualification and legal action.
+            </Text>
+          </ScrollView>
+
+          <TouchableOpacity 
+            style={styles.checkboxContainer}
+            onPress={() => setFormData({ ...formData, termsAccepted: !formData.termsAccepted })}
+            disabled={isSubmitting}
+          >
+            <View style={[styles.checkbox, formData.termsAccepted && styles.checkboxChecked]}>
+              {formData.termsAccepted && <Ionicons name="checkmark" size={16} color="#fff" />}
+            </View>
+            <Text style={styles.checkboxLabel}>
+              I have read, understood, and agree to all the Terms & Conditions mentioned above
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.certificationBox}>
+          <Ionicons name="shield-checkmark-outline" size={18} color={Colors.mediumText} />
+          <Text style={styles.certificationText}>I certify that the information provided is true and accurate.</Text>
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.submitFormButton, (isSubmitting || !formData.termsAccepted) && styles.submitFormButtonDisabled]} 
+          onPress={handleFormSubmit} 
+          disabled={isSubmitting || !formData.termsAccepted}
+        >
+          {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitFormButtonText}>Submit Bid Request</Text>}
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  </View>
+</Modal>
       <Toast position="bottom" bottomOffset={60} />
     </View>
   );
@@ -775,33 +873,77 @@ const styles = StyleSheet.create({
   scrollWrapper: { flex: 1, backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, marginTop: 10 },
   iconCircleSmall: { width: 40, height: 40, borderRadius: 20, justifyContent: "center", alignItems: "center", marginRight: 12 },
   cardWrapper: { marginVertical: 8 },
-  cardGradient: { borderRadius: 20, padding: 2 },
+  cardGradient: { borderRadius: 20, padding: 2, backgroundColor: '#fff' },
   highlightedGradient: { borderWidth: 2, borderColor: "#FFD700" },
   cardInner: { borderRadius: 18, padding: 15, backgroundColor: '#fff', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
-  cardTitle: { fontSize: 16, fontWeight: "bold", color: Colors.darkText },
-  ticketText: { fontSize: 14, color: Colors.mediumText },
-  pendingBadge: { backgroundColor: Colors.pendingText, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginLeft: 8 },
-  pendingBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  progressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  progressText: { fontSize: 14, color: Colors.mediumText },
-  progressTextBold: { fontSize: 14, fontWeight: "bold" },
-  progressBar: { height: 8, backgroundColor: "#E0E0E0", borderRadius: 10, marginBottom: 10 },
-  amountRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  amountColumn: { width: "48%", marginBottom: 12 },
-  amountLabel: { fontSize: 12, color: Colors.mediumText },
-  amountValue: { fontSize: 16, fontWeight: "bold" },
-  row: { width: "100%", flexDirection: "row", justifyContent: "space-between", marginBottom: 8, paddingHorizontal: 2, paddingTop: 5, borderTopWidth: 1, borderTopColor: "#F0F0F0" },
-  leftText: { fontSize: 13, color: Colors.mediumText },
-  rightText: { fontSize: 13, fontWeight: "bold", color: Colors.darkText },
-  balanceContainer: { paddingVertical: 8, paddingHorizontal: 10, backgroundColor: Colors.softGrayBackground, borderRadius: 8, marginBottom: 10, alignItems: 'center', flexDirection: 'column', justifyContent: 'center' },
-  balanceText: { fontSize: 14, fontWeight: '600' },
+  cardTitle: { fontSize: 18, fontWeight: "bold", color: Colors.darkText },
+  ticketText: { fontSize: 13, color: Colors.mediumText, marginTop: 2 },
+  pendingBadge: { backgroundColor: Colors.pendingText, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, marginLeft: 8 },
+  pendingBadgeText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
+  progressSection: { marginBottom: 15 },
+  progressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+  progressText: { fontSize: 13, color: Colors.mediumText },
+  progressTextBold: { fontSize: 14, fontWeight: "bold", color: Colors.primaryBlue },
+  progressBar: { height: 8, backgroundColor: "#E0E0E0", borderRadius: 10, overflow: 'hidden' },
+  // Updated styles for stats container
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: Colors.softGrayBackground,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 15
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 0, // Important for text truncation
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: Colors.lightGrayBorder,
+    height: 40,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: Colors.mediumText,
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.darkText,
+    textAlign: "center",
+    flexWrap: "wrap",
+  },
+  balanceContainer: { 
+  paddingVertical: 8, 
+  paddingHorizontal: 12, 
+  borderRadius: 10, 
+  marginBottom: 10, 
+  alignItems: 'center',
+  backgroundColor: Colors.dueText + '10', // Light red background for due
+},
+balanceText: { 
+  fontSize: 14, 
+  fontWeight: 'bold',
+  marginBottom: 4,
+},
   estimatedText: { fontSize: 10, color: Colors.mediumText, marginLeft: 5, fontStyle: 'italic' },
-  cantParticipateText: { fontSize: 12, color: Colors.dueText, fontWeight: 'bold', marginTop: 4, fontStyle: 'italic' },
+ cantParticipateText: { 
+  fontSize: 11, 
+  color: Colors.dueText, 
+  fontWeight: '500', 
+  textAlign: 'center' 
+},
   bidRequestButton: { marginVertical: 5, borderRadius: 12, overflow: 'hidden', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 5 },
   bidRequestButtonDisabled: { opacity: 0.7 },
-  bidRequestGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 15, minHeight: 60 },
-  bidRequestButtonText: { color: '#ffffff', fontSize: 20, fontWeight: 700, textAlign: 'center', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  bidRequestGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 15, minHeight: 50 },
+  bidRequestButtonText: { color: '#ffffff', fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
   buttonContentWrapper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
   buttonTextContainer: { flex: 1, alignItems: 'center' },
   noGroupWrapper: { alignItems: 'center', padding: 30 },
@@ -817,6 +959,7 @@ const styles = StyleSheet.create({
   selectedGroupInfo: { backgroundColor: Colors.softBlueAccent, padding: 12, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: Colors.primaryBlue },
   selectedGroupText: { fontSize: 14, color: Colors.primaryBlue, fontWeight: '600', marginBottom: 2 },
   eligibleText: { fontSize: 12, color: Colors.successText, fontWeight: 'bold', marginTop: 5 },
+  dueWarningText: { fontSize: 12, color: Colors.dueText, fontWeight: 'bold', marginTop: 5 },
   formSectionLabel: { fontSize: 16, fontWeight: 'bold', marginBottom: 15, color: Colors.darkText },
   inputLabel: { fontSize: 13, fontWeight: '700', color: Colors.mediumText, marginBottom: 5 },
   input: { borderWidth: 1, borderColor: Colors.lightGrayBorder, borderRadius: 8, padding: 12, marginBottom: 15, fontSize: 15, color: Colors.darkText, backgroundColor: Colors.softGrayBackground },
@@ -829,6 +972,88 @@ const styles = StyleSheet.create({
   submitFormButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   certificationBox: { flexDirection: 'row', alignItems: 'center', marginVertical: 15, backgroundColor: Colors.softGrayBackground, padding: 12, borderRadius: 8 },
   certificationText: { fontSize: 12, color: Colors.mediumText, marginLeft: 10, flex: 1 },
+
+
+modalScrollContent: {
+  paddingBottom: 20,
+},
+termsContainer: {
+  marginBottom: 20,
+  backgroundColor: Colors.softGrayBackground,
+  borderRadius: 12,
+  padding: 15,
+  borderWidth: 1,
+  borderColor: Colors.lightGrayBorder,
+},
+termsHeader: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 12,
+  paddingBottom: 10,
+  borderBottomWidth: 1,
+  borderBottomColor: Colors.lightGrayBorder,
+},
+termsTitle: {
+  fontSize: 16,
+  fontWeight: 'bold',
+  color: Colors.primaryBlue,
+  marginLeft: 10,
+},
+termsScrollView: {
+  maxHeight: 280, // Set a fixed max height for the terms scroll area
+  marginBottom: 12,
+  backgroundColor: Colors.white,
+  borderRadius: 8,
+  padding: 10,
+},
+termsText: {
+  fontSize: 12,
+  color: Colors.darkText,
+  lineHeight: 20,
+  textAlign: 'justify',
+},
+termsBold: {
+  fontWeight: 'bold',
+  color: Colors.primaryBlue,
+  fontSize: 13,
+},
+checkboxContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginTop: 5,
+  paddingVertical: 10,
+  paddingHorizontal: 5,
+  backgroundColor: Colors.white,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: Colors.lightGrayBorder,
+},
+checkbox: {
+  width: 22,
+  height: 22,
+  borderRadius: 6,
+  borderWidth: 2,
+  borderColor: Colors.primaryBlue,
+  backgroundColor: '#fff',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: 12,
+},
+checkboxChecked: {
+  backgroundColor: Colors.primaryBlue,
+  borderColor: Colors.primaryBlue,
+},
+checkboxLabel: {
+  flex: 1,
+  fontSize: 12,
+  color: Colors.darkText,
+  fontWeight: '500',
+  lineHeight: 18,
+},
+submitFormButtonDisabled: {
+  opacity: 0.5,
+},
+  
 });
 
 export default BidRequest;
