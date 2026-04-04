@@ -80,7 +80,6 @@ const EnrollConfirm = ({ navigation, route }) => {
     return;
   }
 
-  // Pop to root and navigate to EnrollScreen
   navigation.popToTop();
   navigation.navigate("EnrollScreen", { userId: userId });
 };
