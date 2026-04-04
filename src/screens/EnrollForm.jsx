@@ -105,8 +105,8 @@ const ChitDetailItem = ({ label, value, isLink = false, index, totalItems }) => 
 
 const ChitDetailsGrid = ({ data }) => {
   const chitValue = data.group_value ? `₹ ${formatNumberIndianStyle(data.group_value)}` : 'N/A';
-  const monthlyInstallmentValue = data.monthly_installment ? `₹ ${formatNumberIndianStyle(data.monthly_installment)} /Mo` : 'N/A'; // Shortened /Month to /Mo
-  
+  const monthlyInstallmentValue = data.monthly_installment ? `₹ ${formatNumberIndianStyle(data.monthly_installment)} ` : 'N/A'; // Shortened /Month to /Mo
+
   let rawCommencementDate = data.group_commencement_date;
   const firstAuction = data.auction && Array.isArray(data.auction) && data.auction.length > 0 ? data.auction[0] : null;
 
@@ -117,9 +117,9 @@ const ChitDetailsGrid = ({ data }) => {
   const commencementDateValue = rawCommencementDate ? formatDate(rawCommencementDate) : 'Pending';
 
   const details = [
-    { label: "Installment", value: monthlyInstallmentValue }, // Shortened Label
+    { label: "Installment Amount", value: monthlyInstallmentValue }, // Shortened Label
     { label: "1st Auction", value: commencementDateValue }, // Shortened Label
-    { label: "Duration", value: `${data.group_duration || 'N/A'} Mos` }, // Shortened Label
+    { label: "Duration", value: `${data.group_duration || 'N/A'} ` }, // Shortened Label
     { label: "Group", value: data.group_name || 'N/A' }, // Shortened Label
     { label: "Members", value: data.group_members || 'N/A' }, // Shortened Label
     { label: "Starts", value: data.start_date ? formatDate(data.start_date) : 'N/A' }, // Shortened Label
@@ -173,8 +173,8 @@ const EnrollForm = ({ navigation, route }) => {
         setCardsData(groupData);
       }
       const ticketsResponse = await axios.post(`${url}/enroll/get-next-tickets/${groupId}`, {
-    source: "mychits-customer-app" 
-  });
+        source: "mychits-customer-app"
+      });
       const fetchedTickets = Array.isArray(ticketsResponse.data.availableTickets) ? ticketsResponse.data.availableTickets : [];
       setAvailableTickets(fetchedTickets);
       setTicketCount(fetchedTickets.length > 0 ? 1 : 0);
@@ -207,13 +207,13 @@ const EnrollForm = ({ navigation, route }) => {
 
   const performEnrollment = useCallback(async (ticketsCountInt) => {
     setIsSubmitting(true);
-   const payload = { 
-    group_id: groupId, 
-    user_id: userId, 
-    no_of_tickets: ticketsCountInt, 
-    chit_asking_month: 0,
-    source: "mychits-customer-app" // <--- ADDED THIS LINE
-  };
+    const payload = {
+      group_id: groupId,
+      user_id: userId,
+      no_of_tickets: ticketsCountInt,
+      chit_asking_month: "",
+      source: "mychits-customer-app" // <--- ADDED THIS LINE
+    };
     try {
       await axios.post(`${url}/mobile-app-enroll/add-mobile-app-enroll`, payload);
       Toast.show({ type: "success", text1: "Enrollment Successful!" });
@@ -235,34 +235,87 @@ const EnrollForm = ({ navigation, route }) => {
 
   const renderConfirmModal = () => {
     const groupName = cardsData?.group_name || "the group";
-    const installmentAmount = cardsData?.monthly_installment 
-      ? formatNumberIndianStyle(cardsData.monthly_installment) 
+    const installmentAmount = cardsData?.monthly_installment
+      ? formatNumberIndianStyle(cardsData.monthly_installment)
       : 'N/A';
     const durationMonths = cardsData?.group_duration || "N/A";
     const userName = appUser.name || 'User';
-    
-    const confirmationText = `Dear ${userName}, you are enrolling in ${groupName}. Plan: ₹${installmentAmount}/mo for ${durationMonths} months. Tickets: ${ticketCount}.`;
+
+    const confirmationText = `Dear ${userName}, You Are Enrolling In ${groupName}.`;
 
     return (
-      <Modal animationType="slide" transparent={true} visible={isConfirmModalVisible}>
+      <Modal animationType="fade" transparent={true} visible={isConfirmModalVisible}>
         <View style={styles.modalOverlay}>
           <View style={styles.styledModalContent}>
-            <View style={styles.modalAnimationPlaceholder}>
-              <Ionicons name="people-circle" size={60} color="#053B90" /> {/* Reduced icon size */}
+            {/* Decorative top bar */}
+            <View style={styles.colorBar} />
+
+            {/* Close button */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsConfirmModalVisible(false)}
+            >
+              <Ionicons name="close" size={22} color="#999" />
+            </TouchableOpacity>
+
+            {/* Icon Container */}
+            <View style={styles.iconContainer}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="people" size={45} color="#FFF" />
+              </View>
             </View>
-            <Text style={styles.styledModalTitle}>Confirm</Text>
+
+            <Text style={styles.styledModalTitle}>Confirm Enrollment </Text>
+
             <Text style={styles.styledModalMessage}>{confirmationText}</Text>
-            <Text style={styles.styledModalAgreement}>By proceeding, you agree to terms.</Text>
+
+            {/* Details in separate lines */}
+            <View style={styles.detailsContainer}>
+              <View style={styles.detailRow}>
+                <Ionicons name="ticket-outline" size={16} color="#667eea" />
+                <Text style={styles.detailLabel}>Tickets:</Text>
+                <Text style={styles.detailValue}>{ticketCount}</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Ionicons name="calendar-outline" size={16} color="#667eea" />
+                <Text style={styles.detailLabel}>Duration:</Text>
+                <Text style={styles.detailValue}>{durationMonths} months</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Ionicons name="cash-outline" size={16} color="#667eea" />
+                <Text style={styles.detailLabel}>Per Installment:</Text>
+                <Text style={styles.detailValue}>₹{installmentAmount}</Text>
+              </View>
+            </View>
+
+            <View style={styles.termsContainer}>
+              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+              <Text style={styles.styledModalAgreement}>
+                By proceeding, you agree to terms
+              </Text>
+            </View>
             <View style={styles.styledModalButtonContainer}>
-              <TouchableOpacity style={[styles.styledModalButton, styles.styledModalCancelButton]} onPress={() => setIsConfirmModalVisible(false)}>
+              <TouchableOpacity
+                style={[styles.styledModalButton, styles.styledModalCancelButton]}
+                onPress={() => setIsConfirmModalVisible(false)}
+              >
                 <Text style={styles.styledModalCancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.styledModalButton, styles.styledModalConfirmButton]} 
-                onPress={() => { setIsConfirmModalVisible(false); performEnrollment(parseInt(ticketCount, 10)); }}
+
+              <TouchableOpacity
+                style={[styles.styledModalButton, styles.styledModalConfirmButton]}
+                onPress={() => {
+                  setIsConfirmModalVisible(false);
+                  performEnrollment(parseInt(ticketCount, 10));
+                }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.styledModalConfirmButtonText}>Join</Text>}
+                {isSubmitting ?
+                  <ActivityIndicator size="small" color="#FFF" /> :
+                  <Text style={styles.styledModalConfirmButtonText}>Confirm Join </Text>
+                }
               </TouchableOpacity>
             </View>
           </View>
@@ -270,6 +323,7 @@ const EnrollForm = ({ navigation, route }) => {
       </Modal>
     );
   };
+
 
   if (loading) return <View style={styles.loaderContainer}><ActivityIndicator size="large" color={Colors.primary} /></View>;
 
@@ -282,33 +336,35 @@ const EnrollForm = ({ navigation, route }) => {
           <Text style={styles.groupInfoTitle}>Enrollment Details</Text>
           <ScrollView contentContainerStyle={styles.scrollContentContainer}>
             {cardsData && <ChitDetailsGrid data={cardsData} />}
-            
-            <View style={styles.ticketSelectionBox}>
-              <Text style={styles.ticketSelectionBoxTitle}>Select Tickets</Text>
-              
-              <View style={styles.unifiedTicketControlRow}>
-                <Text style={styles.quantityLabel}>Tickets:</Text>
-                <View style={styles.ticketCountDisplay}>
-                  <Text style={styles.ticketCountText}>{ticketCount}</Text>
+
+            <View style={styles.ticketSelectionBoxCompact}>
+              <Text style={styles.ticketSelectionBoxTitleCompact}>Select Tickets</Text>
+
+              <View style={styles.ticketRow}>
+                <View style={styles.ticketCountSection}>
+                  <Text style={styles.quantityLabelCompact}>Tickets:</Text>
+                  <View style={styles.ticketCountDisplayCompact}>
+                    <Text style={styles.ticketCountTextCompact}>{ticketCount}</Text>
+                  </View>
                 </View>
-              </View>
 
-              <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity 
-                    onPress={handleRemoveTicket} 
-                    style={[styles.actionButtonBox, { borderColor: Colors.danger }]}
-                >
-                  <AntDesign name="minuscircleo" size={14} color={Colors.danger} />
-                  <Text style={[styles.actionButtonText, { color: Colors.danger }]}> Remove</Text>
-                </TouchableOpacity>
+                <View style={styles.actionButtonsRow}>
+                  <TouchableOpacity
+                    onPress={handleRemoveTicket}
+                    style={[styles.actionButtonBoxCompact, { borderColor: Colors.danger }]}
+                  >
+                    <AntDesign name="minuscircleo" size={12} color={Colors.danger} />
+                    <Text style={[styles.actionButtonTextCompact, { color: Colors.danger }]}>Remove</Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity 
-                    onPress={handleAddMoreTickets} 
-                    style={[styles.actionButtonBox, { borderColor: Colors.linkBlue }]}
-                >
-                  <AntDesign name="pluscircleo" size={14} color={Colors.linkBlue} />
-                  <Text style={[styles.actionButtonText, { color: Colors.linkBlue }]}> Add</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleAddMoreTickets}
+                    style={[styles.actionButtonBoxCompact, { borderColor: Colors.linkBlue }]}
+                  >
+                    <AntDesign name="pluscircleo" size={12} color={Colors.linkBlue} />
+                    <Text style={[styles.actionButtonTextCompact, { color: Colors.linkBlue }]}>Add</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
@@ -319,9 +375,9 @@ const EnrollForm = ({ navigation, route }) => {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity 
-              style={[styles.enrollButton, (!termsAccepted || availableTickets.length === 0) && styles.enrollButtonDisabled]} 
-              onPress={handleEnroll} 
+            <TouchableOpacity
+              style={[styles.enrollButton, (!termsAccepted || availableTickets.length === 0) && styles.enrollButtonDisabled]}
+              onPress={handleEnroll}
               disabled={!termsAccepted || availableTickets.length === 0}
             >
               <Text style={styles.enrollButtonText}>Enroll Now</Text>
@@ -342,7 +398,208 @@ const styles = StyleSheet.create({
   contentCard: { flex: 1, backgroundColor: Colors.primaryBackground, borderRadius: 10, marginTop: 2, paddingVertical: 5, paddingHorizontal: 3 }, // Reduced padding & radius
   groupInfoTitle: { fontSize: 16, fontWeight: "bold", color: Colors.primary, marginBottom: 5, textAlign: "center" }, // Reduced font
   scrollContentContainer: { paddingHorizontal: 0 },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  styledModalContent: {
+    width: '85%',
+    maxWidth: 340,
+    backgroundColor: '#FFF',
+    borderRadius: 32,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 20,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 25,
+    elevation: 20,
+  },
+  colorBar: {
+    height: 6,
+    backgroundColor: '#667eea',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    zIndex: 1,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#667eea',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  styledModalTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  styledModalMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  detailsContainer: {
+    backgroundColor: '#F8F9FA',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 14,
+    borderRadius: 16,
+    gap: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: '#888',
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+    flex: 1,
+  },
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',   // important
+    justifyContent: 'center',
   
+    marginBottom: 20,
+  },
+
+  styledModalAgreement: {
+    fontSize: 12,
+    color: '#999',
+    marginLeft: 6,          // spacing instead of gap
+    lineHeight: 16,         // match icon size
+    includeFontPadding: false, // Android fix
+    textAlignVertical: 'center',
+  },
+
+  styledModalButtonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  styledModalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  styledModalCancelButton: {
+    backgroundColor: '#F5F5F7',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  styledModalCancelButtonText: {
+    color: '#666',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  styledModalConfirmButton: {
+    backgroundColor: '#667eea',
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  styledModalConfirmButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  ticketSelectionBoxCompact: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  ticketSelectionBoxTitleCompact: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  ticketRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ticketCountSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quantityLabelCompact: {
+    fontSize: 13,
+    marginRight: 8,
+  },
+  ticketCountDisplayCompact: {
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
+  },
+  ticketCountTextCompact: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButtonBoxCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderRadius: 6,
+  },
+  actionButtonTextCompact: {
+    fontSize: 12,
+    marginLeft: 4,
+  },
+
   // --- SMALL CHIT DETAILS CARD ---
   chitDetailsCard: { width: '99%', alignSelf: 'center', backgroundColor: Colors.white, borderRadius: 10, marginVertical: 5, overflow: 'hidden', elevation: 5 }, // Smaller radius & elevation
   chitValueHeader: { paddingVertical: 8, backgroundColor: Colors.primary, alignItems: 'center' }, // Reduced padding
@@ -364,7 +621,7 @@ const styles = StyleSheet.create({
   quantityLabel: { fontSize: 14, fontWeight: "600", color: Colors.primaryText }, // Reduced font
   ticketCountDisplay: { backgroundColor: Colors.primaryBackground, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6, minWidth: 40, alignItems: 'center' }, // Smaller box
   ticketCountText: { fontSize: 18, fontWeight: "bold", color: Colors.primary }, // Reduced font
-  
+
   actionButtonsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }, // Reduced margin
   actionButtonBox: { flex: 0.48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderWidth: 1.5, borderRadius: 8, borderStyle: 'dashed' }, // Reduced padding
   actionButtonText: { fontWeight: 'bold', fontSize: 11, marginLeft: 4 }, // Reduced font
@@ -388,7 +645,7 @@ const styles = StyleSheet.create({
   styledModalCancelButton: { backgroundColor: Colors.lightGray, marginRight: 8 }, // Reduced margin
   styledModalConfirmButton: { backgroundColor: Colors.primary, marginLeft: 8 }, // Reduced margin
   styledModalConfirmButtonText: { color: Colors.white, fontWeight: "bold" },
-  styledModalAgreement:{ textAlign: 'center', fontStyle:'italic', fontSize:11, marginBottom: 12 }, // Reduced font
+// Reduced font
   bottomSpacer: { height: 40 }
 });
 
