@@ -47,7 +47,6 @@ const EnrollGroup = ({ route, navigation }) => {
   const [paymentData, setPaymentData] = useState([]);
   const [error, setError] = useState(null);
   const [singleOverview, setSingleOverview] = useState({});
-  const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const { isConnected, isInternetReachable } = useContext(NetworkContext);
@@ -73,7 +72,7 @@ const EnrollGroup = ({ route, navigation }) => {
     if (!isConnected || !isInternetReachable) {
       setLoading(false);
       setError("No internet connection. Please check your network and try again.");
-      setGroups({}); setPaymentData([]); setSingleOverview({}); setAuctions([]);
+      setGroups({}); setPaymentData([]); setSingleOverview({});
       Toast.show({ type: "error", text1: "Offline", text2: "Cannot load data without internet connection.", position: "bottom", visibilityTime: 4000 });
       return;
     }
@@ -109,11 +108,9 @@ const EnrollGroup = ({ route, navigation }) => {
         }
       }
 
-      const overviewResponse = await axios.get(`${url}/single-overview?user_id=${userId}&group_id=${groupId}&ticket=${ticket}`);
+      const overviewResponse = await axios.get(`${url}/overview/single?user_id=${userId}&group_id=${groupId}&ticket=${ticket}`);
       setSingleOverview(overviewResponse.data);
 
-      const auctionResponse = await fetch(`${url}/auction/get-group-auction/${groupId}`);
-      if (auctionResponse.ok) setAuctions(await auctionResponse.json());
     } catch (err) {
       setError("An error occurred while fetching data. Please try again.");
       Toast.show({ type: "error", text1: "Data Load Error", text2: "Could not fetch all details. Please retry.", position: "bottom", visibilityTime: 4000 });
@@ -124,11 +121,10 @@ const EnrollGroup = ({ route, navigation }) => {
 
   useEffect(() => { fetchData(); }, [userId, groupId, ticket, isConnected, isInternetReachable]);
 
-  const toBePaidAmount = groups.group_type === "double"
-    ? singleOverview.totalInvestment || 0
-    : (singleOverview.totalPayable || 0) + parseFloat(auctions[0]?.divident_head || 0);
+  const toBePaidAmount =  singleOverview?.total_payable || 0
+   
 
-  const balanceAmount = toBePaidAmount - (singleOverview.totalPaid || 0);
+  const balanceAmount = singleOverview?.total_balance || 0;
   const isBalanceExcess = balanceAmount < 0;
 
   return (
@@ -182,13 +178,13 @@ const EnrollGroup = ({ route, navigation }) => {
                 <View style={[styles.summaryCard, styles.investmentCardBackground]}>
                   {/* Icon size reduced to 18 */}
                   <Ionicons name="wallet-outline" size={18} color="#E0E0E0" style={styles.summaryIcon} />
-                  <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(singleOverview.totalPaid || 0)}</Text>
+                  <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(singleOverview?.total_investment || 0)}</Text>
                   <Text style={styles.summaryLabel}>Investment</Text>
                 </View>
                 <View style={[styles.summaryCard, styles.profitCardBackground]}>
                   {/* Icon size reduced to 18 */}
                   <Ionicons name="trending-up-outline" size={18} color="#E0E0E0" style={styles.summaryIcon} />
-                  <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(singleOverview.totalProfit || 0)}</Text>
+                  <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(singleOverview?.total_profit || 0)}</Text>
                   <Text style={styles.summaryLabel}>Divident / Profit</Text>
                 </View>
               </View>
@@ -196,7 +192,6 @@ const EnrollGroup = ({ route, navigation }) => {
               {/* ── Bottom three stat cards ── */}
               <View style={styles.row}>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("AuctionsRecord", { userId, groupId, ticket })}
                   style={[styles.summaryCard, { borderColor: statBoxBorderColors.toBePaid, backgroundColor: "#fff" }, styles.summaryCardBordered]}
                 >
                   {/* Icon size reduced to 18 */}
@@ -208,7 +203,7 @@ const EnrollGroup = ({ route, navigation }) => {
                 <View style={[styles.summaryCard, { borderColor: statBoxBorderColors.totalPaid, backgroundColor: "#fff" }, styles.summaryCardBordered]}>
                   {/* Icon size reduced to 18 */}
                   <Ionicons name="receipt-outline" size={18} color={statBoxTextColors.totalPaid} style={styles.summaryIcon} />
-                  <Text style={[styles.summaryAmountAlt, { color: statBoxTextColors.totalPaid }]}>₹ {formatNumberIndianStyle(singleOverview.totalPaid || 0)}</Text>
+                  <Text style={[styles.summaryAmountAlt, { color: statBoxTextColors.totalPaid }]}>₹ {formatNumberIndianStyle(singleOverview?.total_investment || 0)}</Text>
                   <Text style={[styles.summaryLabelAlt, { color: statBoxTextColors.totalPaid }]}>TOTAL PAID</Text>
                 </View>
 
