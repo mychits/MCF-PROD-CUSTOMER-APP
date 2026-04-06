@@ -68,23 +68,21 @@ const EnrollConfirm = ({ navigation, route }) => {
       .catch(() => Alert.alert("Error", "Could not open WhatsApp. Please ensure it is installed."));
   };
 
-  const handleGoToMyGroups = () => {
-    if (!userId) {
-      Toast.show({
-        type: "error",
-        text1: "Navigation Error",
-        text2: "User ID is missing. Cannot navigate to My Groups.",
-        position: "bottom",
-        visibilityTime: 3000,
-      });
-      return;
-    }
-
-    navigation.navigate("BottomTab", {
-      screen: "PaymentScreen",
-      params: { userId: userId },
+ const handleGoToMyGroups = () => {
+  if (!userId) {
+    Toast.show({
+      type: "error",
+      text1: "Navigation Error",
+      text2: "User ID is missing. Cannot navigate to My Groups.",
+      position: "bottom",
+      visibilityTime: 3000,
     });
-  };
+    return;
+  }
+
+  navigation.popToTop();
+  navigation.navigate("EnrollScreen", { userId: userId });
+};
 
   if (!userId) {
     return (
@@ -140,7 +138,7 @@ const EnrollConfirm = ({ navigation, route }) => {
           </View>
 
           <Text style={styles.infoText}>
-            Our team is reviewing your details now! We'll notify you as soon as your group is fully active.
+           Congratulations! Your Enrollment Request Has Been Accepted. We’ll Notify You Once Your Group Is Active.
           </Text>
 
           {/* Updated Support Section */}
@@ -201,20 +199,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   congratulationsText: {
-    fontSize: 24,
-    fontWeight: "800",
-    textAlign: "center",
-    marginTop: 10,
-    marginBottom: 5,
-    color: "#053B90",
-  },
+  fontSize: 18,   // was probably 22–24
+  fontWeight: '600',
+  textAlign: 'center',
+  marginTop: 10,
+},
   favorableStatement: {
-    fontSize: 14,
-    textAlign: "center",
-    color: "#6c757d",
-    marginBottom: 15,
-    maxWidth: "90%",
-  },
+  fontSize: 13,   // reduce
+  color: '#666',
+  textAlign: 'center',
+  marginVertical: 6,
+},
   detailsContainer: {
     width: "100%",
     padding: 10,
@@ -243,23 +238,23 @@ const styles = StyleSheet.create({
     width: 20,
     textAlign: "center",
   },
-  detailItem: {
-    fontSize: 16,
-    color: "#333",
-  },
-  detailValue: {
-    fontWeight: "700",
-    color: "#000",
-  },
+detailItem: {
+  fontSize: 13,
+  color: '#333',
+},
+
+detailValue: {
+  fontSize: 13,
+  fontWeight: '600',
+},
   installmentValue: {
     color: "#28A745",
     fontWeight: "900",
   },
   pendingText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFC107",
-  },
+  fontSize: 12,
+  color: '#FFC107',
+},
   infoText: {
     fontSize: 13,
     textAlign: "center",

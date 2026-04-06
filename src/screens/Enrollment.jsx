@@ -12,7 +12,9 @@ import {
     Platform,
     Image,
     Dimensions,
+    TextInput,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
 import url from "../data/url";
 import Header from "../components/layouts/Header";
@@ -48,17 +50,15 @@ const getVacantSeats = (card) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// STYLISH POSTER SLIDER  — with visible gaps between cards
+// STYLISH POSTER SLIDER
 // ─────────────────────────────────────────────────────────────
-const CARD_GAP       = 12;   // gap between cards
-const SIDE_PADDING   = 16;   // left/right padding so next card peeks
-const CARD_WIDTH     = SCREEN_WIDTH - SIDE_PADDING * 2 - CARD_GAP; // card is slightly narrower than screen
+const CARD_GAP = 12;
+const SIDE_PADDING = 16;
+const CARD_WIDTH = SCREEN_WIDTH - SIDE_PADDING * 2 - CARD_GAP;
 
 const StylishPosterSlider = ({ data, onPress }) => {
     const scrollRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-
-    // Each "snap interval" = card width + one gap
     const snapInterval = CARD_WIDTH + CARD_GAP;
 
     useEffect(() => {
@@ -105,19 +105,11 @@ const StylishPosterSlider = ({ data, onPress }) => {
                             { marginRight: index < data.length - 1 ? CARD_GAP : 0 },
                         ]}
                     >
-                        {/* Base dark blue background */}
                         <View style={posterStyles.posterBackground} />
-
-                        {/* Slant line — Pink */}
                         <View style={posterStyles.slantLinePink} />
-                        {/* Slant line — Gold */}
                         <View style={posterStyles.slantLineGold} />
-                        {/* Slant line — Cyan */}
                         <View style={posterStyles.slantLineCyan} />
-
-                        {/* Content */}
                         <View style={posterStyles.contentLayout}>
-                            {/* Left: text */}
                             <View style={posterStyles.textSection}>
                                 <Text style={posterStyles.offerLineGet}>Get</Text>
                                 <Text
@@ -136,8 +128,6 @@ const StylishPosterSlider = ({ data, onPress }) => {
                                     <Text style={posterStyles.offerLine2Suffix}>/monthly</Text>
                                 </View>
                             </View>
-
-                            {/* Right: image */}
                             <View style={posterStyles.imageSection}>
                                 <View style={posterStyles.imageShadowBg} />
                                 <Image
@@ -155,8 +145,6 @@ const StylishPosterSlider = ({ data, onPress }) => {
                     </TouchableOpacity>
                 ))}
             </ScrollView>
-
-            {/* Dot indicators */}
             {data.length > 1 && (
                 <View style={posterStyles.dotsRow}>
                     {data.map((_, i) => (
@@ -175,169 +163,29 @@ const StylishPosterSlider = ({ data, onPress }) => {
 };
 
 const posterStyles = StyleSheet.create({
-    wrapper: {
-        marginBottom: 12,
-        marginTop: 8,
-    },
-    card: {
-        width: CARD_WIDTH,
-        height: 140, // Reduced from 150 for compactness
-        borderRadius: 18,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 7,
-    },
-    posterBackground: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#053B90',
-    },
-    slantLinePink: {
-        position: 'absolute',
-        width: '200%',
-        height: 300,
-        backgroundColor: 'rgba(255, 46, 99, 0.20)',
-        top: -100,
-        left: -80,
-        transform: [{ rotate: '25deg' }],
-        zIndex: 1,
-    },
-    slantLineGold: {
-        position: 'absolute',
-        width: '120%',
-        height: 150,
-        backgroundColor: 'rgba(255, 201, 60, 0.12)',
-        top: 20,
-        right: -50,
-        transform: [{ rotate: '-35deg' }],
-        zIndex: 1,
-    },
-    slantLineCyan: {
-        position: 'absolute',
-        width: '200%',
-        height: 250,
-        backgroundColor: 'rgba(0, 210, 252, 0.15)',
-        bottom: -80,
-        right: -50,
-        transform: [{ rotate: '-15deg' }],
-        zIndex: 1,
-    },
-    contentLayout: {
-        flex: 1,
-        flexDirection: 'row',
-        zIndex: 2,
-        paddingHorizontal: 20,
-        paddingTop: 8,
-    },
-    textSection: {
-        flex: 1.4,
-        justifyContent: 'center',
-    },
-    offerLineGet: {
-        fontSize: 12, // Reduced from 14
-        color: 'rgba(255,255,255,0.85)',
-        fontWeight: '600',
-        letterSpacing: 1,
-        textTransform: 'uppercase',
-        marginBottom: 2,
-    },
-    offerLine1: {
-        fontSize: 22, // Reduced from 25
-        color: '#FFFFFF',
-        fontWeight: '900',
-        lineHeight: 28, // Reduced from 32
-        flexShrink: 1,
-    },
-    offerLine2Row: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        marginTop: 2,
-    },
-    offerLine2Prefix: {
-        fontSize: 9, // Reduced from 10
-        color: '#E0E0E0',
-        marginBottom: 2,
-    },
-    offerLine2Amount: {
-        fontSize: 16, // Reduced from 18
-        color: '#FFC93C',
-        fontWeight: 'bold',
-        marginLeft: 4,
-    },
-    offerLine2Suffix: {
-        fontSize: 10, // Reduced from 11
-        color: '#E0E0E0',
-        marginBottom: 2,
-        marginLeft: 2,
-    },
-    imageSection: {
-        flex: 1.6,
-        justifyContent: 'flex-end',
-        alignItems: 'flex-end',
-        marginBottom: -5,
-    },
-    imageShadowBg: {
-        position: 'absolute',
-        width: 70, // Reduced from 75
-        height: 90, // Reduced from 100
-        backgroundColor: 'rgba(0,0,0,0.2)',
-        borderRadius: 10,
-        bottom: 0,
-        right: 10,
-        transform: [{ rotate: '-10deg' }],
-        zIndex: -1,
-    },
-    posterImage: {
-        width: 100, // Reduced from 110
-        height: 130, // Reduced from 140
-        transform: [{ rotate: '-5deg' }],
-    },
-    floatingTag: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 6,
-        paddingVertical: 3,
-        borderRadius: 15,
-        borderWidth: 1,
-        borderColor: '#FF2E63',
-        transform: [{ rotate: '5deg' }],
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        zIndex: 5,
-    },
-    floatingTagText: {
-        color: '#053B90',
-        fontSize: 9, // Reduced from 10
-        fontWeight: 'bold',
-    },
-    dotsRow: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 8,
-        gap: 5,
-    },
-    dot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#C5D5EA',
-    },
-    dotActive: {
-        width: 18,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#053B90',
-    },
+    wrapper: { marginBottom: 12, marginTop: 8 },
+    card: { width: CARD_WIDTH, height: 140, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 7 },
+    posterBackground: { ...StyleSheet.absoluteFillObject, backgroundColor: '#053B90' },
+    slantLinePink: { position: 'absolute', width: '200%', height: 300, backgroundColor: 'rgba(255, 46, 99, 0.20)', top: -100, left: -80, transform: [{ rotate: '25deg' }], zIndex: 1 },
+    slantLineGold: { position: 'absolute', width: '120%', height: 150, backgroundColor: 'rgba(255, 201, 60, 0.12)', top: 20, right: -50, transform: [{ rotate: '-35deg' }], zIndex: 1 },
+    slantLineCyan: { position: 'absolute', width: '200%', height: 250, backgroundColor: 'rgba(0, 210, 252, 0.15)', bottom: -80, right: -50, transform: [{ rotate: '-15deg' }], zIndex: 1 },
+    contentLayout: { flex: 1, flexDirection: 'row', zIndex: 2, paddingHorizontal: 20, paddingTop: 8 },
+    textSection: { flex: 1.4, justifyContent: 'center' },
+    offerLineGet: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 },
+    offerLine1: { fontSize: 22, color: '#FFFFFF', fontWeight: '900', lineHeight: 28, flexShrink: 1 },
+    offerLine2Row: { flexDirection: 'row', alignItems: 'flex-end', marginTop: 2 },
+    offerLine2Prefix: { fontSize: 9, color: '#E0E0E0', marginBottom: 2 },
+    offerLine2Amount: { fontSize: 16, color: '#FFC93C', fontWeight: 'bold', marginLeft: 4 },
+    offerLine2Suffix: { fontSize: 10, color: '#E0E0E0', marginBottom: 2, marginLeft: 2 },
+    imageSection: { flex: 1.6, justifyContent: 'flex-end', alignItems: 'flex-end', marginBottom: -5 },
+    imageShadowBg: { position: 'absolute', width: 70, height: 90, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 10, bottom: 0, right: 10, transform: [{ rotate: '-10deg' }], zIndex: -1 },
+    posterImage: { width: 100, height: 130, transform: [{ rotate: '-5deg' }] },
+    floatingTag: { position: 'absolute', top: 10, right: 10, backgroundColor: '#FFFFFF', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 15, borderWidth: 1, borderColor: '#FF2E63', transform: [{ rotate: '5deg' }], shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, zIndex: 5 },
+    floatingTagText: { color: '#053B90', fontSize: 9, fontWeight: 'bold' },
+    dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8, gap: 5 },
+    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#C5D5EA' },
+    dotActive: { width: 18, height: 6, borderRadius: 3, backgroundColor: '#053B90' },
 });
-// ─────────────────────────────────────────────────────────────
-
 
 const Enrollment = ({ route, navigation }) => {
     const { groupFilter } = route.params || {};
@@ -354,13 +202,17 @@ const Enrollment = ({ route, navigation }) => {
     const [modalMessage, setModalMessage] = useState("");
     const { isConnected, isInternetReachable } = useContext(NetworkContext);
     const [moreFiltersModalVisible, setMoreFiltersModalVisible] = useState(false);
-
     const [isJoining, setIsJoining] = useState(false);
     const [joinGroupId, setJoinGroupId] = useState(null);
 
+    // Search and Sort States
+    const [searchText, setSearchText] = useState('');
+    const [sortOrder, setSortOrder] = useState('none'); // 'none', 'lowToHigh', 'highToLow'
+    const [sortType, setSortType] = useState('installment'); // 'installment' or 'chitValue'
+
     const groupColors = {
         new: { primary: '#E0F7FA', secondary: '#00BCD4', text: '#00BCD4', darkText: '#263238', buttonBackground: '#00BCD4', selectedBorder: '#00BCD4', iconColor: '#00BCD4' },
-        ongoing: { primary: '#E8F5E9', secondary: '#4CAF50', text: '#4CAF50', darkText: '#263232', buttonBackground: '#4CAF50', selectedBorder: '#4CAF50', iconColor: '#4CAF50' },
+        ongoing: { primary: '#FFF3E0', secondary: '#FF9800', text: '#4CAF50', darkText: '#263232', buttonBackground: '#4CAF50', selectedBorder: '#4CAF50', iconColor: '#4CAF50' },
         ended: { primary: '#FBE9E7', secondary: '#FF7043', text: '#FF7043', darkText: '#263238', buttonBackground: '#FF7043', selectedBorder: '#FF7043', iconColor: '#FF7043' },
         members_5_value_1000: { primary: '#FFFDE7', secondary: '#FFC107', text: '#E65100', darkText: '#5D4037', buttonBackground: '#FF8F00', selectedBorder: '#FF8F00', iconColor: '#FFC107' },
         members_10_value_500: { primary: '#F3E5F5', secondary: '#9C27B0', text: '#4A148C', darkText: '#424242', buttonBackground: '#7B1FA2', selectedBorder: '#6A1B9A', iconColor: '#9C27B0' },
@@ -388,11 +240,14 @@ const Enrollment = ({ route, navigation }) => {
 
     const fetchGroups = async () => {
         if (!isConnected || !isInternetReachable) {
-            setIsLoading(false); setError("No internet connection. Please check your network and try again."); setCardsData([]);
+            setIsLoading(false);
+            setError("No internet connection. Please check your network and try again.");
+            setCardsData([]);
             Toast.show({ type: 'error', text1: 'Offline', text2: 'Cannot load groups without internet connection.', position: 'bottom', visibilityTime: 4000 });
             return;
         }
-        setIsLoading(true); setError(null);
+        setIsLoading(true);
+        setError(null);
         let endpoint = `${url}/group/get-group/`;
         if (selectedGroup === "AllGroups") endpoint = `${url}/group/filter/AllGroups`;
         if (selectedGroup === "NewGroups") endpoint = `${url}/group/filter/NewGroups`;
@@ -406,14 +261,18 @@ const Enrollment = ({ route, navigation }) => {
                 if (selectedGroup === "VacantGroups") {
                     const vacantGroups = groupsData.filter(group => getVacantSeats(group) > 0);
                     setCardsData(vacantGroups);
-                } else { setCardsData(groupsData); }
+                } else {
+                    setCardsData(groupsData);
+                }
                 setIsLoading(false);
             } else {
                 const errorData = await response.json();
-                setError(errorData.message || "Failed to load groups. Please try again."); setIsLoading(false);
+                setError(errorData.message || "Failed to load groups. Please try again.");
+                setIsLoading(false);
             }
         } catch (error) {
-            setError("An unexpected error occurred while fetching groups. Please retry."); setIsLoading(false);
+            setError("An unexpected error occurred while fetching groups. Please retry.");
+            setIsLoading(false);
             Toast.show({ type: 'error', text1: 'Data Load Error', text2: 'Could not fetch groups. Please retry.', position: 'bottom', visibilityTime: 4000 });
         }
     };
@@ -464,37 +323,106 @@ const Enrollment = ({ route, navigation }) => {
         return 'members_value_other';
     };
 
+    // Filter and Sort Function
+    const getFilteredAndSortedGroups = () => {
+        let filtered = [...cardsData];
+
+        // Apply search filter
+        if (searchText.trim() !== '') {
+            filtered = filtered.filter(card =>
+                card.group_name.toLowerCase().includes(searchText.toLowerCase())
+            );
+        }
+
+        // Apply sorting
+        if (sortOrder !== 'none') {
+            filtered.sort((a, b) => {
+                let valueA, valueB;
+                if (sortType === 'installment') {
+                    valueA = parseFloat(a.monthly_installment);
+                    valueB = parseFloat(b.monthly_installment);
+                } else {
+                    valueA = parseFloat(a.group_value);
+                    valueB = parseFloat(b.group_value);
+                }
+
+                if (sortOrder === 'lowToHigh') {
+                    return valueA - valueB;
+                } else {
+                    return valueB - valueA;
+                }
+            });
+        }
+
+        return filtered;
+    };
+
+    // Clear all filters (group, search, sort)
+    const clearAllFilters = () => {
+        setSelectedGroup("NewGroups");
+        setSearchText('');
+        setSortOrder('none');
+        setSortType('installment');
+        Toast.show({
+            type: 'info',
+            text1: 'Cleared',
+            text2: 'All filters have been reset',
+            position: 'bottom',
+            visibilityTime: 1500
+        });
+    };
+
     const getDisplayCards = () => {
+        const filteredAndSorted = getFilteredAndSortedGroups();
+        const dataToUse = filteredAndSorted;
+
         const now = new Date();
-        const newGroups = cardsData.filter(card => new Date(card.start_date) > now);
-        const ongoingGroups = cardsData.filter(card => {
+        const newGroups = dataToUse.filter(card => new Date(card.start_date) > now);
+        const ongoingGroups = dataToUse.filter(card => {
             const startDate = new Date(card.start_date);
             const endDate = new Date(card.end_date);
             return startDate <= now && endDate > now;
         });
-        const endedGroups = cardsData.filter(card => new Date(card.end_date) <= now);
-        const vacantGroups = cardsData.filter(card => getVacantSeats(card) > 0);
+        const endedGroups = dataToUse.filter(card => new Date(card.end_date) <= now);
+        const vacantGroups = dataToUse.filter(card => getVacantSeats(card) > 0);
 
         if (selectedGroup === "AllGroups") return { new: newGroups, ongoing: ongoingGroups, ended: endedGroups, vacant: [] };
-        else if (selectedGroup === "NewGroups") return { new: cardsData, ongoing: [], ended: [], vacant: [] };
-        else if (selectedGroup === "OngoingGroups") return { new: [], ongoing: cardsData, ended: [], vacant: [] };
-        else if (selectedGroup === "VacantGroups") return { new: [], ongoing: [], ended: [], vacant: cardsData };
+        else if (selectedGroup === "NewGroups") return { new: dataToUse, ongoing: [], ended: [], vacant: [] };
+        else if (selectedGroup === "OngoingGroups") return { new: [], ongoing: dataToUse, ended: [], vacant: [] };
+        else if (selectedGroup === "VacantGroups") return { new: [], ongoing: [], ended: [], vacant: dataToUse };
         return { new: [], ongoing: [], ended: [], vacant: [] };
     };
 
     const handleEnrollment = (card) => {
-        if (!isConnected || !isInternetReachable) { setModalMessage("You are offline. Please connect to the internet to view details."); setEnrollmentModalVisible(true); return; }
+        if (!isConnected || !isInternetReachable) {
+            setModalMessage("You are offline. Please connect to the internet to view details.");
+            setEnrollmentModalVisible(true);
+            return;
+        }
         const selectedGroupId = card._id;
-        if (selectedGroupId) { navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId }); }
-        else { setModalMessage("Error: Could not retrieve group ID."); setEnrollmentModalVisible(true); }
+        if (selectedGroupId) {
+            navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId });
+        } else {
+            setModalMessage("Error: Could not retrieve group ID.");
+            setEnrollmentModalVisible(true);
+        }
     };
 
     const handleJoinNow = async (card) => {
-        if (!isConnected || !isInternetReachable) { Toast.show({ type: "error", text1: "No Internet Connection", text2: "Please check your network and try again.", position: "bottom", visibilityTime: 3000 }); return; }
+        if (!isConnected || !isInternetReachable) {
+            Toast.show({ type: "error", text1: "No Internet Connection", text2: "Please check your network and try again.", position: "bottom", visibilityTime: 3000 });
+            return;
+        }
         const selectedGroupId = card._id;
-        if (!selectedGroupId) { Toast.show({ type: "error", text1: "Error", text2: "Could not retrieve group ID for enrollment.", position: "bottom", visibilityTime: 3000 }); return; }
+        if (!selectedGroupId) {
+            Toast.show({ type: "error", text1: "Error", text2: "Could not retrieve group ID for enrollment.", position: "bottom", visibilityTime: 3000 });
+            return;
+        }
         const vacantSeats = getVacantSeats(card);
-        if (vacantSeats === 0) { Toast.show({ type: "info", text1: "No Seats Available", text2: "This group currently has no vacant seats.", position: "bottom", visibilityTime: 3000 }); return; }
+        if (vacantSeats === 0) {
+            Toast.show({ type: "info", text1: "No Seats Available", text2: "This group currently has no vacant seats.", position: "bottom", visibilityTime: 3000 });
+            return;
+        }
         navigation.navigate("EnrollForm", { groupId: selectedGroupId, userId: userId });
     };
 
@@ -526,7 +454,7 @@ const Enrollment = ({ route, navigation }) => {
                 default: return "Group";
             }
         };
-        
+
         const formatDate = (dateString) => {
             if (!dateString) return "N/A";
             const date = new Date(dateString);
@@ -565,11 +493,9 @@ const Enrollment = ({ route, navigation }) => {
                         </View>
                     </View>
                 </View>
-                
-                {/* Compact Separator */}
+
                 <View style={[styles.headerSeparatorSmall, { marginVertical: 4 }]} />
-                
-                {/* Compact Details Row */}
+
                 <View style={[styles.cardDetailsRowSmall, { marginBottom: 4 }]}>
                     <View style={styles.detailItemSmall}>
                         <Text style={[styles.detailLabelSmall, { color: colors.darkText }]}>Starts</Text>
@@ -589,12 +515,10 @@ const Enrollment = ({ route, navigation }) => {
                     </View>
                 </View>
 
-                {/* Compact Installment */}
                 <View style={[styles.installmentDetailsStandalone, { marginVertical: 4 }]}>
                     <InstallmentRow amount={monthlyInstallment} label="Monthly Installment" timeUnit="month" colors={colors} />
                 </View>
 
-                {/* Compact Footer */}
                 <View style={[styles.viewMoreContainerSmall, { paddingTop: 4, marginTop: 0 }]}>
                     <TouchableOpacity style={[styles.viewMoreButtonSmall, { borderColor: colors.secondary, paddingVertical: 6 }, (!isConnected || !isInternetReachable || isCurrentCardJoining) && { opacity: 0.5, borderColor: '#aaa' }]} onPress={() => handleEnrollment(card)} activeOpacity={0.7} disabled={!isConnected || !isInternetReachable || isCurrentCardJoining}>
                         <Text style={[styles.viewMoreButtonTextSmall, { color: colors.secondary, fontSize: 11 }]}>Details</Text>
@@ -638,81 +562,120 @@ const Enrollment = ({ route, navigation }) => {
             <Header userId={userId} navigation={navigation} />
             <View style={styles.mainContentWrapper}>
                 <View style={styles.innerContentArea}>
-                    <View style={styles.filterContainer}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScrollContainer}>
-                            <View style={styles.chipsContainer}>
-                                <TouchableOpacity style={[styles.chip, selectedGroup === "NewGroups" && styles.selectedChip]} onPress={() => setSelectedGroup("NewGroups")}>
-                                    <Ionicons name="sparkles" size={16} color={selectedGroup === "NewGroups" ? '#fff' : '#666'} style={styles.chipIcon} />
-                                    <Text style={[styles.chipText, selectedGroup === "NewGroups" && styles.selectedChipText]}>New Groups</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={[styles.chip, selectedGroup === "OngoingGroups" && styles.selectedChip]} onPress={() => setSelectedGroup("OngoingGroups")}>
-                                    <Ionicons name="hourglass" size={16} color={selectedGroup === "OngoingGroups" ? '#fff' : '#666'} style={styles.chipIcon} />
-                                    <Text style={[styles.chipText, selectedGroup === "OngoingGroups" && styles.selectedChipText]}>Ongoing Groups</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.moreOptionsButton} onPress={() => setMoreFiltersModalVisible(true)}>
-                                    <Ionicons name="filter" size={20} color="#053B90" />
-                                </TouchableOpacity>
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        stickyHeaderIndices={[0]}
+                    >
+                        {/* Sticky Header Section */}
+                        <View style={styles.stickyHeader}>
+                            <View style={styles.filterContainer}>
+                                {/* Filter Chips Row */}
+                                <View style={styles.filterHeaderRow}>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScrollContainer}>
+                                        <View style={styles.chipsContainer}>
+                                            <TouchableOpacity style={[styles.chip, selectedGroup === "NewGroups" && styles.selectedChip]} onPress={() => { setSelectedGroup("NewGroups"); }}>
+                                                <Ionicons name="sparkles" size={16} color={selectedGroup === "NewGroups" ? '#fff' : '#666'} style={styles.chipIcon} />
+                                                <Text style={[styles.chipText, selectedGroup === "NewGroups" && styles.selectedChipText]}>New Groups</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={[styles.chip, selectedGroup === "OngoingGroups" && styles.selectedChip]} onPress={() => { setSelectedGroup("OngoingGroups"); }}>
+                                                <Ionicons name="hourglass" size={16} color={selectedGroup === "OngoingGroups" ? '#fff' : '#666'} style={styles.chipIcon} />
+                                                <Text style={[styles.chipText, selectedGroup === "OngoingGroups" && styles.selectedChipText]}>Ongoing Groups</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={styles.moreOptionsButton}
+                                                onPress={() => setMoreFiltersModalVisible(true)}
+                                            >
+                                                <Feather name="filter" size={18} color="#053B90" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </ScrollView>
+                                </View>
+
+                                {/* Search Bar */}
+                                <View style={styles.searchInputWrapper}>
+                                    <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        placeholder="Search by group name..."
+                                        placeholderTextColor="#999"
+                                        value={searchText}
+                                        onChangeText={setSearchText}
+                                    />
+                                    {searchText !== '' && (
+                                        <TouchableOpacity onPress={() => setSearchText('')} style={styles.clearSearchIcon}>
+                                            <Ionicons name="close-circle" size={18} color="#999" />
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
                             </View>
-                        </ScrollView>
-                    </View>
+                        </View>
 
-                    <StylishPosterSlider
-                        data={cardsData}
-                        onPress={handleEnrollment}
-                    />
+                        {/* Content that scrolls */}
+                        <View style={styles.scrollContentContainer}>
+                            {/* Poster Slider */}
+                            <StylishPosterSlider data={cardsData} onPress={handleEnrollment} />
 
-                    <ScrollView contentContainerStyle={styles.scrollContentContainer} showsVerticalScrollIndicator={false}>
-                        {(() => {
-                            const { new: newGroups, ongoing: ongoingGroups, ended: endedGroups, vacant: vacantGroups } = getDisplayCards();
-                            const renderGroupSection = (data) => (
-                                data.length > 0 && (
-                                    <View style={styles.groupSection}>
-                                        {data.map((card) => {
-                                            const primaryGroupType = getGroupType(card);
-                                            const customColorKey = getCustomCardColorKey(card);
-                                            const colors = { key: customColorKey, ...(groupColors[customColorKey] || groupColors[primaryGroupType] || groupColors.default) };
-                                            const isSelected = selectedCardIndex === card._id;
-                                            const CardWrapper = ({ children }) => (
-                                                <View style={[styles.card, { backgroundColor: colors.primary, borderColor: isSelected ? colors.selectedBorder : '#E0E0E0', borderWidth: isSelected ? 2 : 1 }, (!isConnected || !isInternetReachable) && !isSelected && styles.offlineCardOverlay]}>
-                                                    {children}
-                                                </View>
-                                            );
-                                            return (
-                                                <TouchableOpacity key={card._id} onPress={() => setSelectedCardIndex(card._id)} activeOpacity={0.8} disabled={!isConnected || !isInternetReachable}>
-                                                    <CardWrapper><CardContent card={card} colors={colors} isSelected={isSelected} currentFilter={selectedGroup} /></CardWrapper>
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </View>
-                                )
-                            );
-
-                            let groupsToDisplay = [];
-                            let noGroupsMessage = "";
-                            let noGroupsTitle = "";
-
-                            if (selectedGroup === "NewGroups") {
-                                groupsToDisplay = newGroups; noGroupsTitle = "No New Groups"; noGroupsMessage = "No new groups found. Check back later for exciting additions!";
-                            } else if (selectedGroup === "OngoingGroups") {
-                                groupsToDisplay = ongoingGroups; noGroupsTitle = "No Ongoing Groups"; noGroupsMessage = "No ongoing groups found. Check back later!";
-                            } else if (selectedGroup === "VacantGroups") {
-                                groupsToDisplay = vacantGroups; noGroupsTitle = "No Vacant Groups"; noGroupsMessage = "There are no groups with vacant seats at the moment. Please check back later.";
-                            } else if (selectedGroup === "AllGroups") {
-                                groupsToDisplay = [...newGroups, ...ongoingGroups, ...endedGroups]; noGroupsTitle = "No Groups Available"; noGroupsMessage = "It looks like there are no groups that match your current filter. Try changing the filter or check back later for new additions!";
-                            }
-
-                            if (groupsToDisplay.length === 0) {
-                                return (
-                                    <View style={styles.emptyStateContainer}>
-                                        <Image source={NoGroupsIllustration} style={styles.noGroupsImage} resizeMode="contain" />
-                                        <Text style={styles.noGroupsTitle}>{noGroupsTitle}</Text>
-                                        <Text style={styles.noGroupsText}>{noGroupsMessage}</Text>
-                                    </View>
+                            {/* Groups List */}
+                            {(() => {
+                                const { new: newGroups, ongoing: ongoingGroups, ended: endedGroups, vacant: vacantGroups } = getDisplayCards();
+                                const renderGroupSection = (data) => (
+                                    data.length > 0 && (
+                                        <View style={styles.groupSection}>
+                                            {data.map((card) => {
+                                                const primaryGroupType = getGroupType(card);
+                                                const customColorKey = getCustomCardColorKey(card);
+                                                const colors = { key: customColorKey, ...(groupColors[customColorKey] || groupColors[primaryGroupType] || groupColors.default) };
+                                                const isSelected = selectedCardIndex === card._id;
+                                                const CardWrapper = ({ children }) => (
+                                                    <View style={[styles.card, { backgroundColor: colors.primary, borderColor: isSelected ? colors.selectedBorder : '#E0E0E0', borderWidth: isSelected ? 2 : 1 }, (!isConnected || !isInternetReachable) && !isSelected && styles.offlineCardOverlay]}>
+                                                        {children}
+                                                    </View>
+                                                );
+                                                return (
+                                                    <TouchableOpacity key={card._id} onPress={() => setSelectedCardIndex(card._id)} activeOpacity={0.8} disabled={!isConnected || !isInternetReachable}>
+                                                        <CardWrapper><CardContent card={card} colors={colors} isSelected={isSelected} currentFilter={selectedGroup} /></CardWrapper>
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </View>
+                                    )
                                 );
-                            }
 
-                            return renderGroupSection(groupsToDisplay);
-                        })()}
+                                let groupsToDisplay = [];
+                                let noGroupsMessage = "";
+                                let noGroupsTitle = "";
+
+                                if (selectedGroup === "NewGroups") {
+                                    groupsToDisplay = newGroups;
+                                    noGroupsTitle = "No New Groups";
+                                    noGroupsMessage = "No new groups found. Check back later for exciting additions!";
+                                } else if (selectedGroup === "OngoingGroups") {
+                                    groupsToDisplay = ongoingGroups;
+                                    noGroupsTitle = "No Ongoing Groups";
+                                    noGroupsMessage = "No ongoing groups found. Check back later!";
+                                } else if (selectedGroup === "VacantGroups") {
+                                    groupsToDisplay = vacantGroups;
+                                    noGroupsTitle = "No Vacant Groups";
+                                    noGroupsMessage = "There are no groups with vacant seats at the moment. Please check back later.";
+                                } else if (selectedGroup === "AllGroups") {
+                                    groupsToDisplay = [...newGroups, ...ongoingGroups, ...endedGroups];
+                                    noGroupsTitle = "No Groups Available";
+                                    noGroupsMessage = "It looks like there are no groups that match your current filter. Try changing the filter or check back later for new additions!";
+                                }
+
+                                if (groupsToDisplay.length === 0) {
+                                    return (
+                                        <View style={styles.emptyStateContainer}>
+                                            <Image source={NoGroupsIllustration} style={styles.noGroupsImage} resizeMode="contain" />
+                                            <Text style={styles.noGroupsTitle}>{noGroupsTitle}</Text>
+                                            <Text style={styles.noGroupsText}>{noGroupsMessage}</Text>
+                                        </View>
+                                    );
+                                }
+
+                                return renderGroupSection(groupsToDisplay);
+                            })()}
+                        </View>
                     </ScrollView>
                 </View>
             </View>
@@ -725,23 +688,116 @@ const Enrollment = ({ route, navigation }) => {
                     </View>
                 </View>
             </Modal>
-            <Modal visible={moreFiltersModalVisible} transparent={true} onRequestClose={() => setMoreFiltersModalVisible(false)}>
+
+            {/* Updated Filter Modal with Sort Options */}
+            <Modal visible={moreFiltersModalVisible} transparent={true} onRequestClose={() => setMoreFiltersModalVisible(false)} animationType="slide">
                 <View style={styles.moreFiltersModalOverlay}>
                     <View style={styles.moreFiltersModalContent}>
-                        <Text style={styles.moreFiltersTitle}>Select a Filter</Text>
-                        <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("AllGroups"); setMoreFiltersModalVisible(false); }}><Text style={styles.moreFiltersOptionText}>All Groups</Text></TouchableOpacity>
-                        <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("NewGroups"); setMoreFiltersModalVisible(false); }}><Text style={styles.moreFiltersOptionText}>New Groups</Text></TouchableOpacity>
-                        <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("OngoingGroups"); setMoreFiltersModalVisible(false); }}><Text style={styles.moreFiltersOptionText}>Ongoing Groups</Text></TouchableOpacity>
-                        <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("VacantGroups"); setMoreFiltersModalVisible(false); }}><Text style={styles.moreFiltersOptionText}>Vacant Groups</Text></TouchableOpacity>
-                        <TouchableOpacity style={styles.closeMoreFiltersButton} onPress={() => setMoreFiltersModalVisible(false)}><Text style={styles.closeMoreFiltersButtonText}>Cancel</Text></TouchableOpacity>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text style={styles.moreFiltersTitle}>Filter & Sort Groups</Text>
+
+                            {/* Group Filters Section */}
+                            <Text style={styles.modalSectionTitle}>Group Type</Text>
+                            <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("AllGroups"); setMoreFiltersModalVisible(false); }}>
+                                <Ionicons name="apps" size={20} color="#053B90" />
+                                <Text style={styles.moreFiltersOptionText}>All Groups</Text>
+                                {selectedGroup === "AllGroups" && <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />}
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("NewGroups"); setMoreFiltersModalVisible(false); }}>
+                                <Ionicons name="sparkles" size={20} color="#053B90" />
+                                <Text style={styles.moreFiltersOptionText}>New Groups</Text>
+                                {selectedGroup === "NewGroups" && <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />}
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("OngoingGroups"); setMoreFiltersModalVisible(false); }}>
+                                <Ionicons name="hourglass" size={20} color="#053B90" />
+                                <Text style={styles.moreFiltersOptionText}>Ongoing Groups</Text>
+                                {selectedGroup === "OngoingGroups" && <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />}
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.moreFiltersOption} onPress={() => { setSelectedGroup("VacantGroups"); setMoreFiltersModalVisible(false); }}>
+                                <Ionicons name="people" size={20} color="#053B90" />
+                                <Text style={styles.moreFiltersOptionText}>Vacant Groups</Text>
+                                {selectedGroup === "VacantGroups" && <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />}
+                            </TouchableOpacity>
+
+                            {/* Divider */}
+                            <View style={styles.modalDivider} />
+
+                            {/* Sort Options Section */}
+                            <Text style={styles.modalSectionTitle}>Sort By</Text>
+
+                            {/* Installment Sorting */}
+                            <Text style={styles.sortLabel}>Installment Amount</Text>
+                            <View style={styles.modalSortButtons}>
+                                <TouchableOpacity
+                                    style={[styles.modalSortButton, sortOrder === 'lowToHigh' && sortType === 'installment' && styles.modalSortButtonActive]}
+                                    onPress={() => {
+                                        setSortType('installment');
+                                        setSortOrder(sortOrder === 'lowToHigh' ? 'none' : 'lowToHigh');
+                                    }}
+                                >
+                                    <Ionicons name="arrow-up" size={16} color={sortOrder === 'lowToHigh' && sortType === 'installment' ? '#FFF' : '#666'} />
+                                    <Text style={[styles.modalSortButtonText, sortOrder === 'lowToHigh' && sortType === 'installment' && styles.modalSortButtonTextActive]}>Low to High</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.modalSortButton, sortOrder === 'highToLow' && sortType === 'installment' && styles.modalSortButtonActive]}
+                                    onPress={() => {
+                                        setSortType('installment');
+                                        setSortOrder(sortOrder === 'highToLow' ? 'none' : 'highToLow');
+                                    }}
+                                >
+                                    <Ionicons name="arrow-down" size={16} color={sortOrder === 'highToLow' && sortType === 'installment' ? '#FFF' : '#666'} />
+                                    <Text style={[styles.modalSortButtonText, sortOrder === 'highToLow' && sortType === 'installment' && styles.modalSortButtonTextActive]}>High to Low</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Chit Value Sorting */}
+                            <Text style={styles.sortLabel}>Chit Value</Text>
+                            <View style={styles.modalSortButtons}>
+                                <TouchableOpacity
+                                    style={[styles.modalSortButton, sortOrder === 'lowToHigh' && sortType === 'chitValue' && styles.modalSortButtonActive]}
+                                    onPress={() => {
+                                        setSortType('chitValue');
+                                        setSortOrder(sortOrder === 'lowToHigh' ? 'none' : 'lowToHigh');
+                                    }}
+                                >
+                                    <Ionicons name="arrow-up" size={16} color={sortOrder === 'lowToHigh' && sortType === 'chitValue' ? '#FFF' : '#666'} />
+                                    <Text style={[styles.modalSortButtonText, sortOrder === 'lowToHigh' && sortType === 'chitValue' && styles.modalSortButtonTextActive]}>Low to High</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.modalSortButton, sortOrder === 'highToLow' && sortType === 'chitValue' && styles.modalSortButtonActive]}
+                                    onPress={() => {
+                                        setSortType('chitValue');
+                                        setSortOrder(sortOrder === 'highToLow' ? 'none' : 'highToLow');
+                                    }}
+                                >
+                                    <Ionicons name="arrow-down" size={16} color={sortOrder === 'highToLow' && sortType === 'chitValue' ? '#FFF' : '#666'} />
+                                    <Text style={[styles.modalSortButtonText, sortOrder === 'highToLow' && sortType === 'chitValue' && styles.modalSortButtonTextActive]}>High to Low</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Clear All Button */}
+                            {(sortOrder !== 'none' || searchText !== '' || selectedGroup !== "NewGroups") && (
+                                <TouchableOpacity style={styles.modalClearAllButton} onPress={() => { clearAllFilters(); setMoreFiltersModalVisible(false); }}>
+                                    <Ionicons name="refresh-circle" size={20} color="#DC143C" />
+                                    <Text style={styles.modalClearAllText}>Reset All Filters</Text>
+                                </TouchableOpacity>
+                            )}
+
+                            {/* Close Button */}
+                            <TouchableOpacity style={styles.closeMoreFiltersButton} onPress={() => setMoreFiltersModalVisible(false)}>
+                                <Text style={styles.closeMoreFiltersButtonText}>Close</Text>
+                            </TouchableOpacity>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
+
             <Toast />
         </SafeAreaView>
     );
 };
-
 
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#053B90', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
@@ -751,20 +807,26 @@ const styles = StyleSheet.create({
     retryButton: { marginTop: 20, backgroundColor: '#053B90', paddingVertical: 12, paddingHorizontal: 25, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 6 },
     retryButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     mainContentWrapper: { flex: 1, alignItems: 'center', paddingVertical: 1, backgroundColor: '#053B90', paddingHorizontal: 15 },
-    innerContentArea: { flex: 1, backgroundColor: '#F5F5F5', marginHorizontal: 0, borderRadius: 15, paddingVertical: 15, paddingBottom: 25, width: '104%' },
+    innerContentArea: { flex: 1, backgroundColor: '#F5F5F5', marginHorizontal: 0, borderRadius: 15, width: '104%', overflow: 'hidden' },
+    stickyHeader: { backgroundColor: '#F5F5F5', paddingTop: 15, borderTopLeftRadius: 15, borderTopRightRadius: 15 },
     filterContainer: { paddingHorizontal: 15, paddingBottom: 10 },
-    chipsScrollContainer: { paddingRight: 30, paddingLeft: 5 },
+    filterHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 10 },
+    chipsScrollContainer: { paddingRight: 10, paddingLeft: 0 },
     chipsContainer: { flexDirection: 'row', gap: 10, alignItems: 'center' },
     chip: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 5, backgroundColor: '#E0EFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center' },
     selectedChip: { backgroundColor: '#053B90', borderColor: '#053B90', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 5 },
     chipIcon: { marginRight: 2 },
     chipText: { fontSize: 12, fontWeight: '600', color: '#4A4A4A' },
     selectedChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlignVertical: 'center' },
-    moreOptionsButton: { paddingHorizontal: 10, paddingVertical: 10, backgroundColor: '#E0EFFF', borderRadius: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center', alignItems: 'center' },
-    scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0 },
+    moreOptionsButton: { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#E0EFFF', borderRadius: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1, justifyContent: 'center', alignItems: 'center' },
+
+    searchInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#E0E0E0', marginBottom: 5 },
+    searchIcon: { marginRight: 8 },
+    searchInput: { flex: 1, fontSize: 14, color: '#333', paddingVertical: 4 },
+    clearSearchIcon: { padding: 4 },
+
+    scrollContentContainer: { paddingVertical: 8, paddingHorizontal: 0, paddingBottom: 20 },
     groupSection: { marginBottom: 25, width: '100%', paddingHorizontal: 15 },
-    
-    // --- SMALL CARD STYLES START ---
     card: { flexDirection: 'column', justifyContent: 'space-between', padding: 8, marginVertical: 4, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3, elevation: 4, width: '105%', alignSelf: 'center' },
     offlineCardOverlay: { opacity: 0.6 },
     cardHeaderSmall: { flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 2, position: 'relative' },
@@ -772,45 +834,55 @@ const styles = StyleSheet.create({
     radioButtonContainer: { paddingRight: 8, marginRight: 2, justifyContent: 'center' },
     groupNameAndValueBlock: { flex: 1, marginLeft: 0, overflow: 'hidden', justifyContent: 'center' },
     groupValueContainerSmall: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 0 },
-    groupValueSmall: { fontSize: 18, fontWeight: 'bold', marginRight: 4, lineHeight: 20 }, // Reduced font size
-    chitValueTextSmall: { fontSize: 10, fontWeight: '600', lineHeight: 12 }, // Reduced font size
-    groupNameSmall: { fontSize: 12, fontWeight: 'bold', marginTop: 1, lineHeight: 14 }, // Reduced font size
+    groupValueSmall: { fontSize: 18, fontWeight: 'bold', marginRight: 4, lineHeight: 20 },
+    chitValueTextSmall: { fontSize: 10, fontWeight: '600', lineHeight: 12 },
+    groupNameSmall: { fontSize: 12, fontWeight: 'bold', marginTop: 1, lineHeight: 14 },
     statusBadgeContainer: { flexDirection: 'row', alignItems: 'center', marginLeft: 5 },
-    statusBadge: { paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3 }, // Reduced padding
-    statusBadgeText: { color: 'white', fontSize: 7, fontWeight: 'bold' }, // Reduced font size
+    statusBadge: { paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3 },
+    statusBadgeText: { color: 'white', fontSize: 7, fontWeight: 'bold' },
     headerSeparatorSmall: { height: 0.5, width: '100%', backgroundColor: '#E0E0E0' },
     cardDetailsRowSmall: { flexDirection: 'row', justifyContent: 'space-between' },
     detailItemSmall: { flex: 1, alignItems: 'center', paddingHorizontal: 1 },
-    detailLabelSmall: { fontSize: 8, fontWeight: '500', color: '#777', marginBottom: 1 }, // Reduced font size
-    detailValueSmall: { fontSize: 9, fontWeight: '700', textAlign: 'center', lineHeight: 12 }, // Reduced font size
+    detailLabelSmall: { fontSize: 8, fontWeight: '500', color: '#777', marginBottom: 1 },
+    detailValueSmall: { fontSize: 9, fontWeight: '700', textAlign: 'center', lineHeight: 12 },
     highlightedVacantSeatsSmall: { backgroundColor: '#1de94cff', color: '#060806ff', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6, fontWeight: 'bold', overflow: 'hidden', fontSize: 9 },
     installmentDetailsStandalone: { borderRadius: 6, borderWidth: 1, borderColor: '#E0E0E0', overflow: 'hidden', paddingHorizontal: 4, paddingVertical: 2 },
     installmentRowSmall: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 4, borderLeftWidth: 3 },
     highlightedInstallment: { fontSize: 11, fontWeight: 'bold' },
     viewMoreContainerSmall: { width: '100%', alignItems: 'center', flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 0, gap: 6, borderTopWidth: 1, borderTopColor: '#E0E0E0', paddingTop: 6 },
-    viewMoreButtonSmall: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1.5, backgroundColor: 'transparent', minWidth: 80, justifyContent: 'center', flex: 1 }, // Reduced padding
-    viewMoreButtonTextSmall: { fontSize: 11, fontWeight: '700', marginRight: 2 }, // Reduced font size
+    viewMoreButtonSmall: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1.5, backgroundColor: 'transparent', minWidth: 80, justifyContent: 'center', flex: 1 },
+    viewMoreButtonTextSmall: { fontSize: 11, fontWeight: '700', marginRight: 2 },
     viewMoreIconSmall: { marginLeft: 1 },
-    joinNowButtonSmall: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2, minWidth: 80, justifyContent: 'center', alignItems: 'center', flex: 1 }, // Reduced padding
-    joinNowButtonTextSmall: { color: '#fff', fontSize: 12, fontWeight: '700' }, // Reduced font size
-    // --- SMALL CARD STYLES END ---
-
-    emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20 },
-    noGroupsImage: { width: 250, height: 250, marginBottom: 20, },
-    noGroupsTitle: { fontSize: 22, fontWeight: 'bold', color: '#053B90', marginBottom: 10, textAlign: 'center', },
+    joinNowButtonSmall: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2, elevation: 2, minWidth: 80, justifyContent: 'center', alignItems: 'center', flex: 1 },
+    joinNowButtonTextSmall: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: 20, minHeight: 400 },
+    noGroupsImage: { width: 250, height: 250, marginBottom: 20 },
+    noGroupsTitle: { fontSize: 22, fontWeight: 'bold', color: '#053B90', marginBottom: 10, textAlign: 'center' },
     noGroupsText: { fontSize: 16, color: '#777', textAlign: 'center', marginTop: 15, lineHeight: 22 },
     modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
     modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 25, alignItems: 'center', marginHorizontal: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 5, elevation: 7 },
     modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#333' },
     modalCloseButton: { backgroundColor: '#053B90', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginTop: 10 },
     modalCloseButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    moreFiltersModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)', },
-    moreFiltersModalContent: { backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40, },
-    moreFiltersTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, textAlign: 'center', color: '#333', },
-    moreFiltersOption: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#eee', },
-    moreFiltersOptionText: { fontSize: 16, color: '#053B90', textAlign: 'center', },
-    closeMoreFiltersButton: { marginTop: 20, padding: 15, backgroundColor: '#eee', borderRadius: 10, },
-    closeMoreFiltersButtonText: { fontSize: 16, fontWeight: 'bold', color: '#666', textAlign: 'center', },
+
+    // Updated Modal Styles
+    moreFiltersModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+    moreFiltersModalContent: { backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40, maxHeight: '80%' },
+    moreFiltersTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#053B90' },
+    modalSectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginTop: 10, marginBottom: 10 },
+    moreFiltersOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee', gap: 12 },
+    moreFiltersOptionText: { fontSize: 16, color: '#053B90', flex: 1 },
+    modalDivider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 15 },
+    sortLabel: { fontSize: 13, fontWeight: '600', color: '#666', marginTop: 10, marginBottom: 8 },
+    modalSortButtons: { flexDirection: 'row', gap: 10, marginBottom: 15 },
+    modalSortButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, backgroundColor: '#F0F0F0', gap: 6 },
+    modalSortButtonActive: { backgroundColor: '#053B90' },
+    modalSortButtonText: { fontSize: 13, color: '#666', fontWeight: '500' },
+    modalSortButtonTextActive: { color: '#FFF' },
+    modalClearAllButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 8, backgroundColor: '#FFE5E5', gap: 8, marginTop: 15, marginBottom: 15 },
+    modalClearAllText: { fontSize: 14, color: '#DC143C', fontWeight: '600' },
+    closeMoreFiltersButton: { marginTop: 10, padding: 15, backgroundColor: '#053B90', borderRadius: 10 },
+    closeMoreFiltersButtonText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' },
 });
 
 export default Enrollment;
