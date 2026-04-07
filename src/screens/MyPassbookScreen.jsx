@@ -195,7 +195,6 @@ const StatBar = ({ chit, pigmy, loan, pigmyCount, loanCount }) => (
 const SkeletonView = () => (
   <View style={styles.loaderContainer}>
     <ActivityIndicator size="large" color={C.navy} />
-    <Text style={styles.loaderText}>loading your passbook...</Text>
   </View>
 );
 
@@ -402,123 +401,121 @@ const styles = StyleSheet.create({
   scroll:      { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 30 },
 
-  // Full-height outer box — same pattern as PrizedScreen
   outerBox: {
     flex: 1,
     backgroundColor: C.bg,
     marginHorizontal: 12,
     marginBottom: 50,
-    borderRadius: 28,
+    borderRadius: 24, // smaller
     overflow: "hidden",
     ...Platform.select({
-      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.25, shadowRadius: 20 },
-      android: { elevation: 20 },
+      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 18 }, // adjusted
+      android: { elevation: 18 }, // adjusted
     }),
   },
 
-  // ── NEW: wrapper box around all three card sections ──
   allCardsWrapper: {
     backgroundColor: C.card,
-    borderRadius: 22,
-    padding: 14,
+    borderRadius: 18, // smaller
+    padding: 12, // smaller
     marginTop: 4,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: C.border,
     ...Platform.select({
-      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.10, shadowRadius: 14 },
-      android: { elevation: 6 },
+      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 }, // adjusted
+      android: { elevation: 5 }, // adjusted
     }),
   },
 
   // Page header
-  pageHeader:  { alignItems: "center", paddingHorizontal: 16, paddingTop: 18, paddingBottom: 14 },
-  pageEyebrow: { fontSize: 9, fontWeight: "700", color: C.textLight, letterSpacing: 1.8, textTransform: "uppercase", marginBottom: 3 },
-  pageTitle:   { fontSize: 24, fontWeight: "900", color: C.textDark, letterSpacing: -0.4, marginBottom: 4 },
-  pageSub:     { fontSize: 12, color: C.textMid, textAlign: "center" },
+  pageHeader:  { alignItems: "center", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }, // smaller
+  pageEyebrow: { fontSize: 8, fontWeight: "700", color: C.textLight, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 2 }, // smaller
+  pageTitle:   { fontSize: 22, fontWeight: "900", color: C.textDark, letterSpacing: -0.4, marginBottom: 3 }, // smaller
+  pageSub:     { fontSize: 11, color: C.textMid, textAlign: "center" }, // smaller
 
   // Section eyebrow
-  eyebrow: { fontSize: 8, fontWeight: "700", color: C.textLight, letterSpacing: 1.8, textTransform: "uppercase", marginBottom: 8, marginTop: 4, marginLeft: 2 },
+  eyebrow: { fontSize: 7, fontWeight: "700", color: C.textLight, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6, marginTop: 4, marginLeft: 2 }, // smaller
 
   // Finance card
   finCard: {
-    borderRadius: 20, marginBottom: 16, overflow: "hidden",
+    borderRadius: 16, marginBottom: 12, overflow: "hidden", // smaller
     ...Platform.select({
-      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.22, shadowRadius: 16 },
-      android: { elevation: 12 },
+      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12 }, // adjusted
+      android: { elevation: 10 }, // adjusted
     }),
   },
-  finCardGradient: { padding: 16, borderRadius: 20, overflow: "hidden" },
-  decCircle1: { position: "absolute", width: 130, height: 130, borderRadius: 65, borderWidth: 1, top: -40, right: -20 },
-  decCircle2: { position: "absolute", width: 70, height: 70, borderRadius: 35, backgroundColor: "rgba(245,197,24,0.06)", bottom: -15, left: 30 },
+  finCardGradient: { padding: 12, borderRadius: 16, overflow: "hidden" }, // smaller
+  decCircle1: { position: "absolute", width: 110, height: 110, borderRadius: 55, borderWidth: 1, top: -30, right: -15 }, // smaller
+  decCircle2: { position: "absolute", width: 60, height: 60, borderRadius: 30, backgroundColor: "rgba(245,197,24,0.06)", bottom: -10, left: 25 }, // smaller
 
-  finCardTop: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
+  finCardTop: { flexDirection: "row", alignItems: "center", marginBottom: 10 }, // smaller
   finCardIconWrap: {
-    width: 44, height: 44, borderRadius: 13,
+    width: 40, height: 40, borderRadius: 12, // smaller
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center", justifyContent: "center",
-    marginRight: 12,
+    marginRight: 10, // smaller
     borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
   },
   finCardTitleBlock: { flex: 1 },
-  finCardEyebrow: { fontSize: 8, fontWeight: "700", color: "rgba(255,255,255,0.4)", letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 2 },
-  finCardTitle:   { fontSize: 15, fontWeight: "800", color: "#fff" },
+  finCardEyebrow: { fontSize: 7, fontWeight: "700", color: "rgba(255,255,255,0.4)", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 1 }, // smaller
+  finCardTitle:   { fontSize: 14, fontWeight: "800", color: "#fff" }, // smaller
 
-  finCardAmountBlock: { marginBottom: 12 },
-  finCardAmountLabel: { fontSize: 9, fontWeight: "600", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 3 },
-  finCardAmount:      { fontSize: 28, fontWeight: "900", color: "#fff", letterSpacing: -0.8 },
+  finCardAmountBlock: { marginBottom: 10 }, // smaller
+  finCardAmountLabel: { fontSize: 8, fontWeight: "600", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }, // smaller
+  finCardAmount:      { fontSize: 24, fontWeight: "900", color: "#fff", letterSpacing: -0.7 }, // smaller
 
-  finCardDivider: { height: 1, backgroundColor: "rgba(255,255,255,0.12)", marginBottom: 12 },
+  finCardDivider: { height: 1, backgroundColor: "rgba(255,255,255,0.12)", marginBottom: 10 }, // smaller
 
   finCardBottom:    { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
-  finCardSubLabel:  { fontSize: 9, fontWeight: "600", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
-  finCardSubValue:  { fontSize: 16, fontWeight: "800", color: "#fff" },
-  finBadge: { backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
-  finBadgeText: { fontSize: 10, fontWeight: "700", color: "#fff", letterSpacing: 0.4 },
+  finCardSubLabel:  { fontSize: 8, fontWeight: "600", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }, // smaller
+  finCardSubValue:  { fontSize: 15, fontWeight: "800", color: "#fff" }, // smaller
+  finBadge: { backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 15, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }, // smaller
+  finBadgeText: { fontSize: 9, fontWeight: "700", color: "#fff", letterSpacing: 0.4 }, // smaller
 
   // Pulse chip
-  pulseChip: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
-  pulseChipText: { fontSize: 10, fontWeight: "700", color: "#fff", marginRight: 2 },
+  pulseChip: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 15, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }, // smaller
+  pulseChipText: { fontSize: 9, fontWeight: "700", color: "#fff", marginRight: 1 }, // smaller
 
   // Apply card
   applyCard: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderRadius: 18, marginBottom: 16,
-    padding: 16,
+    backgroundColor: C.card, borderRadius: 16, marginBottom: 12, // smaller
+    padding: 12, // smaller
     borderWidth: 1, borderColor: C.border,
     ...Platform.select({
-      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 },
-      android: { elevation: 4 },
+      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 8 }, // adjusted
+      android: { elevation: 3 }, // adjusted
     }),
   },
-  applyIconCircle: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center", marginRight: 14 },
+  applyIconCircle: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 12 }, // smaller
   applyContent: { flex: 1 },
-  applyTitle:   { fontSize: 15, fontWeight: "800", marginBottom: 2 },
-  applySub:     { fontSize: 12, color: C.textMid },
-  contactBox:      { flexDirection: "row", gap: 8, marginTop: 10 },
-  contactIconBtn:  { width: 34, height: 34, borderRadius: 10, backgroundColor: "#EEF3FF", alignItems: "center", justifyContent: "center" },
+  applyTitle:   { fontSize: 14, fontWeight: "800", marginBottom: 1 }, // smaller
+  applySub:     { fontSize: 11, color: C.textMid }, // smaller
+  contactBox:      { flexDirection: "row", gap: 6, marginTop: 8 }, // smaller
+  contactIconBtn:  { width: 32, height: 32, borderRadius: 8, backgroundColor: "#EEF3FF", alignItems: "center", justifyContent: "center" }, // smaller
 
   // Bottom section
-  bottomLabel: { fontSize: 9, fontWeight: "700", color: C.textLight, textTransform: "uppercase", letterSpacing: 1.8, textAlign: "center", marginBottom: 10, marginTop: 8 },
+  bottomLabel: { fontSize: 8, fontWeight: "700", color: C.textLight, textTransform: "uppercase", letterSpacing: 1.5, textAlign: "center", marginBottom: 8, marginTop: 6 }, // smaller
 
   // Loader
   loaderContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
-  loaderText: { marginTop: 12, fontSize: 12, fontWeight: "600", color: C.textMid, textTransform: "lowercase", letterSpacing: 0.3 },
+  loaderText: { marginTop: 10, fontSize: 11, fontWeight: "600", color: C.textMid, textTransform: "lowercase", letterSpacing: 0.3 }, // smaller
 
   // Stat bar
   statBar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-around",
-    backgroundColor: C.card, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 10,
+    backgroundColor: C.card, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 8, // smaller
     ...Platform.select({
-      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 14 },
-      android: { elevation: 10 },
+      ios: { shadowColor: C.deepBlue, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.15, shadowRadius: 12 }, // adjusted
+      android: { elevation: 8 }, // adjusted
     }),
   },
   statItem:       { flex: 1, alignItems: "center" },
-  statIconCircle: { width: 36, height: 36, borderRadius: 11, alignItems: "center", justifyContent: "center", marginBottom: 6 },
-  statValue:      { fontSize: 20, fontWeight: "900", color: C.textDark, letterSpacing: -0.5 },
-  statLbl:        { fontSize: 8, fontWeight: "600", color: C.textLight, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 2 },
-  statSep:        { width: 1, height: 40, backgroundColor: C.border },
+  statIconCircle: { width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center", marginBottom: 4 }, // smaller
+  statValue:      { fontSize: 18, fontWeight: "900", color: C.textDark, letterSpacing: -0.5 }, // smaller
+  statLbl:        { fontSize: 7, fontWeight: "600", color: C.textLight, textTransform: "uppercase", letterSpacing: 1, marginTop: 1 }, // smaller
+  statSep:        { width: 1, height: 36, backgroundColor: C.border }, // smaller
 });
 
 export default MyPassbookScreen;
