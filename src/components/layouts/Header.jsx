@@ -10,9 +10,9 @@ import {
   SafeAreaView,
   Animated,
   Easing,
-  Platform
+  Platform,
 } from "react-native";
-import { Ionicons, AntDesign } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons"; // Using Ionicons for cross-platform reliability
 import axios from "axios";
 import { useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -75,16 +75,18 @@ const Header = ({ userId, navigation }) => {
     setShowInfoPopup(!showInfoPopup);
   };
 
-  // Helper function to get the first two words of a string
   const getShortenedName = (name) => {
     if (!name) return "...";
-    const words = name.trim().split(/\s+/); // Splits by any whitespace
+    const words = name.trim().split(/\s+/);
     return words.length > 2 ? `${words[0]} ${words[1]}` : name;
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.headerGradientStart} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={Colors.headerGradientStart}
+      />
       <Animated.View
         style={[
           styles.animatedHeaderWrapper,
@@ -133,11 +135,12 @@ const Header = ({ userId, navigation }) => {
               </TouchableOpacity>
             </View>
 
+            {/* UPDATED: Using Ionicons for the Info button */}
             <TouchableOpacity
               onPress={toggleInfoPopup}
               style={styles.infoIconContainer}
             >
-              <AntDesign name="infocirlceo" size={22} color="#fff" />
+              <Ionicons name="information-circle-outline" size={26} color="#fff" />
             </TouchableOpacity>
 
             {showInfoPopup && (
@@ -147,20 +150,18 @@ const Header = ({ userId, navigation }) => {
                 activeOpacity={1}
               >
                 <View style={styles.infoPopup}>
+                  {/* UPDATED: Using Ionicons for the Close button */}
                   <TouchableOpacity
                     onPress={toggleInfoPopup}
                     style={styles.closeButton}
                   >
-                    <AntDesign name="closecircle" size={24} color="#053B90" />
+                    <Ionicons name="close-circle" size={28} color="#053B90" />
                   </TouchableOpacity>
 
                   <Image
                     source={require("../../../assets/Group400.png")}
                     style={styles.popupImage}
                     resizeMode="contain"
-                    onError={(e) =>
-                      console.log("Image loading error:", e.nativeEvent.error)
-                    }
                   />
                   <View style={styles.infoPopupTextContainer}>
                     <Text style={styles.mychitsText}>Mychits</Text>
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1, // Added to allow text to take remaining space
+    flex: 1,
   },
   backButton: {
     marginRight: width * 0.04,
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginLeft: width * 0.04,
-    flex: 1, // Added to prevent pushing the info icon off screen
+    flex: 1,
   },
   profileImage: {
     width: width * 0.1,
