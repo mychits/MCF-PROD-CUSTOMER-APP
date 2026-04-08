@@ -1448,7 +1448,7 @@ const MyLoan = ({ route, navigation }) => {
         : formData.loanPurpose;
     setIsSubmitting(true);
     const payload = {
-      user_id: userId,
+      borrower: userId,
       loan_amount: Number(formData.loanAmount),
       loan_purpose: finalPurpose,
       source: "mychits-customer-app",
