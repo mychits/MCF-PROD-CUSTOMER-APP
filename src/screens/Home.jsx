@@ -1050,7 +1050,7 @@ const services = [
                         </View>
                         <TouchableOpacity
                             style={styles.viewLicenseLink}
-                            onPress={() => navigation.navigate('LicenseAndCertificate')}
+                            onPress={() => navigation.navigate('LicenseAndCertificateScreen')}
                         >
                             <View style={styles.viewLicenseContent}>
                                 <MaterialIcons name="link" size={14} color="#053B90" />
