@@ -60,12 +60,16 @@ const EnrollGroup = ({ route, navigation }) => {
     totalPaid: "#800080",
     balance: "#E74C3C",
     balanceExcess: "#2ECC71",
+    totalPenalty: "#DC143C",
+    totalLateFee: "#FF6347",
   };
   const statBoxTextColors = {
     toBePaid: "#FF6347",
     totalPaid: "#800080",
     balance: "#E74C3C",
     balanceExcess: "#2ECC71",
+    totalPenalty: "#DC143C",
+    totalLateFee: "#FF6347",
   };
 
   const fetchData = async () => {
@@ -79,37 +83,29 @@ const EnrollGroup = ({ route, navigation }) => {
     setLoading(true);
     setError(null);
     try {
-      const groupResponse = await fetch(`${url}/group/get-by-id-group/${groupId}`);
-      if (groupResponse.ok) { setGroups(await groupResponse.json()); }
-      else { setError("Failed to load group details."); }
+        const [groupResponse, paymentResponse, overviewResponse] = await Promise.all([
+            axios.get(`${url}/group/get-by-id-group/${groupId}`),
+            axios.post(`${url}/payment/payment-list`, {
+                groupId,
+                userId,
+                ticket,
+                source: "mychits-customer-app"
+            }),
+            axios.get(`${url}/overview/single?user_id=${userId}&group_id=${groupId}&ticket=${ticket}`)
+        ]);
 
-      const paymentResponse = await fetch(`${url}/payment/payment-list`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-       body: JSON.stringify({ 
-          groupId, 
-          userId, 
-          ticket,
-          source: "mychits-customer-app"
-        }),
-      });
-      if (!paymentResponse.ok) {
-        const errorData = await paymentResponse.json();
-        setError(errorData.message || "An error occurred fetching payment data.");
-        setPaymentData([]);
-      } else {
-        const paymentListData = await paymentResponse.json();
+        setGroups(groupResponse.data);
+
+        const paymentListData = paymentResponse.data;
         if (paymentListData.success) {
-          setPaymentData(paymentListData.data.sort((a, b) => new Date(b.pay_date) - new Date(a.pay_date)));
-          setError(null);
+            setPaymentData(paymentListData.data.sort((a, b) => new Date(b.pay_date) - new Date(a.pay_date)));
         } else {
-          setError(paymentListData.message || "No payment data available");
-          setPaymentData([]);
+            setError(paymentListData.message || "No payment data available");
+            setPaymentData([]);
         }
-      }
 
-      const overviewResponse = await axios.get(`${url}/overview/single?user_id=${userId}&group_id=${groupId}&ticket=${ticket}`);
-      setSingleOverview(overviewResponse.data);
+        setSingleOverview(overviewResponse.data);
+        console.log(JSON.stringify(overviewResponse.data, null, 2));
 
     } catch (err) {
       setError("An error occurred while fetching data. Please try again.");
@@ -121,8 +117,7 @@ const EnrollGroup = ({ route, navigation }) => {
 
   useEffect(() => { fetchData(); }, [userId, groupId, ticket, isConnected, isInternetReachable]);
 
-  const toBePaidAmount =  singleOverview?.total_payable || 0
-   
+  const toBePaidAmount = singleOverview?.total_payable || 0;
 
   const balanceAmount = singleOverview?.total_balance || 0;
   const isBalanceExcess = balanceAmount < 0;
@@ -163,9 +158,10 @@ const EnrollGroup = ({ route, navigation }) => {
                 ₹ {formatNumberIndianStyle(groups.group_value || 0)}
               </Text>
               <Text style={styles.groupTitle}>{groups.group_name}</Text>
-              <Text style={styles.ticketNumberText}>
-                Ticket: <Text style={styles.ticketNumberValue}>{ticket}</Text>
-              </Text>
+              <View style={styles.ticketPill}>
+                <Text style={styles.ticketNumberText}>TICKET</Text>
+                <Text style={styles.ticketNumberValue}>{ticket}</Text>
+              </View>
             </View>
 
             {/* ── SCROLLABLE AREA — everything below ticket scrolls ── */}
@@ -176,13 +172,11 @@ const EnrollGroup = ({ route, navigation }) => {
               {/* ── Top two summary cards (Investment / Profit) ── */}
               <View style={styles.row}>
                 <View style={[styles.summaryCard, styles.investmentCardBackground]}>
-                  {/* Icon size reduced to 18 */}
                   <Ionicons name="wallet-outline" size={18} color="#E0E0E0" style={styles.summaryIcon} />
                   <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(singleOverview?.total_investment || 0)}</Text>
                   <Text style={styles.summaryLabel}>Investment</Text>
                 </View>
                 <View style={[styles.summaryCard, styles.profitCardBackground]}>
-                  {/* Icon size reduced to 18 */}
                   <Ionicons name="trending-up-outline" size={18} color="#E0E0E0" style={styles.summaryIcon} />
                   <Text style={styles.summaryAmount}>₹ {formatNumberIndianStyle(singleOverview?.total_profit || 0)}</Text>
                   <Text style={styles.summaryLabel}>Divident / Profit</Text>
@@ -194,14 +188,12 @@ const EnrollGroup = ({ route, navigation }) => {
                 <TouchableOpacity
                   style={[styles.summaryCard, { borderColor: statBoxBorderColors.toBePaid, backgroundColor: "#fff" }, styles.summaryCardBordered]}
                 >
-                  {/* Icon size reduced to 18 */}
                   <Ionicons name="wallet-outline" size={18} color={statBoxTextColors.toBePaid} style={styles.summaryIcon} />
                   <Text style={[styles.summaryAmountAlt, { color: statBoxTextColors.toBePaid }]}>₹ {formatNumberIndianStyle(toBePaidAmount)}</Text>
                   <Text style={[styles.summaryLabelAlt, { color: statBoxTextColors.toBePaid }]}>TO BE PAID</Text>
                 </TouchableOpacity>
 
                 <View style={[styles.summaryCard, { borderColor: statBoxBorderColors.totalPaid, backgroundColor: "#fff" }, styles.summaryCardBordered]}>
-                  {/* Icon size reduced to 18 */}
                   <Ionicons name="receipt-outline" size={18} color={statBoxTextColors.totalPaid} style={styles.summaryIcon} />
                   <Text style={[styles.summaryAmountAlt, { color: statBoxTextColors.totalPaid }]}>₹ {formatNumberIndianStyle(singleOverview?.total_investment || 0)}</Text>
                   <Text style={[styles.summaryLabelAlt, { color: statBoxTextColors.totalPaid }]}>TOTAL PAID</Text>
@@ -211,7 +203,7 @@ const EnrollGroup = ({ route, navigation }) => {
                   <View style={[styles.summaryCard, { borderColor: isBalanceExcess ? statBoxBorderColors.balanceExcess : statBoxBorderColors.balance, backgroundColor: "#fff" }, styles.summaryCardBordered]}>
                     <Ionicons
                       name={isBalanceExcess ? "arrow-up-circle-outline" : "arrow-down-circle-outline"}
-                      size={18} // Icon size reduced to 18
+                      size={18}
                       color={isBalanceExcess ? statBoxTextColors.balanceExcess : statBoxTextColors.balance}
                       style={styles.summaryIcon}
                     />
@@ -224,6 +216,33 @@ const EnrollGroup = ({ route, navigation }) => {
                   </View>
                 )}
               </View>
+
+              {(singleOverview?.total_penalty > 0 || singleOverview?.total_late_fee > 0) && (
+                <View style={styles.row}>
+                  {singleOverview?.total_penalty > 0 && (
+                    <View style={[styles.summaryCard, { borderColor: statBoxBorderColors.totalPenalty, backgroundColor: "#fff" }, styles.summaryCardBordered]}>
+                      <Ionicons name="alert-circle-outline" size={18} color={statBoxTextColors.totalPenalty} style={styles.summaryIcon} />
+                      <Text style={[styles.summaryAmountAlt, { color: statBoxTextColors.totalPenalty }]}>
+                        ₹ {formatNumberIndianStyle(singleOverview?.total_penalty)}
+                      </Text>
+                      <Text style={[styles.summaryLabelAlt, { color: statBoxTextColors.totalPenalty }]}>
+                        TOTAL PENALTY
+                      </Text>
+                    </View>
+                  )}
+                  {singleOverview?.total_late_fee > 0 && (
+                    <View style={[styles.summaryCard, { borderColor: statBoxBorderColors.totalLateFee, backgroundColor: "#fff" }, styles.summaryCardBordered]}>
+                      <Ionicons name="time-outline" size={18} color={statBoxTextColors.totalLateFee} style={styles.summaryIcon} />
+                      <Text style={[styles.summaryAmountAlt, { color: statBoxTextColors.totalLateFee }]}>
+                        ₹ {formatNumberIndianStyle(singleOverview?.total_late_fee)}
+                      </Text>
+                      <Text style={[styles.summaryLabelAlt, { color: statBoxTextColors.totalLateFee }]}>
+                        TOTAL LATE FEE
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
 
               {/* ── Transactions header ── */}
               <View style={styles.transactionsHeader}>
@@ -270,109 +289,309 @@ const EnrollGroup = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  // ─── Layout & Safe Area ───────────────────────────────────────────
   safeArea: {
     flex: 1,
-    backgroundColor: "#053B90",
+    backgroundColor: "#0D2D6B",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   fullScreenLoader: {
-    flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F7FF",
   },
   loaderContainer: {
-    flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#053B90",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0D2D6B",
+    paddingHorizontal: 24,
   },
   mainContentWrapper: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 3,
-    backgroundColor: "#053B90",
+    paddingTop: 6,
+    paddingBottom: 0,
+    backgroundColor: "#0D2D6B",
   },
+
+  // ─── Main Card Shell ──────────────────────────────────────────────
   contentCard: {
     flex: 1,
-    width: "95%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    width: "94%",
+    backgroundColor: "#F5F7FF",
+    borderRadius: 20,
     overflow: "hidden",
     ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 10 },
-      android: { elevation: 8 },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 16 },
+      android: { elevation: 10 },
     }),
   },
-  scrollContentContainer: {
-    padding: 15,
-    paddingBottom: 120,
+
+  // ─── Fixed Header ─────────────────────────────────────────────────
+  dropdownContainer: {
+    alignItems: "center",
+    paddingTop: 20,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    backgroundColor: "#0D2D6B",
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
+  numericGroupValue: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#4ECBA0",
+    textAlign: "center",
+    letterSpacing: -0.5,
+    marginBottom: 2,
+  },
+  groupTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.85)",
+    textAlign: "center",
+    letterSpacing: 0.3,
+    marginBottom: 12,
+  },
+  ticketPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: 50,
+    paddingVertical: 5,
+    paddingHorizontal: 16,
+  },
+  ticketNumberText: {
+    fontSize: 10,
+    color: "rgba(255,255,255,0.5)",
+    fontWeight: "700",
+    letterSpacing: 1.2,
+  },
+  ticketNumberValue: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 0.4,
+  },
+
+  // ─── Scroll Body ──────────────────────────────────────────────────
+  scrollContentContainer: {
+    padding: 14,
+    paddingBottom: 110,
+    gap: 10,
+  },
+
+  // ─── Card Rows ────────────────────────────────────────────────────
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 5,
-    gap: 8, // Reduced gap
+    gap: 10,
+    marginBottom: 0,
   },
+
+  // ─── Summary Cards (colored) ──────────────────────────────────────
   summaryCard: {
-    flex: 1, 
-    padding: 8, // Reduced padding
-    borderRadius: 12, 
-    alignItems: "center", 
-    justifyContent: "center", 
-    minHeight: 75, // Reduced height
+    flex: 1,
+    padding: 12,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 82,
     ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-      android: { elevation: 4 },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.10, shadowRadius: 6 },
+      android: { elevation: 3 },
     }),
   },
-  investmentCardBackground: { backgroundColor: "#004775" },
-  profitCardBackground: { backgroundColor: "#357500" },
-  summaryIcon: { marginBottom: 4, color: "#E0E0E0" }, // Reduced margin
-  summaryAmount: { fontSize: 14, fontWeight: "bold", color: "#FFFFFF" }, // Reduced font size
-  summaryLabel: { fontSize: 9, color: "#E0E0E0", marginTop: 2, textAlign: "center", fontWeight: "600" }, // Reduced font size
-  summaryCardBordered: { borderWidth: 1 },
-  summaryAmountAlt: { fontSize: 11, fontWeight: "900", textAlign: "center" }, // Reduced font size
-  summaryLabelAlt: { fontSize: 7, fontWeight: "700", textAlign: "center", marginTop: 2 }, // Reduced font size
-  dropdownContainer: {
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 8,
-    paddingHorizontal: 15,
+  investmentCardBackground: {
+    backgroundColor: "#0D2D6B",
+  },
+  profitCardBackground: {
+    backgroundColor: "#0A6645",
+  },
+  summaryIcon: {
+    marginBottom: 5,
+    opacity: 0.85,
+  },
+  summaryAmount: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.3,
+  },
+  summaryLabel: {
+    fontSize: 9,
+    color: "rgba(255,255,255,0.60)",
+    marginTop: 3,
+    textAlign: "center",
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+
+  // ─── Stat Cards (white bordered) ──────────────────────────────────
+  summaryCardBordered: {
+    borderWidth: 1.5,
     backgroundColor: "#fff",
-  },
-  numericGroupValue: { fontSize: 25, fontWeight: "bold", color: "#0b7a09ff", textAlign: "center", marginBottom: -4 },
-  groupTitle: { marginVertical: 4, fontWeight: "900", fontSize: 22, color: "#333", textAlign: "center" },
-  ticketNumberText: { fontSize: 16, color: "#666", textAlign: "center", marginBottom: 4 },
-  ticketNumberValue: { fontWeight: "bold", color: "#053B90", fontSize: 18 },
-  transactionsHeader: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    marginVertical: 18, marginHorizontal: 10,
-    borderBottomWidth: 1, borderBottomColor: "#eee", paddingBottom: 8,
-  },
-  transactionsTitle: { fontWeight: "800", fontSize: 15, color: "#333" },
-  viewMoreText: { color: "#fff", fontSize: 12, fontWeight: "800" },
-  viewMoreBoxContainer: {
-    marginTop: 5, borderRadius: 8, backgroundColor: '#053B90',
-    width: 95, height: 35, alignItems: 'center', justifyContent: 'center',
-  },
-  transactionCard: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingVertical: 18, paddingHorizontal: 15, marginVertical: 4,
-    borderWidth: 1, borderColor: "#E0E0E0", borderRadius: 10,
-    width: '100%', backgroundColor: "#fff",
     ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 3 },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4 },
       android: { elevation: 2 },
     }),
   },
-  transactionLeftSide: { flex: 1.2, justifyContent: "center", alignItems: "flex-start" },
-  transactionCenterSide: { flex: 1, justifyContent: "center", alignItems: "center" },
-  transactionRightSide: { flex: 1, justifyContent: "center", alignItems: "flex-end" },
-  transactionReceiptText: { fontSize: 14, fontWeight: "700", color: "#333" },
-  transactionDateText: { fontSize: 12, color: "#666" },
-  transactionAmountText: { fontWeight: "800", fontSize: 18, color: "#053B90" },
-  errorText: { color: "#fff", textAlign: "center", marginTop: 30, fontSize: 16, paddingHorizontal: 20 },
-  networkStatusText: { fontSize: 18, fontWeight: "bold", color: "#FFFFFF", textAlign: "center", paddingHorizontal: 20 },
-  retryButton: { backgroundColor: "#fff", paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginTop: 20 },
-  retryButtonText: { color: "#053B90", fontSize: 16, fontWeight: "bold" },
-  noTransactionsContainer: { justifyContent: "center", alignItems: "center", paddingVertical: 50 },
-  noTransactionsImage: { width: 200, height: 200, marginBottom: 20 },
-  noTransactionsText: { textAlign: "center", color: "#666", fontSize: 16, fontWeight: "500" },
+  summaryAmountAlt: {
+    fontSize: 12,
+    fontWeight: "800",
+    textAlign: "center",
+    letterSpacing: -0.2,
+  },
+  summaryLabelAlt: {
+    fontSize: 7.5,
+    fontWeight: "700",
+    textAlign: "center",
+    marginTop: 3,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+
+  // ─── Transactions Section ─────────────────────────────────────────
+  transactionsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 6,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F4",
+  },
+  transactionsTitle: {
+    fontWeight: "700",
+    fontSize: 14,
+    color: "#0D2D6B",
+    letterSpacing: 0.2,
+  },
+  viewMoreBoxContainer: {
+    borderRadius: 20,
+    backgroundColor: "#0D2D6B",
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewMoreText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+
+  // ─── Transaction Row Cards ────────────────────────────────────────
+  transactionCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: "#E4EAF4",
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    ...Platform.select({
+      ios: { shadowColor: "#0D2D6B", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 },
+      android: { elevation: 1 },
+    }),
+  },
+  transactionLeftSide: {
+    flex: 1.2,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  transactionCenterSide: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  transactionRightSide: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "flex-end",
+  },
+  transactionReceiptText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2D3A5A",
+  },
+  transactionDateText: {
+    fontSize: 11,
+    color: "#8896B3",
+    fontWeight: "500",
+  },
+  transactionAmountText: {
+    fontWeight: "800",
+    fontSize: 16,
+    color: "#0D2D6B",
+    letterSpacing: -0.3,
+  },
+
+  // ─── Error / Offline States ───────────────────────────────────────
+  errorText: {
+    color: "#fff",
+    textAlign: "center",
+    fontSize: 15,
+    paddingHorizontal: 20,
+    lineHeight: 22,
+    opacity: 0.9,
+  },
+  networkStatusText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textAlign: "center",
+    paddingHorizontal: 20,
+    lineHeight: 24,
+    opacity: 0.9,
+  },
+  retryButton: {
+    backgroundColor: "#fff",
+    paddingVertical: 11,
+    paddingHorizontal: 32,
+    borderRadius: 50,
+    marginTop: 20,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8 },
+      android: { elevation: 4 },
+    }),
+  },
+  retryButtonText: {
+    color: "#0D2D6B",
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+
+  // ─── Empty State ──────────────────────────────────────────────────
+  noTransactionsContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  noTransactionsImage: {
+    width: 180,
+    height: 180,
+    marginBottom: 16,
+    opacity: 0.85,
+  },
+  noTransactionsText: {
+    textAlign: "center",
+    color: "#8896B3",
+    fontSize: 14,
+    fontWeight: "500",
+  },
 });
 
 export default EnrollGroup;
