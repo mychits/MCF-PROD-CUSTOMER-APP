@@ -12,20 +12,19 @@ import {
   ActivityIndicator,
   Animated,
   Modal,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import ImageViewer from "react-native-image-zoom-viewer";
 
+const { width, height } = Dimensions.get("window");
+
+// --- Asset Imports ---
 const imagefirth = require("../../assets/imagefirth.png");
 const imagesec = require("../../assets/imagesec.png");
 const imagesixth = require("../../assets/imagesixth.png");
 const imagethird = require("../../assets/imagethird.png");
 const imagone = require("../../assets/imagone.png");
 const imahrfifth = require("../../assets/imahrfifth.png");
-
-const { width, height } = Dimensions.get("window");
 
 const LicenseAndCertificateScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -40,95 +39,66 @@ const LicenseAndCertificateScreen = ({ navigation }) => {
     { id: "6", source: imagesixth, title: "Licenses" },
   ];
 
-  const cardColors = [
-    "#FF6F61", // Vibrant Coral
-    "#6B5B95", // Deep Lavender
-    "#88B04B", // Olive Green
-    "#F7CAC9", // Soft Rose Quartz
-    "#92A8D1", // Serenity Blue
-    "#EFC050", // Golden Yellow
-    "#45B8AC", // Teal
-    "#FF9478", // Warm Peach
-    "#C1BBDD", // Light Periwinkle
-    "#5A807E", // Dark Teal
-  ];
-
-  const handleImagePress = (image) => {
-    setSelectedImage(image);
-  };
-
-  const closeModal = () => {
-    setSelectedImage(null);
-  };
+  const closeModal = () => setSelectedImage(null);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#053B90" />
 
-      {/* Header Section */}
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Licenses & Certificates</Text>
         <View style={{ width: 28 }} />
       </View>
 
-      {/* Scrollable Content Area */}
+      {/* Main List */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {images.map((img, index) => (
           <ImageCard
             key={img.id}
             img={img}
             index={index}
-            cardColor={cardColors[index % cardColors.length]}
-            onPress={() => handleImagePress(img)}
+            onPress={() => setSelectedImage(img)}
             title={img.title}
           />
         ))}
       </ScrollView>
-      <Modal
-        visible={!!selectedImage}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={closeModal}
-      >
-        {selectedImage && (
-          <ImageViewer
-            imageUrls={[
-              {
-                url: Image.resolveAssetSource(selectedImage.source).uri,
-                props: { source: selectedImage.source },
-              },
-            ]}
-            enableSwipeDown={true}
-            onCancel={closeModal}
-            backgroundColor="rgba(0, 0, 0, 0.85)"
-            renderHeader={() => (
-              <View
-                style={[
-                  styles.modalViewerHeader,
-                  { paddingTop: Platform.OS === "ios" ? insets.top : 20 },
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.modalCloseButtonViewer}
-                  onPress={closeModal}
-                >
-                  <Ionicons name="close-circle" size={40} color="#FFFFFF" />
-                </TouchableOpacity>
-                <Text style={styles.modalViewerTitle}>
-                  {selectedImage.title}
-                </Text>
-                <View style={{ width: 40 }} />
-              </View>
+
+      {/* Full Screen Viewer Modal */}
+      <Modal visible={!!selectedImage} transparent animationType="fade" onRequestClose={closeModal}>
+        <View style={styles.modalBackground}>
+          {/* Top Close Button */}
+          <TouchableOpacity 
+            style={[styles.modalCloseBtn, { top: insets.top + 10 }]} 
+            onPress={closeModal}
+          >
+            <Ionicons name="close-circle" size={45} color="white" />
+          </TouchableOpacity>
+
+          <ScrollView
+            maximumZoomScale={5}
+            minimumZoomScale={1}
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.zoomContent} // Ensures center alignment
+          >
+            {selectedImage && (
+              <Image
+                source={selectedImage.source}
+                style={styles.fullImage}
+                resizeMode="contain" // This ensures the whole image fits without cropping
+              />
             )}
-            renderIndicator={(currentIndex, totalImages) => null}
-          />
-        )}
+          </ScrollView>
+
+          {/* Bottom Caption */}
+          <View style={[styles.modalFooter, { paddingBottom: insets.bottom + 20 }]}>
+            <Text style={styles.modalFooterText}>{selectedImage?.title}</Text>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -142,158 +112,76 @@ const ImageCard = ({ img, index, onPress, title }) => {
     if (!imageLoading) {
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600,
-        delay: index * 120,
+        duration: 500,
+        delay: index * 50,
         useNativeDriver: true,
       }).start();
     }
-  }, [imageLoading, fadeAnim, index]);
+  }, [imageLoading]);
 
   return (
     <Animated.View style={[styles.imageCardOuter, { opacity: fadeAnim }]}>
-      <View style={styles.imageCardContainer}>
-        <TouchableOpacity
-          onPress={onPress}
-          activeOpacity={0.7}
-          style={styles.cardTouchable}
-        >
-          <View style={styles.cardImageWrapper}>
-            {imageLoading && (
-              <View style={styles.imageLoader}>
-                <ActivityIndicator size="large" color="#053B90" />
-              </View>
-            )}
-            <Image
-              source={img.source}
-              style={[styles.image, imageLoading && { opacity: 0 }]}
-              resizeMode="contain"
-              onLoadEnd={() => setImageLoading(false)}
-              onError={(e) => {
-                console.log(
-                  `Error loading image ${img.id}:`,
-                  e.nativeEvent.error
-                );
-                setImageLoading(false);
-              }}
-            />
-          </View>
-        </TouchableOpacity>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
+        <View style={styles.cardImageWrapper}>
+          {imageLoading && <ActivityIndicator style={styles.loader} color="#053B90" />}
+          <Image
+            source={img.source}
+            style={styles.thumbnailImage}
+            onLoadEnd={() => setImageLoading(false)}
+          />
+        </View>
         <Text style={styles.cardTitle}>{title}</Text>
-      </View>
+      </TouchableOpacity>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F0F2F5",
-  },
+  container: { flex: 1, backgroundColor: "#F0F2F5" },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     backgroundColor: "#053B90",
     paddingHorizontal: 20,
     paddingBottom: 20,
-
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
-  backButton: {
-    padding: 10,
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "800",
-    textAlign: "center",
-    flex: 1,
-  },
-  scrollContent: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    alignItems: "center",
-  },
+  headerTitle: { color: "#FFFFFF", fontSize: 19, fontWeight: "bold", flex: 1, textAlign: "center" },
+  backButton: { padding: 5 },
+  scrollContent: { paddingVertical: 20, alignItems: "center" },
   imageCardOuter: {
-    borderRadius: 18,
-    marginBottom: 25,
-
-    width: width * 0.72, // Adjust this value (e.g., 0.8, 0.75) to make it smaller
-    backgroundColor: "transparent",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  imageCardContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+    width: width * 0.9,
+    marginBottom: 20,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    elevation: 3,
     overflow: "hidden",
   },
-  cardTouchable: {
-    width: "100%",
-  },
-  cardImageWrapper: {
-    width: "100%",
-
-    height: width * 0.85 * 0.75, // Adjust this aspect ratio (e.g., 0.75 for 4:3, 1 for square)
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-  },
-  imageLoader: {
-    ...StyleSheet.absoluteFillObject,
+  cardImageWrapper: { height: 200, backgroundColor: "#EEE", justifyContent: "center" },
+  thumbnailImage: { width: "100%", height: "100%", resizeMode: "cover" },
+  loader: { position: "absolute", alignSelf: "center" },
+  cardTitle: { padding: 12, textAlign: "center", fontWeight: "600", color: "#333" },
+  
+  // Modal Fixes
+  modalBackground: { flex: 1, backgroundColor: "#000" },
+  modalCloseBtn: { position: "absolute", right: 20, zIndex: 10 },
+  zoomContent: {
+    flexGrow: 1, // Important: Allows the content to fill the ScrollView for centering
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8F8F8",
-    zIndex: 1,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
   },
-  cardTitle: {
-    marginTop: 10,
-    marginBottom: 15,
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#333",
-    textAlign: "center",
-    paddingHorizontal: 15,
+  fullImage: {
+    width: width,   // Full screen width
+    height: height, // Full screen height - ensures the image has a box to live in
   },
-  modalViewerHeader: {
+  modalFooter: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
+    bottom: 0,
+    width: "100%",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: 15,
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 15,
-    paddingBottom: 10,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    zIndex: 1,
   },
-  modalCloseButtonViewer: {
-    padding: 10,
-  },
-  modalViewerTitle: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    flex: 1,
-    textAlign: "center",
-  },
+  modalFooterText: { color: "white", fontWeight: "bold" },
 });
 
 export default LicenseAndCertificateScreen;

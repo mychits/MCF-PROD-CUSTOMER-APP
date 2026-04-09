@@ -72,6 +72,436 @@ const PURPOSE_OPTIONS = [
 ];
 
 // ============================================================
+// BLOCKED MODAL (Stylish Center Modal)
+// ============================================================
+const BlockedModal = ({ visible, onClose }) => {
+  const scaleAnim = useRef(new Animated.Value(0.6)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const iconBounce = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Shake animation for attention
+        Animated.sequence([
+          Animated.timing(shakeAnim, {
+            toValue: 8,
+            duration: 60,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shakeAnim, {
+            toValue: -8,
+            duration: 60,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shakeAnim, {
+            toValue: 5,
+            duration: 60,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shakeAnim, {
+            toValue: -5,
+            duration: 60,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shakeAnim, {
+            toValue: 0,
+            duration: 60,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        // Icon bounce in
+        Animated.spring(iconBounce, {
+          toValue: 1,
+          tension: 60,
+          friction: 5,
+          delay: 200,
+          useNativeDriver: true,
+        }).start();
+      });
+    } else {
+      scaleAnim.setValue(0.6);
+      opacityAnim.setValue(0);
+      shakeAnim.setValue(0);
+      iconBounce.setValue(0);
+    }
+  }, [visible]);
+
+  return (
+    <Modal
+      transparent
+      animationType="none"
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <View style={blockedStyles.overlay}>
+        {/* Animated background blobs */}
+        <View style={blockedStyles.blob1} />
+        <View style={blockedStyles.blob2} />
+        <View style={blockedStyles.blob3} />
+
+        <Animated.View
+          style={[
+            blockedStyles.card,
+            {
+              opacity: opacityAnim,
+              transform: [
+                { scale: scaleAnim },
+                { translateX: shakeAnim },
+              ],
+            },
+          ]}
+        >
+          {/* Top gradient bar */}
+          <View style={blockedStyles.topBar}>
+            <View style={blockedStyles.topBarPattern1} />
+            <View style={blockedStyles.topBarPattern2} />
+            <View style={blockedStyles.topBarPattern3} />
+          </View>
+
+          {/* Icon section */}
+          <Animated.View
+            style={[
+              blockedStyles.iconContainer,
+              {
+                transform: [
+                  {
+                    scale: iconBounce.interpolate({
+                      inputRange: [0, 0.6, 1],
+                      outputRange: [0, 1.15, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View style={blockedStyles.iconOuterRing} />
+            <View style={blockedStyles.iconInnerRing}>
+              <Ionicons name="warning" size={34} color="#fff" />
+            </View>
+          </Animated.View>
+
+          {/* Text content */}
+          <Text style={blockedStyles.title}>Action Blocked</Text>
+          <Text style={blockedStyles.subtitle}>
+            You already have an unapproved loan request pending.
+          </Text>
+
+          {/* Info card */}
+          <View style={blockedStyles.infoCard}>
+            <View style={blockedStyles.infoRow}>
+              <View style={blockedStyles.infoIconWrap}>
+                <Ionicons
+                  name="time-outline"
+                  size={16}
+                  color={Colors.pendingOrange}
+                />
+              </View>
+              <View style={blockedStyles.infoTextWrap}>
+                <Text style={blockedStyles.infoLabel}>
+                  Pending Request Found
+                </Text>
+                <Text style={blockedStyles.infoValue}>
+                  You can only have 1 active loan request at a time.
+                </Text>
+              </View>
+            </View>
+            <View style={blockedStyles.infoDivider} />
+            <View style={blockedStyles.infoRow}>
+              <View style={[blockedStyles.infoIconWrap, { backgroundColor: Colors.softBlueAccent }]}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={16}
+                  color={Colors.primaryBlue}
+                />
+              </View>
+              <View style={blockedStyles.infoTextWrap}>
+                <Text style={blockedStyles.infoLabel}>What to do?</Text>
+                <Text style={blockedStyles.infoValue}>
+                  Please wait for your current request to be approved or contact support for help.
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Support section */}
+          <View style={blockedStyles.supportRow}>
+            <TouchableOpacity
+              style={blockedStyles.supportChip}
+              onPress={() => {
+                Linking.openURL(`tel:${CONTACT_PHONE}`);
+              }}
+            >
+              <Ionicons name="call-outline" size={15} color={Colors.callBlue} />
+              <Text style={blockedStyles.supportChipText}>Call Support</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={blockedStyles.supportChip}
+              onPress={() => {
+                Linking.openURL(
+                  `whatsapp://send?phone=${CONTACT_WHATSAPP}&text=Hello, I have a query regarding my pending loan request.`
+                );
+              }}
+            >
+              <Ionicons name="logo-whatsapp" size={15} color={Colors.whatsappGreen} />
+              <Text style={[blockedStyles.supportChipText, { color: Colors.whatsappGreen }]}>
+                WhatsApp Us
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Close button */}
+          <TouchableOpacity
+            style={blockedStyles.closeButton}
+            onPress={onClose}
+            activeOpacity={0.85}
+          >
+            <Text style={blockedStyles.closeButtonText}>Got It</Text>
+            <Ionicons name="checkmark-circle" size={20} color="#fff" />
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
+const blockedStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(3, 15, 40, 0.82)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  blob1: {
+    position: "absolute",
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
+    top: "15%",
+    left: "-5%",
+  },
+  blob2: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(249, 115, 22, 0.06)",
+    bottom: "18%",
+    right: "-3%",
+  },
+  blob3: {
+    position: "absolute",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(5, 59, 144, 0.06)",
+    top: "35%",
+    right: "10%",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 380,
+    backgroundColor: "#fff",
+    borderRadius: 28,
+    overflow: "hidden",
+    elevation: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.4,
+    shadowRadius: 35,
+    alignItems: "center",
+    paddingBottom: 24,
+  },
+  topBar: {
+    width: "100%",
+    height: 6,
+    backgroundColor: "linear-gradient(90deg, #DC3545, #F97316)",
+    position: "relative",
+    overflow: "hidden",
+  },
+  topBarPattern1: {
+    position: "absolute",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    top: -25,
+    left: 15,
+  },
+  topBarPattern2: {
+    position: "absolute",
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    top: -45,
+    left: 110,
+  },
+  topBarPattern3: {
+    position: "absolute",
+    width: 45,
+    height: 45,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    top: -25,
+    right: 25,
+  },
+  iconContainer: {
+    marginTop: 28,
+    marginBottom: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  iconOuterRing: {
+    position: "absolute",
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 2.5,
+    borderColor: "rgba(220, 53, 69, 0.15)",
+  },
+  iconInnerRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.errorRed,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 10,
+    shadowColor: Colors.errorRed,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    borderWidth: 4,
+    borderColor: "#FFE0E3",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: Colors.darkText,
+    letterSpacing: 0.3,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: Colors.mediumText,
+    textAlign: "center",
+    paddingHorizontal: 30,
+    lineHeight: 19,
+    marginBottom: 18,
+  },
+  infoCard: {
+    width: "100%",
+    backgroundColor: Colors.softGrayBackground,
+    marginHorizontal: 0,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: Colors.lightGrayBorder,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 14,
+    gap: 12,
+  },
+  infoIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: Colors.pendingBg,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  infoTextWrap: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  infoLabel: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: Colors.darkText,
+    marginBottom: 3,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  infoValue: {
+    fontSize: 12,
+    color: Colors.mediumText,
+    lineHeight: 18,
+    fontWeight: "500",
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: Colors.lightGrayBorder,
+    marginHorizontal: 14,
+  },
+  supportRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 18,
+    paddingHorizontal: 20,
+    width: "100%",
+  },
+  supportChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.lightGrayBorder,
+    backgroundColor: Colors.cardBackground,
+  },
+  supportChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.callBlue,
+  },
+  closeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.darkText,
+    paddingVertical: 15,
+    paddingHorizontal: 50,
+    borderRadius: 16,
+    marginTop: 18,
+    elevation: 6,
+    shadowColor: Colors.darkText,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+});
+
+// ============================================================
 // CONFIRMATION MODAL
 // ============================================================
 const ConfirmationModal = ({
@@ -740,6 +1170,7 @@ const MyLoan = ({ route, navigation }) => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isSuccessVisible, setIsSuccessVisible] = useState(false);
+  const [isBlockedModalVisible, setIsBlockedModalVisible] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -1020,22 +1451,18 @@ const MyLoan = ({ route, navigation }) => {
       user_id: userId,
       loan_amount: Number(formData.loanAmount),
       loan_purpose: finalPurpose,
-      source: "mychits-customer-app", // Added source field
+      source: "mychits-customer-app",
     };
     const hasPendingRequest = loanRequests?.some(
       (req) => (req.approval_status || "").toLowerCase() === "pending",
     );
 
     if (hasPendingRequest) {
-      Toast.show({
-        type: "error",
-        text1: "Pending Loan Exists",
-        text2:
-          "You already have a pending loan request. You cannot apply for another loan.",
-        position: "bottom",
-      });
-
-      setIsSubmitting(false); // ✅ IMPORTANT (you missed this)
+      setIsSubmitting(false);
+      setIsConfirmVisible(false);
+      setTimeout(() => {
+        setIsBlockedModalVisible(true);
+      }, 300);
       return;
     }
     try {
@@ -1052,7 +1479,6 @@ const MyLoan = ({ route, navigation }) => {
               "Your loan application has been submitted successfully!",
           );
           setIsSuccessVisible(true);
-          // Refresh requests
           const fetchRequests = async () => {
             try {
               const res = await axios.get(
@@ -1089,10 +1515,9 @@ const MyLoan = ({ route, navigation }) => {
     }
   };
 
-  // UPDATED HANDLER
   const handleSuccessClose = () => {
     setIsSuccessVisible(false);
-    setActiveTab("unapproved"); // Switch to Unapproved Loans tab
+    setActiveTab("unapproved");
   };
 
   const handleCloseModal = () => {
@@ -1414,7 +1839,6 @@ const MyLoan = ({ route, navigation }) => {
               )
             ) : (
               <>
-                {/* --- TABS (Always Visible) --- */}
                 <View style={styles.tabContainer}>
                   <TouchableOpacity
                     style={[
@@ -1452,24 +1876,17 @@ const MyLoan = ({ route, navigation }) => {
                   </TouchableOpacity>
                 </View>
 
-                {/* --- TAB CONTENT --- */}
                 {activeTab === "approved" ? (
-                  // === APPROVED TAB CONTENT ===
                   <>
                     {loans.length > 0 && (
                       <TouchableOpacity
-                        disabled={isApplyDisabled}
                         style={[
                           styles.applyAnotherLoanHeaderBtn,
                           isApplyDisabled && { opacity: 0.5 },
                         ]}
                         onPress={() => {
                           if (isApplyDisabled) {
-                            Toast.show({
-                              type: "error",
-                              text1: "Pending Loan Exists",
-                              text2: "You already have a pending loan request.",
-                            });
+                            setIsBlockedModalVisible(true);
                             return;
                           }
                           setIsFormVisible(true);
@@ -1566,7 +1983,6 @@ const MyLoan = ({ route, navigation }) => {
                         </View>
                       ))
                     ) : (
-                      // --- APPROVED TAB EMPTY STATE: UNLOCK POTENTIAL SCREEN ---
                       <View style={styles.noLoanContainer}>
                         <View style={styles.noLoanHeader}>
                           <Ionicons
@@ -1587,19 +2003,13 @@ const MyLoan = ({ route, navigation }) => {
                         </Text>
                         <View style={styles.contactGroup}>
                           <TouchableOpacity
-                            disabled={isApplyDisabled}
                             style={[
                               styles.contactButtonPhone,
                               isApplyDisabled && { opacity: 0.5 },
                             ]}
                             onPress={() => {
                               if (isApplyDisabled) {
-                                Toast.show({
-                                  type: "error",
-                                  text1: "Pending Loan Exists",
-                                  text2:
-                                    "You already have a pending loan request.",
-                                });
+                                setIsBlockedModalVisible(true);
                                 return;
                               }
                               setIsFormVisible(true);
@@ -1647,7 +2057,6 @@ const MyLoan = ({ route, navigation }) => {
                     )}
                   </>
                 ) : (
-                  // === UNAPPROVED TAB CONTENT ===
                   <>
                     {isRequestsLoading ? (
                       <View style={styles.centerState}>
@@ -1782,7 +2191,6 @@ const MyLoan = ({ route, navigation }) => {
                         })}
                       </View>
                     ) : (
-                      // --- UNAPPROVED TAB EMPTY STATE ---
                       <View style={styles.centerState}>
                         <View style={styles.emptyStateIconBox}>
                           <Ionicons
@@ -1798,19 +2206,13 @@ const MyLoan = ({ route, navigation }) => {
                           You haven't submitted any loan requests yet.
                         </Text>
                         <TouchableOpacity
-                          disabled={isApplyDisabled}
                           style={[
                             styles.primaryActionBtn,
                             isApplyDisabled && { opacity: 0.5 },
                           ]}
                           onPress={() => {
                             if (isApplyDisabled) {
-                              Toast.show({
-                                type: "error",
-                                text1: "Pending Loan Exists",
-                                text2:
-                                  "You already have a pending loan request.",
-                              });
+                              setIsBlockedModalVisible(true);
                               return;
                             }
                             setIsFormVisible(true);
@@ -1831,6 +2233,7 @@ const MyLoan = ({ route, navigation }) => {
         )}
       </View>
 
+      {/* Loan Application Form Modal */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -2155,6 +2558,10 @@ const MyLoan = ({ route, navigation }) => {
         message={successMessage}
         onClose={handleSuccessClose}
       />
+      <BlockedModal
+        visible={isBlockedModalVisible}
+        onClose={() => setIsBlockedModalVisible(false)}
+      />
       <Toast position="bottom" bottomOffset={60} />
     </SafeAreaView>
   );
@@ -2210,7 +2617,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  // Tab Styles
   tabContainer: {
     flexDirection: "row",
     backgroundColor: Colors.softGrayBackground,
@@ -2430,7 +2836,6 @@ const styles = StyleSheet.create({
     color: Colors.mediumText,
     marginHorizontal: 4,
   },
-  // Blue Box (Unlock Potential)
   noLoanContainer: {
     alignItems: "center",
     backgroundColor: Colors.primaryBlue,
@@ -2519,7 +2924,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
-  // Modal Styles
   centeredModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(3, 15, 50, 0.72)",
@@ -2743,7 +3147,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 0.3,
   },
-  // Empty States
   centerState: {
     flex: 1,
     justifyContent: "center",
@@ -2797,7 +3200,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   primaryActionBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  // Unapproved List Styles
   cardsList: { gap: 20, paddingBottom: 10 },
   stylishCard: {
     backgroundColor: "#FFFFFF",

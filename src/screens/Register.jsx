@@ -16,7 +16,7 @@ import {
   Dimensions,
   StatusBar,
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons"; // Updated to Ionicons
 import { useNavigation } from "@react-navigation/native";
 import url from "../data/url";
 import { ContextProvider } from "../context/UserProvider";
@@ -68,11 +68,10 @@ const Toast = React.forwardRef(({ duration = 2000 }, ref) => {
   );
 });
 
-
 export default function Register() {
   const navigation = useNavigation();
   const toastRef = useRef();
-  const [appUser, setAppUser] = useContext(ContextProvider); // kept for future use
+  const [appUser, setAppUser] = useContext(ContextProvider);
 
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -85,7 +84,6 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-
 
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", () =>
@@ -104,7 +102,6 @@ export default function Register() {
   const showAppToast = (message) => {
     toastRef.current?.show(message, require("../../assets/Group400.png"));
   };
-
 
   const validateInputs = () => {
     const name = fullName.trim();
@@ -135,24 +132,20 @@ export default function Register() {
     return true;
   };
 
-  /* ================= SEND OTP HANDLER ================= */
-
   const handleSendOtp = async () => {
     if (!validateInputs()) return;
 
     setLoading(true);
 
- try {
-    const payload = {
-      phone_number: phoneNumber.replace(/\s/g, ""),
-      full_name: fullName.trim(),
-      source: "mychits-customer-app", // Added source field here
-      ...(referralCode.trim() && { referral_code: referralCode.trim() }),
-    };
+    try {
+      const payload = {
+        phone_number: phoneNumber.replace(/\s/g, ""),
+        full_name: fullName.trim(),
+        source: "mychits-customer-app",
+        ...(referralCode.trim() && { referral_code: referralCode.trim() }),
+      };
 
-      const apiEndpoint = `${url}/user/send-register-otp`;
-
-      console.log("Sending OTP payload:", payload);
+      const apiEndpoint = `${url}/user/signup-otp`;
 
       const response = await fetch(apiEndpoint, {
         method: "POST",
@@ -164,7 +157,6 @@ export default function Register() {
 
       if (response.ok && contentType?.includes("application/json")) {
         const data = await response.json();
-
         showAppToast(data.message || "OTP sent successfully!");
 
         navigation.navigate("RegisterOtpVerify", {
@@ -175,14 +167,12 @@ export default function Register() {
         });
       } else {
         let errorMessage = "Failed to send OTP. Please try again.";
-
         if (contentType?.includes("application/json")) {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
         } else {
           errorMessage = `Server error (${response.status})`;
         }
-
         showAppToast(errorMessage);
       }
     } catch (error) {
@@ -193,7 +183,6 @@ export default function Register() {
     }
   };
 
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#053B90" />
@@ -201,9 +190,7 @@ export default function Register() {
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={
-          Platform.OS === "ios" ? 0 : -screenHeight * 0.15
-        }
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -screenHeight * 0.15}
       >
         <ScrollView
           contentContainerStyle={styles.scrollViewContent}
@@ -254,10 +241,10 @@ export default function Register() {
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
               >
-                <AntDesign
-                  name={showPassword ? "eye" : "eyeo"}
-                  size={20}
-                  color="#78909C"
+                <Ionicons
+                  name={showPassword ? "eye" : "eye-off"}
+                  size={24}
+                  color="#053B90"
                 />
               </TouchableOpacity>
             </View>
@@ -275,10 +262,10 @@ export default function Register() {
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 style={styles.eyeIcon}
               >
-                <AntDesign
-                  name={showConfirmPassword ? "eye" : "eyeo"}
-                  size={20}
-                  color="#78909C"
+                <Ionicons
+                  name={showConfirmPassword ? "eye" : "eye-off"}
+                  size={24}
+                  color="#053B90"
                 />
               </TouchableOpacity>
             </View>
@@ -314,12 +301,8 @@ export default function Register() {
               </TouchableOpacity>
             )}
 
-            {/* Send OTP */}
             <TouchableOpacity
-              style={[
-                styles.registerButton,
-                loading && { opacity: 0.7 },
-              ]}
+              style={[styles.registerButton, loading && { opacity: 0.7 }]}
               onPress={handleSendOtp}
               disabled={loading}
             >
@@ -461,22 +444,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#053B90",
-  },
   toastContainer: {
     position: "absolute",
     top: 40,
@@ -503,7 +470,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
   },
-  // Style for the initial 'Have a referral code?' link
   referralLinkContainer: {
     width: "90%",
     alignItems: "flex-end",
@@ -516,20 +482,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textDecorationLine: "underline",
   },
-  // NEW styles for the active referral input group and skip link
   referralInputGroup: {
-    width: "100%", 
-    alignItems: "center", 
-    // marginBottom is handled by the input's own marginBottom: 12
+    width: "100%",
+    alignItems: "center",
   },
   skipLinkContainer: {
-    width: "90%", 
-    alignItems: "flex-end", 
-    marginBottom: 5, 
-    paddingRight: 5, 
+    width: "90%",
+    alignItems: "flex-end",
+    marginBottom: 5,
+    paddingRight: 5,
   },
   skipLinkText: {
-    color: "#053B90", // A distinct color for "Skip"
+    color: "#053B90",
     fontSize: 13,
     fontWeight: "500",
     textDecorationLine: "underline",

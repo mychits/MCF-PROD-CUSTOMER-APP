@@ -34,11 +34,11 @@ if (Platform.OS === 'android') {
 
 const Colors = {
   primaryBlue: "#053B90",
-  secondaryBlue: "#0C53B3",
+  secondaryBlue: "#053B90",
   lightBackground: "#F5F8FA",
   darkText: "#2C3E50",
   mediumText: "#7F8C8D",
-  accentColor: "#3498DB",
+  accentColor: "#053B90",
   removedText: "#E74C3C",
   completedText: "#27AE60",
   tableHeaderBlue: "#042D75",
@@ -281,6 +281,7 @@ const Mygroups = ({ navigation }) => {
         if (groupBlock.mobileAppEnrolls && groupBlock.mobileAppEnrolls.length > 0) {
             const mobileCards = groupBlock.mobileAppEnrolls.map(card => ({
                 ...card,
+                group_id: card.group || card.group_id,
                 tickets: card.no_of_tickets, 
                 isPendingApproval: true, 
             }));
@@ -289,6 +290,7 @@ const Mygroups = ({ navigation }) => {
         if (groupBlock.enrollments && groupBlock.enrollments.length > 0) {
             const approvedCards = groupBlock.enrollments.map(card => ({
                 ...card,
+                group_id: card.group || card.group_id,
                 isPendingApproval: false,
             }));
             allCards.push(...approvedCards);
@@ -414,19 +416,21 @@ const Mygroups = ({ navigation }) => {
       <Header userId={userId} navigation={navigation} />
 
       <View style={styles.mainWrapper}>
+        <View style={styles.titleRow}>
+            <Text style={styles.title}>My Groups</Text>
+            {!loading && (
+                <View style={styles.titleBadge}>
+                    <Text style={styles.titleBadgeText}>{activeCards.length}</Text>
+                </View>
+            )}
+        </View>
+
         {loading ? (
-          <View style={styles.fullScreenLoader}>
+          <View style={[styles.scrollWrapper, {justifyContent: 'center', alignItems: 'center'}]}>
             <ActivityIndicator size="large" color={Colors.primaryBlue} />
           </View>
         ) : (
           <>
-            <View style={styles.titleRow}>
-                <Text style={styles.title}>My Groups</Text>
-                <View style={styles.titleBadge}>
-                    <Text style={styles.titleBadgeText}>{activeCards.length}</Text>
-                </View>
-            </View>
-
             <View style={styles.fixedSummaryWrapper}>
               <LinearGradient colors={["#0A2647", "#0C53B3"]} style={styles.summaryCardLeft}>
                 <FontAwesome5 name="wallet" size={12} color="#fff" />
@@ -596,8 +600,9 @@ const Mygroups = ({ navigation }) => {
                                   </View>
                               )}
                               
-                              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, justifyContent: 'space-between' }}>
                                   <Text style={styles.ticketText}>Ticket: {ticketKey}</Text>
+                                  <Text style={styles.ticketText}>Group Type: {card.group_id?.group_type}</Text>
                               </View>
 
                               {isHeldMode ? (
@@ -623,7 +628,10 @@ const Mygroups = ({ navigation }) => {
                                 </View>
                                 <View style={styles.progressHeader}><Text style={styles.progressText}>Paid</Text><Text style={styles.progressTextBold}>{paidPercentage}%</Text></View>
                                 <View style={styles.progressBar}><View style={{ width: `${paidPercentage}%`, height: 5, borderRadius: 5, backgroundColor: isPending ? Colors.mediumText : Colors.accentColor }} /></View>
-                                <View style={styles.amountRow}><View style={[styles.amountColumn, { alignItems: 'flex-start', flex: 1, paddingLeft: 5 }]}><Text style={styles.amountLabel}>Paid Amount</Text><Text style={[styles.amountValue, { color: isPending ? Colors.mediumText : Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text></View></View>
+                                <View style={styles.amountRow}>
+                                  <View style={{ flex: 1, alignItems: 'flex-start'}}><Text style={styles.amountLabel}>Paid Amount</Text><Text style={[styles.amountValue, { color: isPending ? Colors.mediumText : Colors.accentColor }]}>₹ {formatNumberIndianStyle(individualPaidAmount)}</Text></View>
+                                  <View style={{ flex: 1, alignItems: 'flex-end'}}><Text style={styles.amountLabel}>Group Value</Text><Text style={[styles.amountValue, { color: Colors.darkText }]}>₹ {formatNumberIndianStyle(card.group_id?.group_value)}</Text></View>
+                                </View>
                                 {!isPending && (
                                   <View style={styles.paymentsButton}>
                                       <Text style={styles.paymentsButtonText}>View Payments & Details</Text>
@@ -716,8 +724,27 @@ const styles = StyleSheet.create({
   convertButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 10, marginLeft: 6 },
 
   // --- COMPACT CARD STYLES ---
-  cardTouchable: { marginBottom: 12, borderRadius: 16, elevation: 3, backgroundColor: "#fff" }, 
-  highlightedCard: { borderWidth: 1.5, borderColor: Colors.accentColor, transform: [{ scale: 1.01 }] },
+  cardTouchable: { 
+    marginBottom: 12, 
+    borderRadius: 16, 
+    elevation: 4, 
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  }, 
+  highlightedCard: { 
+    borderWidth: 1.5, 
+    borderColor: Colors.accentColor, 
+    transform: [{ scale: 1.01 }],
+    shadowColor: Colors.accentColor,
+  },
   cardGradient: { borderRadius: 16, padding: 1 },
   cardInner: { borderRadius: 15, padding: 10 }, 
   cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 }, 
