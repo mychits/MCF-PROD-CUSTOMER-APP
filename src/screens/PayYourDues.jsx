@@ -266,13 +266,7 @@ const PayYourDues = ({ navigation }) => {
             Stay on top of your chit payments!
           </Text>
 
-          {/* DYNAMIC TIMESTAMP BOX */}
-          <View style={styles.timestampBox}>
-             <MaterialIcons name="sync" size={14} color="#007BFF" />
-             <Text style={styles.timestampText}>
-                Updated: <Text style={{fontWeight: '700'}}>{currentDateTime}</Text>
-             </Text>
-          </View>
+         
 
           {loading ? (
             <ActivityIndicator

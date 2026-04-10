@@ -83,29 +83,29 @@ const EnrollGroup = ({ route, navigation }) => {
     setLoading(true);
     setError(null);
     try {
-      const [groupResponse, paymentResponse, overviewResponse] = await Promise.all([
-        axios.get(`${url}/group/get-by-id-group/${groupId}`),
-        axios.post(`${url}/payment/payment-list`, {
-          groupId,
-          userId,
-          ticket,
-          source: "mychits-customer-app"
-        }),
-        axios.get(`${url}/overview/single?user_id=${userId}&group_id=${groupId}&ticket=${ticket}`)
-      ]);
+        const [groupResponse, paymentResponse, overviewResponse] = await Promise.all([
+            axios.get(`${url}/group/get-by-id-group/${groupId}`),
+            axios.post(`${url}/payment/payment-list`, {
+                groupId,
+                userId,
+                ticket,
+                source: "mychits-customer-app"
+            }),
+            axios.get(`${url}/overview/single?user_id=${userId}&group_id=${groupId}&ticket=${ticket}`)
+        ]);
 
-      setGroups(groupResponse.data);
+        setGroups(groupResponse.data);
 
-      const paymentListData = paymentResponse.data;
-      if (paymentListData.success) {
-        setPaymentData(paymentListData.data.sort((a, b) => new Date(b.pay_date) - new Date(a.pay_date)));
-      } else {
-        setError(paymentListData.message || "No payment data available");
-        setPaymentData([]);
-      }
+        const paymentListData = paymentResponse.data;
+        if (paymentListData.success) {
+            setPaymentData(paymentListData.data.sort((a, b) => new Date(b.pay_date) - new Date(a.pay_date)));
+        } else {
+            setError(paymentListData.message || "No payment data available");
+            setPaymentData([]);
+        }
 
-      setSingleOverview(overviewResponse.data);
-      console.log(JSON.stringify(overviewResponse.data, null, 2));
+        setSingleOverview(overviewResponse.data);
+        console.log(JSON.stringify(overviewResponse.data, null, 2));
 
     } catch (err) {
       setError("An error occurred while fetching data. Please try again.");
@@ -124,9 +124,7 @@ const EnrollGroup = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={{ marginTop: 23 }}>
-        <Header userId={userId} navigation={navigation} />
-      </View>
+      <Header userId={userId} navigation={navigation} />
       <StatusBar
         barStyle={loading ? "dark-content" : "light-content"}
         backgroundColor={loading ? "#fff" : "#053B90"}
@@ -596,4 +594,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EnrollGroup;
+export default EnrollGroup; 
