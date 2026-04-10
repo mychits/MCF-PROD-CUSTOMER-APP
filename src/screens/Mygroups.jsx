@@ -174,8 +174,23 @@ const Mygroups = ({ navigation }) => {
   const girlWalkY = useRef(new Animated.Value(50)).current;
   const girlWalkRotation = useRef(new Animated.Value(-10)).current;
 
+  // LIVE ANIMATION REF (Added from PayYourDues)
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
   const recipientEmail = 'info.mychits@gmail.com';
   const phoneNumber = '+919483900777';
+
+  // LIVE ANIMATION EFFECT (Added from PayYourDues)
+  useEffect(() => {
+    const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pulseAnim]);
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -418,11 +433,22 @@ const Mygroups = ({ navigation }) => {
       <View style={styles.mainWrapper}>
         <View style={styles.titleRow}>
             <Text style={styles.title}>My Groups</Text>
-            {!loading && (
-                <View style={styles.titleBadge}>
-                    <Text style={styles.titleBadgeText}>{activeCards.length}</Text>
+            
+            {/* Container for Right Side Header Items (Live Badge + Count Badge) */}
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                
+                {/* ADDED LIVE BADGE */}
+                <View style={styles.liveBadge}>
+                    <Animated.View style={[styles.liveDot, { opacity: pulseAnim }]} />
+                    <Text style={styles.liveText}>LIVE</Text>
                 </View>
-            )}
+
+                {!loading && (
+                    <View style={styles.titleBadge}>
+                        <Text style={styles.titleBadgeText}>{activeCards.length}</Text>
+                    </View>
+                )}
+            </View>
         </View>
 
         {loading ? (
@@ -679,6 +705,32 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: "bold", color: "#fff" },
   titleBadge: { backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.4)' },
   titleBadgeText: { color: '#fff', fontWeight: 'bold', fontSize: 12, },
+  // --- ADDED LIVE STYLES ---
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A5D6A7',
+    marginRight: 10, // Space between Live badge and Count badge
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#2E7D32',
+    marginRight: 4,
+  },
+  liveText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#2E7D32',
+    letterSpacing: 0.5,
+  },
+  // ------------------------
   scrollWrapper: { flex: 1, backgroundColor: Colors.lightBackground, borderTopLeftRadius: 25, borderTopRightRadius: 25 },  fixedSummaryWrapper: { 
     flexDirection: "row", 
     paddingHorizontal: 15, 

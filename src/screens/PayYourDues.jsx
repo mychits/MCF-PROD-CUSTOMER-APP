@@ -18,6 +18,7 @@ import {
   Linking,
   TextInput,
   Alert,
+  Animated, // Added for animation
 } from "react-native";
 import url from "../data/url";
 import axios from "axios";
@@ -74,6 +75,10 @@ const PayYourDues = ({ navigation }) => {
   const [cardsData, setCardsData] = useState([]);
   const [groupOverviews, setGroupOverviews] = useState({});
   const [loading, setLoading] = useState(true);
+  const [currentDateTime, setCurrentDateTime] = useState("");
+
+  // Animation Value for the Pulsing Dot
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [modalDetails, setModalDetails] = useState({
@@ -84,6 +89,40 @@ const PayYourDues = ({ navigation }) => {
   });
   const [paymentAmount, setPaymentAmount] = useState("");
   const amountInputRef = useRef(null);
+
+  // Initialize Pulse Animation
+  useEffect(() => {
+    const startPulse = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    };
+    startPulse();
+  }, [pulseAnim]);
+
+  const updateTimestamp = useCallback(() => {
+    const now = new Date();
+    const options = { 
+        day: '2-digit', 
+        month: 'short', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+    };
+    setCurrentDateTime(now.toLocaleString('en-IN', options));
+  }, []);
 
   const fetchTicketsData = useCallback(async (currentUserId) => {
     try {
@@ -120,6 +159,7 @@ const PayYourDues = ({ navigation }) => {
       return;
     }
     setLoading(true);
+    updateTimestamp();
     try {
       const fetchedCards = await fetchTicketsData(userId);
       const filtered = fetchedCards.filter(
@@ -144,11 +184,12 @@ const PayYourDues = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [userId, fetchTicketsData, fetchIndividualGroupOverview]);
+  }, [userId, fetchTicketsData, fetchIndividualGroupOverview, updateTimestamp]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
   useFocusEffect(
     useCallback(() => {
       fetchData();
@@ -196,7 +237,6 @@ const PayYourDues = ({ navigation }) => {
     }
   };
 
-  // Filter cards to only show those with balance > 0
   const activeDuesCards = cardsData.filter((card) => {
     const overview = groupOverviews[`${card.group_id._id}_${card.tickets}`];
     return overview && (overview.total_balance || 0) > 0;
@@ -212,10 +252,27 @@ const PayYourDues = ({ navigation }) => {
 
       <View style={styles.outerBoxContainer}>
         <View style={styles.mainContentWrapper}>
-          <Text style={styles.sectionTitle}>Pay Your Dues</Text>
+          
+          {/* HEADER SECTION WITH ANIMATED LIVE BADGE ON RIGHT */}
+          <View style={styles.headerTitleRow}>
+             <Text style={styles.sectionTitle}>Pay Your Dues</Text>
+             <View style={styles.liveBadge}>
+                <Animated.View style={[styles.liveDot, { opacity: pulseAnim }]} />
+                <Text style={styles.liveText}>LIVE</Text>
+             </View>
+          </View>
+          
           <Text style={styles.subSectionTitle}>
             Stay on top of your chit payments!
           </Text>
+
+          {/* DYNAMIC TIMESTAMP BOX */}
+          <View style={styles.timestampBox}>
+             <MaterialIcons name="sync" size={14} color="#007BFF" />
+             <Text style={styles.timestampText}>
+                Updated: <Text style={{fontWeight: '700'}}>{currentDateTime}</Text>
+             </Text>
+          </View>
 
           {loading ? (
             <ActivityIndicator
@@ -350,7 +407,7 @@ const PayYourDues = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Payment Modal */}
+      {/* Confirmation Form Modal */}
       <Modal
         isVisible={isModalVisible}
         onBackdropPress={() => setModalVisible(false)}
@@ -385,15 +442,17 @@ const PayYourDues = ({ navigation }) => {
             <Text style={styles.inputHint}>Min: ₹100 | Max: ₹50,000</Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.payNowButtonModal}
-            onPress={handlePaymentInitiate}
-          >
-            <Text style={styles.payNowButtonTextModal}>
-              Pay ₹
-              {formatNumberIndianStyle(paymentAmount || modalDetails.amount)}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.formButtonWrapper}>
+            <TouchableOpacity
+              style={styles.payNowButtonModal}
+              onPress={handlePaymentInitiate}
+            >
+              <Text style={styles.payNowButtonTextModal}>
+                Confirm & Pay ₹
+                {formatNumberIndianStyle(paymentAmount || modalDetails.amount)}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             onPress={() => setModalVisible(false)}
@@ -432,17 +491,68 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 18,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    width: '100%',
+    marginBottom: 2,
+  },
   sectionTitle: {
     fontWeight: "bold",
     fontSize: 22,
     color: "#263238",
     textAlign: "center",
   },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A5D6A7',
+    position: 'absolute',
+    right: 0, // MOVED TO RIGHT SIDE
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#2E7D32',
+    marginRight: 4,
+  },
+  liveText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#2E7D32',
+    letterSpacing: 0.5,
+  },
   subSectionTitle: {
     fontSize: 13,
     color: "#546E7A",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 8,
+  },
+  timestampBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+    backgroundColor: '#EEF6FF',
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'center',
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: '#D1E3FF',
+  },
+  timestampText: {
+    fontSize: 12,
+    color: '#263238',
+    marginLeft: 6,
   },
   loader: { marginTop: 50 },
   groupCardEnhanced: {
@@ -520,7 +630,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     padding: 25,
     borderRadius: 25,
-    width: "90%",
+    width: "94%",
     alignItems: "center",
   },
   companyName: {
@@ -575,17 +685,31 @@ const styles = StyleSheet.create({
     marginTop: 5,
     textAlign: "center",
   },
+  formButtonWrapper: {
+    width: "100%",
+    paddingVertical: 20,
+    paddingHorizontal: 25,
+  },
   payNowButtonModal: {
     backgroundColor: "#007BFF",
-    paddingVertical: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 15,
     borderRadius: 15,
     width: "100%",
     alignItems: "center",
-    marginTop: 20,
-    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
   },
-  payNowButtonTextModal: { color: "#FFF", fontSize: 16, fontWeight: "bold" },
-  modalCloseButton: { marginTop: 20, padding: 10 },
+  payNowButtonTextModal: { 
+    color: "#FFF", 
+    fontSize: 18, 
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalCloseButton: { marginTop: 5, padding: 10 },
   modalCloseButtonText: { color: "#546E7A", fontWeight: "600", fontSize: 14 },
 });
 
