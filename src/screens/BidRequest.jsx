@@ -350,7 +350,7 @@ const BidRequest = ({ navigation, route }) => {
 
   const handleBidRequest = async (enrollment) => {
     if (hasPendingBidRequest(enrollment._id)) {
-      Alert.alert("Pending Request", "You already have a pending bid request for this group. Please wait for approval.", [{ text: "OK" }]);
+      Alert.alert("Pending Bid Request", "You already have a pending bid request for this group. Please wait for approval.", [{ text: "OK" }]);
       return;
     }
 
@@ -433,7 +433,7 @@ const BidRequest = ({ navigation, route }) => {
       enrollmentId: selectedEnrollment._id,
       auction_time: formatTime(new Date()),
       referred_by: "",
-      status: "Pending",
+      status: "Pending ",
       source: "mychits-customer-app"
     };
 
